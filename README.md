@@ -1,22 +1,15 @@
-# Welcome to React Router!
+# Battle Map Generator — Web
 
-A modern, production-ready template for building full-stack React applications using React Router.
+Frontend for the battle map generator, built with [React Router](https://reactrouter.com/) in SPA mode (`ssr: false`). It compiles to static files that are served by the ASP.NET Core backend (separate repository) on Azure App Service.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+## Stack
 
-## Features
-
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+- React Router (SPA mode) + React
+- TypeScript
+- Vite
+- Tailwind CSS
 
 ## Getting Started
-
-### Installation
 
 Install the dependencies:
 
@@ -24,64 +17,49 @@ Install the dependencies:
 npm install
 ```
 
-### Development
-
 Start the development server with HMR:
 
 ```bash
 npm run dev
 ```
 
-Your application will be available at `http://localhost:5173`.
+The app is available at `http://localhost:5173`.
+
+Type-check the project:
+
+```bash
+npm run typecheck
+```
 
 ## Building for Production
-
-Create a production build:
 
 ```bash
 npm run build
 ```
 
+The deployable output is `build/client/`:
+
+```
+build/client/
+├── index.html   # SPA entry point
+├── assets/      # Hashed JS/CSS bundles
+└── favicon.ico
+```
+
+`build/server/` is only used by the build itself and is not deployed.
+
 ## Deployment
 
-### Docker Deployment
+The frontend is not deployed on its own. It is hosted by the ASP.NET Core API as static files:
 
-To build and run using Docker:
+1. CI builds this repository (`npm ci && npm run build`).
+2. The contents of `build/client/` are copied into the backend's published `wwwroot/`.
+3. The backend is deployed to Azure App Service.
 
-```bash
-docker build -t my-app .
+The backend serves the SPA with `UseDefaultFiles()` / `UseStaticFiles()` and falls back to `index.html` for non-API routes (`MapFallbackToFile("index.html")`), so client-side routes work on page refresh. API endpoints live under `/api` on the same origin, so the frontend calls relative URLs and needs no CORS configuration in production.
 
-# Run the container
-docker run -p 3000:3000 my-app
-```
-
-The containerized application can be deployed to any platform that supports Docker, including:
-
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
-```
+Caching: files in `assets/` are content-hashed and can be cached long-term; `index.html` should be served with `Cache-Control: no-cache` so new deployments are picked up.
 
 ## Styling
 
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
-
----
-
-Built with ❤️ using React Router.
+[Tailwind CSS](https://tailwindcss.com/) is configured via `@tailwindcss/vite`.
