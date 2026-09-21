@@ -1,0 +1,11 @@
+/.10x-cli.json
+/.github/
+/projekt-kursowy-mniejszy-niz-myslisz.md
+/context/foundation/README.md
+/context/changes/README.md
+/context/archive/README.md
+
+.env
+.env.*
+!.env.example
+node_modules/
