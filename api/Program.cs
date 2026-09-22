@@ -1,3 +1,5 @@
+using Microsoft.Net.Http.Headers;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -14,28 +16,33 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
+// The SPA from web/build/client is copied into wwwroot at build time.
+// index.html is never cached so a deploy is picked up on refresh; hashed assets are immutable.
+app.UseDefaultFiles();
+app.UseStaticFiles(new StaticFileOptions
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+    OnPrepareResponse = ctx =>
+    {
+        var headers = ctx.Context.Response.Headers;
+        if (ctx.Context.Request.Path.StartsWithSegments("/assets"))
+        {
+            headers[HeaderNames.CacheControl] = "public, max-age=31536000, immutable";
+        }
+        else
+        {
+            headers[HeaderNames.CacheControl] = "no-cache";
+        }
+    }
+});
 
-app.MapGet("/weatherforecast", () =>
+app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }))
+    .WithName("GetHealth");
+
+// Unknown API routes are 404s, never the SPA shell.
+app.MapFallback("/api/{**rest}", () => Results.NotFound());
+app.MapFallbackToFile("index.html", new StaticFileOptions
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    OnPrepareResponse = ctx => ctx.Context.Response.Headers[HeaderNames.CacheControl] = "no-cache"
+});
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

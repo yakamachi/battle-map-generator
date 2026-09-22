@@ -7,4 +7,10 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
+  server: {
+    // In dev the API runs separately (`dotnet run` in api/); in production it serves this SPA itself.
+    proxy: {
+      "/api": "http://localhost:5108",
+    },
+  },
 });
