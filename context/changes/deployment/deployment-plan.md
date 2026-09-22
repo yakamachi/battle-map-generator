@@ -1,6 +1,6 @@
 ---
 change: first-deployment
-status: in-progress
+status: deployed
 created: 2026-09-22
 platform: Azure App Service (Linux, F1)
 ---
@@ -43,9 +43,9 @@ Nic nie wygasa: OIDC + managed identity nie mają hasła do rotacji. Jedyne „d
 - **Operacje destrukcyjne**: usuwanie bazy lub zasobów, rotacja haseł, zmiana tieru. Zawsze ręcznie w portalu.
 
 ## Faza 0: przygotowanie repo i narzędzi
-- [ ] **(człowiek, zatwierdzenie)** Commit obecnej restrukturyzacji monorepo jako osobny commit, przed zmianami wdrożeniowymi.
-- [ ] **(człowiek)** Instalacja CLI (CachyOS): `sudo pacman -S azure-cli github-cli`, potem `az login`, `gh auth login`.
-- [ ] Sprawdzenie: `az account show` (subskrypcja Free Trial, zapisać datę wygaśnięcia kredytu w planie), `az webapp list-runtimes --os linux | grep -i dotnet` (oczekiwane `DOTNETCORE:10.0`), `az appservice list-locations --sku F1 --linux-workers-enabled` (wybór regionu, np. `polandcentral` albo `westeurope`).
+- [x] **(człowiek, zatwierdzenie)** Commit obecnej restrukturyzacji monorepo jako osobny commit, przed zmianami wdrożeniowymi.
+- [x] **(człowiek)** Instalacja CLI (CachyOS): `sudo pacman -S azure-cli github-cli`, potem `az login`, `gh auth login`.
+- [x] Sprawdzenie: `az account show` (subskrypcja Free Trial, zapisać datę wygaśnięcia kredytu w planie), `az webapp list-runtimes --os linux | grep -i dotnet` (oczekiwane `DOTNETCORE:10.0`), `az appservice list-locations --sku F1 --linux-workers-enabled` (wybór regionu, np. `polandcentral` albo `westeurope`).
 
 ## Faza 1: zmiany w kodzie (agent)
 - [x] `api/Program.cs`:
@@ -67,22 +67,22 @@ Nic nie wygasa: OIDC + managed identity nie mają hasła do rotacji. Jedyne „d
 
 ## Faza 2: zasoby Azure (człowiek uruchamia albo zatwierdza każde polecenie)
 Zmienne: `RG=rg-battlemap`, `LOC=<region>`, `APP=battlemap-<unikalny-sufiks>`, `ID=id-battlemap-deploy`.
-- [ ] `az group create -n $RG -l $LOC`
-- [ ] `az appservice plan create -g $RG -n plan-battlemap --is-linux --sku F1`
-- [ ] `az webapp create -g $RG -p plan-battlemap -n $APP --runtime "DOTNETCORE:10.0"` (separator z Fazy 0)
-- [ ] `az webapp update -g $RG -n $APP --https-only true`; `az webapp config set -g $RG -n $APP --startup-file "dotnet battle-map-generator-api.dll"`
-- [ ] `az webapp log config -g $RG -n $APP --docker-container-logging filesystem`
-- [ ] **Tożsamość deployu bez sekretów:**
+- [x] `az group create -n $RG -l $LOC`
+- [x] `az appservice plan create -g $RG -n plan-battlemap --is-linux --sku F1`
+- [x] `az webapp create -g $RG -p plan-battlemap -n $APP --runtime "DOTNETCORE:10.0"` (separator z Fazy 0)
+- [x] `az webapp update -g $RG -n $APP --https-only true`; `az webapp config set -g $RG -n $APP --startup-file "dotnet battle-map-generator-api.dll"`
+- [x] `az webapp log config -g $RG -n $APP --docker-container-logging filesystem`
+- [x] **Tożsamość deployu bez sekretów:**
   - `az identity create -g $RG -n $ID`
   - `az identity federated-credential create -g $RG --identity-name $ID -n github-production --issuer https://token.actions.githubusercontent.com --subject repo:<owner>/battle-map-generator:environment:production --audiences api://AzureADTokenExchange`
   - `az role assignment create --assignee <principalId> --role "Website Contributor" --scope <webapp resource id>` (zakres tylko ta aplikacja: bez DNS, bez billingu, bez innych zasobów)
 - [ ] **(człowiek, portal)** Budget alert na subskrypcji (np. 5 USD), bo billing jest human-only.
 
 ## Faza 3: GitHub (człowiek zatwierdza, bo to publikacja na zewnątrz)
-- [ ] `gh repo create battle-map-generator --private --source . --remote origin` (bez pushu na razie)
-- [ ] `gh api -X PUT repos/<owner>/battle-map-generator/environments/production`
-- [ ] `gh variable set AZURE_CLIENT_ID|AZURE_TENANT_ID|AZURE_SUBSCRIPTION_ID|AZURE_WEBAPP_NAME` (variables, bo to nie sekrety)
-- [ ] Commit zmian z Fazy 1 i `git push -u origin main`, co uruchamia pierwszy deploy.
+- [x] `gh repo create battle-map-generator --private --source . --remote origin` (bez pushu na razie)
+- [x] `gh api -X PUT repos/<owner>/battle-map-generator/environments/production`
+- [x] `gh variable set AZURE_CLIENT_ID|AZURE_TENANT_ID|AZURE_SUBSCRIPTION_ID|AZURE_WEBAPP_NAME` (variables, bo to nie sekrety)
+- [x] Commit zmian z Fazy 1 i `git push -u origin main`, co uruchamia pierwszy deploy.
 
 ## Przypadki brzegowe i wsparcie
 - **`AADSTS70021` / „no matching federated identity”**: subject musi się zgadzać co do znaku (`repo:owner/name:environment:production`, wielkość liter owner/repo). Sprawdzić `az identity federated-credential list`.
@@ -103,3 +103,12 @@ Zmienne: `RG=rg-battlemap`, `LOC=<region>`, `APP=battlemap-<unikalny-sufiks>`, `
 3. CI: oba joby zielone, smoke test przechodzi.
 4. Produkcja: `https://$APP.azurewebsites.net/` ładuje SPA, `/api/health` zwraca 200, `az webapp log tail` bez błędów.
 5. Po sukcesie: zapis planu (z odhaczonymi krokami) do `context/changes/deployment/deployment-plan.md`.
+
+## Wynik (2026-09-22)
+
+- **Produkcja:** https://battle-map-generator.azurewebsites.net (Poland Central, plan F1, Linux, `DOTNETCORE|10.0`). Na subskrypcji Free Trial plan F1 dał się utworzyć, więc ryzyko „kwota F1 = 0” się nie potwierdziło.
+- **Zasoby:** `rg-battlemap`, `plan-battlemap`, `battle-map-generator`, managed identity `id-battlemap-deploy` z rolą Website Contributor tylko na tej aplikacji.
+- **Repo:** https://github.com/yakamachi/battle-map-generator (publiczne). Środowisko `production`, zmienne `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `AZURE_WEBAPP_NAME`. Brak sekretów.
+- **Pierwszy run:** `AADSTS700213`. Nowe repozytoria GitHub wysyłają subject OIDC z niezmiennymi ID: `repo:yakamachi@6146326/battle-map-generator@1381748628:environment:production`. Federated credential ma teraz ten subject. Przetrwa zmianę nazwy repo lub konta, ale nie usunięcie i ponowne utworzenie repo.
+- **Weryfikacja produkcji:** `/` i `/some/deep/link` zwracają 200 `text/html` z `no-cache`, `/api/health` zwraca 200 `{"status":"ok"}`, `/api/nope` zwraca 404, HTTP przekierowuje 301 na HTTPS.
+- **Otwarte:** budget alert (człowiek), upgrade do Pay-As-You-Go przed końcem kredytu Free Trial (człowiek). Actions `azure/login@v2` i `actions/download-artifact@v4` są wymuszane na Node 24; podbić wersje, gdy wyjdą nowe majory.
