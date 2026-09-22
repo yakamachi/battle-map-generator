@@ -162,6 +162,11 @@ potrzeba rozróżnienia uprawnień.
   generuje tylko podstawowy układ pokoi/korytarzy z jednym tileset; rozszerzenia
   wizualne i treściowe to praca po MVP.
 - Zapis mapy w bibliotece z tytułem należy wyłącznie do etapu 2.
+- **Druk mapy na papierze w skali 1 cal na kratkę (wiele stron)** — po MVP.
+  Cel: korzystanie z map zarówno online (Roll20), jak i przy stole. MVP
+  zapewnia pobranie jednego PNG w stałej, wysokiej rozdzielczości (140 px na
+  kratkę), które nadaje się do Roll20 i do samodzielnego wydruku; podział na
+  strony do druku to praca po MVP.
 
 ## Open Questions
 

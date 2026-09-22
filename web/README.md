@@ -1,6 +1,6 @@
 # Battle Map Generator — Web
 
-Frontend for the battle map generator, built with [React Router](https://reactrouter.com/) in SPA mode (`ssr: false`). It compiles to static files that are served by the ASP.NET Core backend (separate repository) on Azure App Service.
+Frontend for the battle map generator, built with [React Router](https://reactrouter.com/) in SPA mode (`ssr: false`). It compiles to static files that are served by the ASP.NET Core backend in `../api/` of this monorepo on Azure App Service.
 
 ## Stack
 
@@ -52,8 +52,8 @@ build/client/
 
 The frontend is not deployed on its own. It is hosted by the ASP.NET Core API as static files:
 
-1. CI builds this repository (`npm ci && npm run build`).
-2. The contents of `build/client/` are copied into the backend's published `wwwroot/`.
+1. CI builds this app (`npm ci && npm run build` in `web/`).
+2. The contents of `web/build/client/` are copied into the published `wwwroot/` of `api/`.
 3. The backend is deployed to Azure App Service.
 
 The backend serves the SPA with `UseDefaultFiles()` / `UseStaticFiles()` and falls back to `index.html` for non-API routes (`MapFallbackToFile("index.html")`), so client-side routes work on page refresh. API endpoints live under `/api` on the same origin, so the frontend calls relative URLs and needs no CORS configuration in production.

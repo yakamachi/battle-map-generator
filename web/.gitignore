@@ -6,7 +6,3 @@
 /.react-router/
 /build/
 
-# Local AI tooling
-/.10x-cli.json
-/.claude/
-/CLAUDE.md

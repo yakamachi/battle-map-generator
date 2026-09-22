@@ -1,19 +1,23 @@
 # Battle Map Generator Web
 
-## Context
+Read the root `../AGENTS.md` first (ownership split, generation rules, testing, deployment). This file adds frontend-only rules.
 
-Before scoping features, read `context\foundation\prd.md`. For decision history or unresolved requirements, read `context\foundation\shape-notes.md`. For snapshot provenance and updates, read `context\foundation\README.md`.
+## Scope
 
-Before scaffolding or changing infrastructure, read `context\foundation\tech-stack.md`. This repository currently contains planning inputs only; preserve them when bootstrapping into this repository root.
+This app owns the login UI, encounter parameters, generate and regenerate requests, and **all visual output**: turning the API's semantic grid into a picture, the on-screen preview, and the PNG download. Sprite and tileset work, the main direction for improving maps, lives entirely here.
 
-## Ownership and integration
+React Router with TypeScript in SPA mode (`ssr: false`; the starter defaults to SSR). There is no Node server in production: ASP.NET Core in `../api/` serves `build/client`. Call the API with relative `/api` URLs; no CORS in production.
 
-This frontend owns login UI, encounter parameters, generation/regeneration requests, PNG preview and download. The sibling `..\battle-map-generator-api` repository owns authentication enforcement, procedural generation, rendering and the API. Both repositories share one product PRD; implement only this repository's responsibilities.
+## Map rendering
 
-When implementing API calls, use backend-generated OpenAPI as the contract source. The contract has not been created yet; coordinate endpoint, error and authentication shapes with the backend rather than defining a second independent contract.
+- One pure render function: `(grid, seed, tileSize) -> canvas`. It maps semantic cells to sprites, does wall autotiling and picks visual variants. Variant randomness is derived from the response seed, never from `Math.random()`.
+- **Download renders offscreen at a fixed 140 px per grid square** (twice Roll20's 70 px standard, so it also prints sharply at 1 inch per square), independent of the screen. The preview uses the same render function at a size that fits the screen. `devicePixelRatio`, browser zoom and display scaling must never affect the downloaded file.
+- Draw at integer pixel positions with image smoothing off, so tiles never show seams.
+- Keep the tileset as one atlas image with a hashed filename, so browsers cache it and it does not consume the hosting plan's daily bandwidth quota.
+- Mind browser canvas size limits when adding larger maps or higher export scales.
+- Printing across multiple pages at 1 inch per square is post-MVP (see the PRD's non-goals); do not build it into the MVP.
 
-Use React Router with TypeScript in SPA mode (`ssr: false`). ASP.NET Core will serve the compiled assets on Azure App Service. The hand-off's `self-host` target means this shared application host, not an additional VPS or Node.js backend. Artifact transfer and authentication integration remain implementation work.
+## Tests
 
-## Bootstrap boundary
-
-Run scaffolding only on explicit request. Apply SPA mode explicitly: the starter defaults to SSR and the hand-off schema has no SPA field. Bootstrapper availability must be checked before invocation; the skill was not installed during context preparation.
+- Rendering tests use the shared fixture grids from `../api/` tests: fixed grid and seed in, stable image out.
+- Playwright end-to-end tests run in both Chromium and Firefox, including the PNG download (dimensions match the grid × 140 px, and the file is not blank).
