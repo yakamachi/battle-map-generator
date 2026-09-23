@@ -1,0 +1,15 @@
+# Local development only. The SA password below is a throwaway for this container;
+# Azure SQL uses the app's managed identity and has no password.
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "LocalDev_Only_Passw0rd!"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+
+volumes:
+  sqlserver-data:

@@ -1,6 +1,14 @@
 @battle_map_generator_api_HostAddress = http://localhost:5108
+# Local-only key from appsettings.Development.json.
+@health_ready_key = local-dev-only-ready-key
 
-GET {{battle_map_generator_api_HostAddress}}/api/health
+GET {{battle_map_generator_api_HostAddress}}/api/health/live
 Accept: application/json
+
+###
+
+GET {{battle_map_generator_api_HostAddress}}/api/health/ready
+Accept: application/json
+X-Health-Key: {{health_ready_key}}
 
 ###

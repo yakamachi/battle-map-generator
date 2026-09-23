@@ -75,4 +75,4 @@ jobs:
 
       - name: Smoke test
         # F1 cold start can take tens of seconds.
-        run: curl --fail --silent --show-error --retry 10 --retry-delay 15 --retry-all-errors https://${{ vars.AZURE_WEBAPP_NAME }}.azurewebsites.net/api/health
+        run: curl --fail --silent --show-error --retry 10 --retry-delay 15 --retry-all-errors https://${{ vars.AZURE_WEBAPP_NAME }}.azurewebsites.net/api/health/live
