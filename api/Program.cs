@@ -41,6 +41,12 @@ builder.Services.AddDataProtection()
     .SetApplicationName("battle-map-generator")
     .PersistKeysToDbContext<AppDbContext>();
 
+// Data Protection preloads the key ring in a hosted service before the app listens, which reads
+// the database on every cold start and wakes a paused Azure SQL database. Load keys on first use instead.
+// Single() fails startup loudly if a framework update renames the internal service.
+builder.Services.Remove(builder.Services.Single(d =>
+    d.ServiceType == typeof(IHostedService) && d.ImplementationType?.Name == "DataProtectionHostedService"));
+
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<AppDbContext>(tags: ["ready"])
     .AddCheck<DataProtectionHealthCheck>("data-protection", tags: ["ready"]);
@@ -110,10 +116,11 @@ static bool HasValidHealthKey(HttpContext ctx)
         return false;
     }
 
+    // Hashing first gives equal-length inputs, so the comparison time does not reveal the key length.
     var provided = ctx.Request.Headers["X-Health-Key"].ToString();
     return CryptographicOperations.FixedTimeEquals(
-        Encoding.UTF8.GetBytes(provided),
-        Encoding.UTF8.GetBytes(expected));
+        SHA256.HashData(Encoding.UTF8.GetBytes(provided)),
+        SHA256.HashData(Encoding.UTF8.GetBytes(expected)));
 }
 
 // Exposed for WebApplicationFactory<Program> in integration tests.

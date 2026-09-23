@@ -368,15 +368,15 @@ Every deploy applies pending migrations before the new app starts, then proves b
 
 #### Automated
 
-- [x] 1.1 API builds: `dotnet build api`
-- [x] 1.2 Migration exists and generates a script: `dotnet tool restore && dotnet ef migrations script --project api` lists `AspNetUsers` and `DataProtectionKeys`
-- [x] 1.3 Migration applies to local SQL Server: `docker compose up -d sqlserver && dotnet ef database update --project api` exits 0
+- [x] 1.1 API builds: `dotnet build api` — 8f89390
+- [x] 1.2 Migration exists and generates a script: `dotnet tool restore && dotnet ef migrations script --project api` lists `AspNetUsers` and `DataProtectionKeys` — 8f89390
+- [x] 1.3 Migration applies to local SQL Server: `docker compose up -d sqlserver && dotnet ef database update --project api` exits 0 — 8f89390
 
 #### Manual
 
-- [x] 1.4 With the container up and `dotnet run --project api`: `/api/health/live` → 200, `/api/health/ready` with the local `X-Health-Key` → 200 and without it → 404, `/api/health` and `/api/nope` → 404, a deep link returns `index.html` (with `wwwroot` populated)
-- [x] 1.5 With the container stopped: `/api/health/live` → 200, `/api/health/ready` with the key → 503 (after the retry window)
-- [x] 1.6 After the first `ready` call, `SELECT Id, FriendlyName FROM DataProtectionKeys` in the container shows exactly one key; restarting the API and calling `ready` again leaves the same single key
+- [x] 1.4 With the container up and `dotnet run --project api`: `/api/health/live` → 200, `/api/health/ready` with the local `X-Health-Key` → 200 and without it → 404, `/api/health` and `/api/nope` → 404, a deep link returns `index.html` (with `wwwroot` populated) — 8f89390
+- [x] 1.5 With the container stopped: `/api/health/live` → 200, `/api/health/ready` with the key → 503 (after the retry window) — 8f89390
+- [x] 1.6 After the first `ready` call, `SELECT Id, FriendlyName FROM DataProtectionKeys` in the container shows exactly one key; restarting the API and calling `ready` again leaves the same single key — 8f89390
 
 ### Phase 2: Integration Tests and CI Test Gate
 
