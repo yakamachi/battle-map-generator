@@ -408,14 +408,14 @@ Every deploy applies pending migrations before the new app starts, then proves b
 
 #### Automated
 
-- [x] 4.1 Workflow is valid YAML and lists the new steps: `gh workflow view deploy.yml` succeeds, and `grep -c "if: always()" .github/workflows/deploy.yml` returns at least 1
-- [x] 4.2 Bundle builds locally: `dotnet ef migrations bundle --project api --self-contained -r linux-x64 -o /tmp/efbundle --force` exits 0
-- [x] 4.3 Tests still pass: `dotnet test api.Tests`
+- [x] 4.1 Workflow is valid YAML and lists the new steps: `gh workflow view deploy.yml` succeeds, and `grep -c "if: always()" .github/workflows/deploy.yml` returns at least 1 — 1c149ee
+- [x] 4.2 Bundle builds locally: `dotnet ef migrations bundle --project api --self-contained -r linux-x64 -o /tmp/efbundle --force` exits 0 — 1c149ee
+- [x] 4.3 Tests still pass: `dotnet test api.Tests` — 1c149ee
 
 #### Manual
 
-- [ ] 4.4 The deploy run on `main` is green: migration step applied `InitialAccountStore`, the firewall rule step ran, and both smoke tests passed
-- [ ] 4.5 After the run, `az sql server firewall-rule list -g rg-battlemap -s $SQL -o table` shows only `AllowAzureServices`
-- [ ] 4.6 Key-ring proof: `SELECT Id, FriendlyName, LEN(Xml) FROM DataProtectionKeys` shows exactly one key; `az webapp restart -g rg-battlemap -n battle-map-generator`; `/api/health/ready` (with the key) → 200; the query shows the same single key
+- [x] 4.4 The deploy run on `main` is green: migration step applied `InitialAccountStore`, the firewall rule step ran, and both smoke tests passed — 1c149ee
+- [x] 4.5 After the run, `az sql server firewall-rule list -g rg-battlemap -s $SQL -o table` shows only `AllowAzureServices` — 1c149ee
+- [x] 4.6 Key-ring proof: `SELECT Id, FriendlyName, LEN(Xml) FROM DataProtectionKeys` shows exactly one key; `az webapp restart -g rg-battlemap -n battle-map-generator`; `/api/health/ready` (with the key) → 200; the query shows the same single key — 1c149ee
 - [ ] 4.7 Idle proof: after more than 60 minutes without traffic, with `az sql db show -g rg-battlemap -s $SQL -n sqldb-battlemap --query status` returning `Paused`, `/api/health/ready` (with the key) returns 200 within the retry window (record the time taken) and the same single key remains
 - [ ] 4.8 A second push to `main` with no new migration still deploys green (the bundle is a no-op)
