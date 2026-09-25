@@ -1,10 +1,10 @@
 ---
 change_id: account-store-foundation
 title: Cloud account store and persistent sessions
-status: impl_reviewed
+status: archived
 created: 2026-09-23
 updated: 2026-09-25
-archived_at: null
+archived_at: 2026-09-25T15:16:21Z
 ---
 
 ## Notes
