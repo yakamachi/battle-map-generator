@@ -382,8 +382,8 @@ Every deploy applies pending migrations before the new app starts, then proves b
 
 #### Automated
 
-- [ ] 2.1 Tests pass locally: `dotnet test api.Tests`
-- [ ] 2.2 Test project files are not tracked as build output: `git status --porcelain api.Tests` shows no `bin/` or `obj/` paths
+- [x] 2.1 Tests pass locally: `dotnet test api.Tests`
+- [x] 2.2 Test project files are not tracked as build output: `git status --porcelain api.Tests` shows no `bin/` or `obj/` paths
 
 #### Manual
 

@@ -36,6 +36,11 @@ jobs:
         with:
           global-json-file: global.json
 
+      # Integration tests start SQL Server through Testcontainers (Docker is available on ubuntu-latest).
+      # A failing test stops the job before the deploy artifact is built.
+      - name: Test API
+        run: dotnet test api.Tests -c Release
+
       - name: Copy SPA into API wwwroot
         run: |
           mkdir -p api/wwwroot
