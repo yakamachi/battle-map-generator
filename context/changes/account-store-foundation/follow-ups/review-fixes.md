@@ -11,7 +11,7 @@ Code fix applied in `api/Program.cs`: the `DataProtectionHostedService` preload 
 
 ## From F6 (ready has no time limit while the database resumes)
 
-- [ ] **Phase 4 smoke test**: add `--max-time 120` to the `/api/health/ready` curl so a hung request becomes a retry within the 10 × 15 s loop.
+- [x] **Phase 4 smoke test** (done in Phase 4): add `--max-time 120` to the `/api/health/ready` curl so a hung request becomes a retry within the 10 × 15 s loop.
 
 ## From Phase 2 implementation (2026-09-25)
 

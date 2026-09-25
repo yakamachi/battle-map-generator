@@ -408,9 +408,9 @@ Every deploy applies pending migrations before the new app starts, then proves b
 
 #### Automated
 
-- [ ] 4.1 Workflow is valid YAML and lists the new steps: `gh workflow view deploy.yml` succeeds, and `grep -c "if: always()" .github/workflows/deploy.yml` returns at least 1
-- [ ] 4.2 Bundle builds locally: `dotnet ef migrations bundle --project api --self-contained -r linux-x64 -o /tmp/efbundle --force` exits 0
-- [ ] 4.3 Tests still pass: `dotnet test api.Tests`
+- [x] 4.1 Workflow is valid YAML and lists the new steps: `gh workflow view deploy.yml` succeeds, and `grep -c "if: always()" .github/workflows/deploy.yml` returns at least 1
+- [x] 4.2 Bundle builds locally: `dotnet ef migrations bundle --project api --self-contained -r linux-x64 -o /tmp/efbundle --force` exits 0
+- [x] 4.3 Tests still pass: `dotnet test api.Tests`
 
 #### Manual
 
