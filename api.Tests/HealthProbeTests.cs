@@ -84,6 +84,7 @@ public sealed class HealthProbeTests(SqlServerFixture sql)
         Assert.Equal(0, await SqlServerFixture.CountKeysAsync(connectionString));
     }
 
+    // ApiFactory serves a stub index.html, so without the /api guard these paths would get 200.
     [Theory]
     [InlineData("/api/health")]
     [InlineData("/api/does-not-exist")]
@@ -93,5 +94,17 @@ public sealed class HealthProbeTests(SqlServerFixture sql)
         var client = factory.CreateClient();
 
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(path)).StatusCode);
+    }
+
+    [Fact]
+    public async Task Deep_links_outside_api_return_the_spa_shell()
+    {
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/maps/some-page");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains(ApiFactory.SpaShellMarker, await response.Content.ReadAsStringAsync());
     }
 }

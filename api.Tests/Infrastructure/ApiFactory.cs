@@ -13,10 +13,17 @@ public sealed class ApiFactory(string connectionString, string? readyKey = ApiFa
 {
     public const string ReadyKey = "test-ready-key";
     public const string ReadyKeyHeader = "X-Health-Key";
+    public const string SpaShellMarker = "spa-shell-stub";
+
+    // The real wwwroot is empty in CI (the SPA is copied in after the tests run), and then the SPA
+    // fallback answers 404 too, which would hide a missing /api guard. A stub index.html makes the
+    // fallback answer 200, so an /api path that ever reaches it fails the tests.
+    private readonly string _webRoot = CreateStubWebRoot();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+        builder.UseWebRoot(_webRoot);
         builder.ConfigureAppConfiguration(config => config.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["ConnectionStrings:AppDb"] = connectionString,
@@ -29,5 +36,19 @@ public sealed class ApiFactory(string connectionString, string? readyKey = ApiFa
         var client = CreateClient();
         client.DefaultRequestHeaders.Add(ReadyKeyHeader, ReadyKey);
         return client;
+    }
+
+    public override async ValueTask DisposeAsync()
+    {
+        await base.DisposeAsync();
+        Directory.Delete(_webRoot, recursive: true);
+    }
+
+    private static string CreateStubWebRoot()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"bmg-webroot-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(path);
+        File.WriteAllText(Path.Combine(path, "index.html"), $"<!doctype html><title>{SpaShellMarker}</title>");
+        return path;
     }
 }

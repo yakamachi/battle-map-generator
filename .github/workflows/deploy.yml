@@ -6,7 +6,6 @@ on:
   workflow_dispatch:
 
 permissions:
-  id-token: write
   contents: read
 
 concurrency:
@@ -16,6 +15,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # The API tests pull a ~2.3 GB SQL Server image; a stalled pull or hung test must not hold
+    # the deploy queue (cancel-in-progress is false) for the 6-hour default.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -58,6 +60,11 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    # Only this job signs in to Azure (OIDC), so only it may mint an ID token;
+    # the build job runs third-party test dependencies.
+    permissions:
+      id-token: write
+      contents: read
     environment:
       name: production
       url: https://${{ vars.AZURE_WEBAPP_NAME }}.azurewebsites.net
