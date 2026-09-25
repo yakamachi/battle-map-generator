@@ -123,9 +123,21 @@ jobs:
             --output none
 
       # Runs as id-battlemap-deploy through the Azure CLI login. A failure stops the job before the
-      # new app is deployed. EF's retry strategy covers the first connection to a paused database.
+      # new app is deployed. A paused free-offer database took about 3 minutes to resume, longer than
+      # EF's own retries (about 1 minute), so the bundle is retried; re-running it only applies pending
+      # migrations, each in its own transaction.
       - name: Apply migrations
-        run: ./efbundle/efbundle --connection "Server=tcp:${{ vars.AZURE_SQL_SERVER }}.database.windows.net,1433;Database=${{ vars.AZURE_SQL_DATABASE }};Authentication=Active Directory Default;Encrypt=True;"
+        run: |
+          conn="Server=tcp:${{ vars.AZURE_SQL_SERVER }}.database.windows.net,1433;Database=${{ vars.AZURE_SQL_DATABASE }};Authentication=Active Directory Default;Encrypt=True;Connect Timeout=60;"
+          for attempt in 1 2 3 4 5; do
+            if ./efbundle/efbundle --connection "$conn"; then
+              exit 0
+            fi
+            echo "::warning::Migration attempt $attempt failed (the database may be resuming); retrying in 30 s"
+            sleep 30
+          done
+          echo "::error::Migrations failed after 5 attempts"
+          exit 1
 
       # Always runs (failure, cancel) once the rule may exist, so the server is never left open to this IP.
       # A missing rule is fine; a failed delete of an existing rule fails the job.
