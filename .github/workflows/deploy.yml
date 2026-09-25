@@ -140,16 +140,14 @@ jobs:
           exit 1
 
       # Always runs (failure, cancel) once the rule may exist, so the server is never left open to this IP.
-      # A missing rule is fine; a failed delete of an existing rule fails the job.
+      # Deleting a missing rule succeeds, so any error here is real and fails the job.
       - name: Close SQL firewall for runner
         if: always() && steps.firewall.outcome != 'skipped'
         run: |
-          rule=(--resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" --server "${{ vars.AZURE_SQL_SERVER }}" --name "gh-runner-${{ github.run_id }}")
-          if az sql server firewall-rule show "${rule[@]}" --output none 2>/dev/null; then
-            az sql server firewall-rule delete "${rule[@]}"
-          else
-            echo "Firewall rule gh-runner-${{ github.run_id }} not found; nothing to remove."
-          fi
+          az sql server firewall-rule delete \
+            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
+            --server "${{ vars.AZURE_SQL_SERVER }}" \
+            --name "gh-runner-${{ github.run_id }}"
 
       - uses: azure/webapps-deploy@v3
         with:

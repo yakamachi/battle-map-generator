@@ -61,6 +61,18 @@ public sealed class HealthProbeTests(SqlServerFixture sql)
         Assert.Equal(HttpStatusCode.ServiceUnavailable, (await client.GetAsync("/api/health/ready")).StatusCode);
     }
 
+    // A missing connection string (e.g. a lost app setting) must not crash the host:
+    // live keeps answering and ready reports the database as unavailable.
+    [Fact]
+    public async Task Missing_connection_string_keeps_live_up_and_fails_ready()
+    {
+        await using var factory = new ApiFactory(connectionString: null);
+        var client = factory.CreateReadyClient();
+
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/health/live")).StatusCode);
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, (await client.GetAsync("/api/health/ready")).StatusCode);
+    }
+
     // Fail closed: 404 and no check runs. The Data Protection check would write the first key
     // to this empty key ring, so a key count of zero proves no check ran.
     [Theory]

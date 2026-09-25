@@ -8,7 +8,8 @@ namespace battle_map_generator_api.Tests.Infrastructure;
 // The environment is "Testing", not Development: appsettings.Development.json carries the developer's
 // local container connection string and ready key, and tests must not depend on either.
 // Every setting the app reads is supplied here, added last so it also wins over environment variables.
-public sealed class ApiFactory(string connectionString, string? readyKey = ApiFactory.ReadyKey)
+// A null connection string models a missing ConnectionStrings:AppDb (the null in-memory value wins).
+public sealed class ApiFactory(string? connectionString, string? readyKey = ApiFactory.ReadyKey)
     : WebApplicationFactory<Program>
 {
     public const string ReadyKey = "test-ready-key";
