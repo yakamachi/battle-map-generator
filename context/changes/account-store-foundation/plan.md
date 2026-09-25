@@ -393,16 +393,16 @@ Every deploy applies pending migrations before the new app starts, then proves b
 
 #### Automated
 
-- [ ] 3.1 Database exists with the free offer: `az sql db show -g rg-battlemap -s $SQL -n sqldb-battlemap --query "{free:useFreeLimit,onLimit:freeLimitExhaustionBehavior,loc:location}"` shows `true`, `AutoPause`, `polandcentral`
-- [ ] 3.2 Server is Entra-only: `az sql server ad-only-auth get -g rg-battlemap -n $SQL` shows `azureAdOnlyAuthentication: true`
-- [ ] 3.3 App identity and connection string are set: `az webapp identity show -g rg-battlemap -n battle-map-generator` returns a principalId, and `az webapp config connection-string list -g rg-battlemap -n battle-map-generator` lists `AppDb` of type `SQLAzure`
-- [ ] 3.4 CI variables exist: `gh variable list` shows `AZURE_RESOURCE_GROUP`, `AZURE_SQL_SERVER`, `AZURE_SQL_DATABASE`, and `gh secret list --env production` shows `HEALTH_READY_KEY`
+- [x] 3.1 Database exists with the free offer: `az sql db show -g rg-battlemap -s $SQL -n sqldb-battlemap --query "{free:useFreeLimit,onLimit:freeLimitExhaustionBehavior,loc:location}"` shows `true`, `AutoPause`, `polandcentral`
+- [x] 3.2 Server is Entra-only: `az sql server ad-only-auth get -g rg-battlemap -n $SQL` shows `azureAdOnlyAuthentication: true`
+- [x] 3.3 App identity and connection string are set: `az webapp identity show -g rg-battlemap -n battle-map-generator` returns a principalId, and `az webapp config connection-string list -g rg-battlemap -n battle-map-generator` lists `AppDb` of type `SQLAzure`
+- [x] 3.4 CI variables exist: `gh variable list` shows `AZURE_RESOURCE_GROUP`, `AZURE_SQL_SERVER`, `AZURE_SQL_DATABASE`, and `gh secret list --env production` shows `HEALTH_READY_KEY`
 
 #### Manual
 
-- [ ] 3.5 In the Azure portal, the database's free-offer setting reads "Auto-pause the database until next month" (not "continue with charges")
-- [ ] 3.6 The owner's temporary firewall rule is removed; only `AllowAzureServices` remains
-- [ ] 3.7 `SELECT name FROM sys.database_principals WHERE type = 'E'` in the database lists both `battle-map-generator` and `id-battlemap-deploy`
+- [x] 3.5 In the Azure portal, the database's free-offer setting reads "Auto-pause the database until next month" (not "continue with charges")
+- [x] 3.6 The owner's temporary firewall rule is removed; only `AllowAzureServices` remains
+- [x] 3.7 `SELECT name FROM sys.database_principals WHERE type = 'E'` in the database lists both `battle-map-generator` and `id-battlemap-deploy`
 
 ### Phase 4: Migrations in CI and Production Proof
 
