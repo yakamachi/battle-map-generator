@@ -382,12 +382,12 @@ Every deploy applies pending migrations before the new app starts, then proves b
 
 #### Automated
 
-- [x] 2.1 Tests pass locally: `dotnet test api.Tests`
-- [x] 2.2 Test project files are not tracked as build output: `git status --porcelain api.Tests` shows no `bin/` or `obj/` paths
+- [x] 2.1 Tests pass locally: `dotnet test api.Tests` — e41f94b
+- [x] 2.2 Test project files are not tracked as build output: `git status --porcelain api.Tests` shows no `bin/` or `obj/` paths — e41f94b
 
 #### Manual
 
-- [ ] 2.3 After pushing, the GitHub Actions run shows the test step green before `Publish API`, and the smoke test on `/api/health/live` passes
+- [x] 2.3 After pushing, the GitHub Actions run shows the test step green before `Publish API`, and the smoke test on `/api/health/live` passes — e41f94b
 
 ### Phase 3: Azure Provisioning (Owner Runs or Approves Each Command)
 
