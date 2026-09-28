@@ -12,11 +12,14 @@ concurrency:
   group: deploy-production
   cancel-in-progress: false
 
+# Tests run in ci.yml on every pull request, and main is protected, so a push here is already tested.
 jobs:
   build:
+    # A manual dispatch from another branch would deploy code that CI never gated.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    # The API tests pull a ~2.3 GB SQL Server image; a stalled pull or hung test must not hold
-    # the deploy queue (cancel-in-progress is false) for the 6-hour default.
+    # A stalled restore or build must not hold the deploy queue (cancel-in-progress is false)
+    # for the 6-hour default.
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -37,11 +40,6 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
-
-      # Integration tests start SQL Server through Testcontainers (Docker is available on ubuntu-latest).
-      # A failing test stops the job before the deploy artifact is built.
-      - name: Test API
-        run: dotnet test api.Tests -c Release
 
       # Built from the same commit as the app. The host builds without a connection string;
       # the deploy job passes one at run time.
@@ -77,7 +75,7 @@ jobs:
     # step must not hold the deploy queue (cancel-in-progress is false) for the 6-hour default.
     timeout-minutes: 40
     # Only this job signs in to Azure (OIDC), so only it may mint an ID token;
-    # the build job runs third-party test dependencies.
+    # the build job runs third-party npm and NuGet build steps.
     permissions:
       id-token: write
       contents: read

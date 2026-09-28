@@ -151,7 +151,8 @@ The blob-link fallback stays documented but is no longer expected to be needed.
 
 ## Operational Story
 
-- **Preview deploys**: none on F1 (deployment slots need Standard or higher). Local is the preview environment; pull-request builds run tests in GitHub Actions only.
+- **Preview deploys**: none on F1 (deployment slots need Standard or higher). Local is the preview environment. Pull requests run `.github/workflows/ci.yml` (tests only, no deploy).
+- **CI/CD**: every change reaches `main` through a pull request; `main` is protected (required `CI` checks, strict, admins enforced, no direct or force pushes, 0 approvals). `ci.yml` has no path filters, so docs-only pull requests run the full suite. A merge runs `deploy.yml`, which builds, migrates, deploys and smoke-tests without re-running tests (reversing F-01's test-before-deploy step); a manual dispatch deploys only from `main`.
 - **Secrets**: App Service application settings and connection strings (Key Vault references are possible). GitHub Actions authenticates to Azure via OIDC federated credentials, so there is no long-lived secret in GitHub. Rotating the SQL password is a manual portal step.
 - **Rollback**: re-run the last successful GitHub Actions deploy, or `az webapp deploy --src-path <previous-build.zip>`. Expect a few minutes. EF Core migrations do not roll back automatically; keep migrations additive and write down the down-migration.
 - **Approval**: human-only: creating the subscription and resources, raising the plan tier, choosing "continue with charges" on the SQL free offer, dropping a database, rotating the SQL password. Agent may act unattended: deploy on merge to main via CI, restart the app, read logs and diagnostics.
