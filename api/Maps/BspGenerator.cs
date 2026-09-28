@@ -164,7 +164,7 @@ public static class BspGenerator
         var previous = new int[stateCount];
         Array.Fill(cost, int.MaxValue);
         Array.Fill(previous, -1);
-        var queue = new PriorityQueue<int, int>();
+        var queue = new PriorityQueue<int, long>();
 
         var source = layout.Rooms[from];
         for (var y = source.Y; y < source.Y + source.Height; y++)
@@ -175,14 +175,15 @@ public static class BspGenerator
                 {
                     var state = (y * width + x) * Directions.Length + d;
                     cost[state] = 0;
-                    queue.Enqueue(state, 0);
+                    queue.Enqueue(state, Priority(0, state));
                 }
             }
         }
 
         var end = -1;
-        while (queue.TryDequeue(out var state, out var stateCost))
+        while (queue.TryDequeue(out var state, out var priority))
         {
+            var stateCost = (int)(priority >> 32);
             if (stateCost != cost[state])
             {
                 continue;
@@ -250,7 +251,7 @@ public static class BspGenerator
                 {
                     cost[nextState] = nextCost;
                     previous[nextState] = state;
-                    queue.Enqueue(nextState, nextCost);
+                    queue.Enqueue(nextState, Priority(nextCost, nextState));
                 }
             }
         }
@@ -274,6 +275,12 @@ public static class BspGenerator
             }
         }
     }
+
+    // Equal costs are broken by the lower state index. PriorityQueue does not define the order of
+    // equal priorities, and that order could change between .NET versions and with it which corridor
+    // a seed produces. A state is only re-queued at a strictly lower cost, so every key is unique and
+    // the dequeue order is fully defined by this code.
+    private static long Priority(int cost, int state) => ((long)cost << 32) | (uint)state;
 
     private static int StepCost(int cell, Layout layout)
     {
