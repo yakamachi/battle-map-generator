@@ -242,7 +242,7 @@ Corridors are 1 cell wide. Internal parameters (minimum leaf size, room margins,
 - Before the merge, `ASPNETCORE_FORWARDEDHEADERS_ENABLED=true` is set as an App Service app setting (owner-approved `az webapp config appsettings set`). It is harmless without the limiter, and otherwise all production traffic would share the front end's IP as one 10/min bucket
 - The Phase 2 PR is green and merged; the deploy run is green
 - On production, `curl -X POST https://<app>/api/maps/generate -H 'content-type: application/json' -d '{"seed":42}'` returns a 30×20 map identical to `fixtures/grids/seed-42.json`
-- On production, 11 rapid calls from one machine give 429 on the 11th; a call from a different network (for example a phone hotspot) in the same minute still gets 200
+- On production, 11 rapid calls from one machine give 429 on the 11th; a call from a different network (for example a phone hotspot) in the same minute still gets 200; and 11 calls from one machine, each with a different `X-Forwarded-For: 203.0.113.<i>` header, still give 429 on the 11th (the limit can't be bypassed by spoofing the header; impl-review F2)
 - Generation cost is negligible: 1 000 local generations take under 1 s in total (a timing loop recorded in the PR description)
 
 **Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation from the human that the manual testing was successful before proceeding to the next phase.
@@ -515,16 +515,16 @@ The DM downloads the preview as a PNG. Playwright proves the whole flow in Chrom
 
 #### Automated
 
-- [x] 2.1 API builds and emits the contract with the `GenerateMap` operation
-- [x] 2.2 The committed contract is current (`git diff --exit-code api/battle-map-generator-api.json`)
-- [x] 2.3 All API tests pass: `dotnet test api.Tests`
+- [x] 2.1 API builds and emits the contract with the `GenerateMap` operation — 58d4ce6
+- [x] 2.2 The committed contract is current (`git diff --exit-code api/battle-map-generator-api.json`) — 58d4ce6
+- [x] 2.3 All API tests pass: `dotnet test api.Tests` — 58d4ce6
 
 #### Manual
 
 - [ ] 2.4 `ASPNETCORE_FORWARDEDHEADERS_ENABLED=true` is set on App Service before the merge (owner-approved)
 - [ ] 2.5 The Phase 2 PR is green and merged; the deploy run is green
 - [ ] 2.6 Production `generate` with seed 42 returns a 30×20 map identical to `fixtures/grids/seed-42.json`
-- [ ] 2.7 Production rate limit: 429 on the 11th call from one machine, 200 from a different network
+- [ ] 2.7 Production rate limit: 429 on the 11th call from one machine, 200 from a different network, and still 429 with spoofed `X-Forwarded-For` headers
 - [ ] 2.8 1 000 local generations take under 1 s in total (recorded in the PR)
 
 ### Phase 3: Web Client, Scribble Atlas and Preview
