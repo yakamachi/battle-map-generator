@@ -2,10 +2,10 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using battle_map_generator_api.Maps;
-using battle_map_generator_api.Tests.Infrastructure;
+using BattleMapGenerator.Api.Maps;
+using BattleMapGenerator.Api.Tests.Infrastructure;
 
-namespace battle_map_generator_api.Tests;
+namespace BattleMapGenerator.Api.Tests;
 
 // Generation never needs the database, so these tests run without the SQL Server container: every
 // factory points at a database that cannot be reached, and a request that touched it would fail.

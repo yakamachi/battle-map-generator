@@ -1,10 +1,10 @@
-using battle_map_generator_api.Tests.Infrastructure;
+using BattleMapGenerator.Api.Tests.Infrastructure;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace battle_map_generator_api.Tests;
+namespace BattleMapGenerator.Api.Tests;
 
 [Collection(SqlServerCollection.Name)]
 public sealed class AccountStoreTests(SqlServerFixture sql)

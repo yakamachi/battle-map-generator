@@ -1,9 +1,9 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.RateLimiting;
-using battle_map_generator_api.Data;
-using battle_map_generator_api.Health;
-using battle_map_generator_api.Maps;
+using BattleMapGenerator.Api.Data;
+using BattleMapGenerator.Api.Health;
+using BattleMapGenerator.Api.Maps;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;

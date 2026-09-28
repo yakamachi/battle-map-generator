@@ -1,9 +1,9 @@
-using battle_map_generator_api.Data;
+using BattleMapGenerator.Api.Data;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Testcontainers.MsSql;
 
-namespace battle_map_generator_api.Tests.Infrastructure;
+namespace BattleMapGenerator.Api.Tests.Infrastructure;
 
 // One SQL Server container per test run. The shared database is migrated once; tests that count
 // Data Protection keys ask for their own database, so other tests writing keys cannot disturb them.

@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 
-namespace battle_map_generator_api.Tests.Infrastructure;
+namespace BattleMapGenerator.Api.Tests.Infrastructure;
 
 // Hosts the real app in memory against a given database.
 // The environment is "Testing", not Development: appsettings.Development.json carries the developer's

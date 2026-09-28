@@ -6,6 +6,10 @@ Read the root `../AGENTS.md` first (ownership split, generation rules, testing, 
 
 This app owns email/password authentication (ASP.NET Core Identity + EF Core), access enforcement, the procedural BSP layout algorithm and the JSON API. It does not render images; `../web/` draws the map.
 
+## Code conventions
+
+- Namespaces are PascalCase and follow the folder: `BattleMapGenerator.Api`, `BattleMapGenerator.Api.Maps`, tests in `BattleMapGenerator.Api.Tests`. The kebab-case project and assembly name (`battle-map-generator-api`) is a file name only; it also names the generated OpenAPI file, so leave it as is.
+
 ## Map generation contract
 
 - The generate endpoint returns JSON only, never image bytes: seed, parameters, width, height, a row-major **semantic grid** (what each cell is, not which sprite to draw) and the room list.

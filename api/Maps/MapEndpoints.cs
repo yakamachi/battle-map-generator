@@ -2,7 +2,7 @@ using System.Buffers.Binary;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Http.HttpResults;
 
-namespace battle_map_generator_api.Maps;
+namespace BattleMapGenerator.Api.Maps;
 
 public static class MapEndpoints
 {

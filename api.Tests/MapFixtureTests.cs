@@ -1,7 +1,7 @@
 using System.Text.Json;
-using battle_map_generator_api.Maps;
+using BattleMapGenerator.Api.Maps;
 
-namespace battle_map_generator_api.Tests;
+namespace BattleMapGenerator.Api.Tests;
 
 // The fixture grids in fixtures/grids/ pin the generator's exact output and are shared with web/'s
 // rendering tests. A change to the algorithm fails here until the fixtures are regenerated on purpose:

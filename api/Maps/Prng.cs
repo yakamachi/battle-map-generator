@@ -1,4 +1,4 @@
-namespace battle_map_generator_api.Maps;
+namespace BattleMapGenerator.Api.Maps;
 
 // SplitMix64: the project's own small seeded generator. System.Random is not used because its
 // algorithm is not guaranteed across runtime versions, and fixture grids must stay identical.

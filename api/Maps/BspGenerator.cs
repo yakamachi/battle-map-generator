@@ -1,4 +1,4 @@
-namespace battle_map_generator_api.Maps;
+namespace BattleMapGenerator.Api.Maps;
 
 // Binary space partitioning: the map is split recursively into leaves, each leaf gets one room,
 // and sibling subtrees are joined by a 1-cell corridor found with a turn-averse shortest path.

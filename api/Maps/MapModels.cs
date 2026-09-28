@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace battle_map_generator_api.Maps;
+namespace BattleMapGenerator.Api.Maps;
 
 // The semantic grid shared with web/: what each cell is, never which sprite to draw.
 // Serialised as camelCase strings ("void", "floor", ...) through MapJson.

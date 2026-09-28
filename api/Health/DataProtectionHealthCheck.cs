@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-namespace battle_map_generator_api.Health;
+namespace BattleMapGenerator.Api.Health;
 
 // Proves the key ring loads from (or is created in) the database and can round-trip a payload.
 // The first call on an empty database writes the default key.

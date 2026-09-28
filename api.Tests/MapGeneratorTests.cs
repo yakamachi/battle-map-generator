@@ -1,6 +1,6 @@
-using battle_map_generator_api.Maps;
+using BattleMapGenerator.Api.Maps;
 
-namespace battle_map_generator_api.Tests;
+namespace BattleMapGenerator.Api.Tests;
 
 public sealed class MapGeneratorTests
 {

@@ -4,7 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>battle_map_generator_api</RootNamespace>
+    <RootNamespace>BattleMapGenerator.Api</RootNamespace>
     <!-- Every build writes battle-map-generator-api.json next to this file: the committed API
          contract web/ reads. It runs Program's startup against a mock server, so startup must
          not need configuration or the database. -->
