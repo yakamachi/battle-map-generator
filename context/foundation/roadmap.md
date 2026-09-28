@@ -3,7 +3,7 @@ project: "Battle Map Generator dla D&D (DM Toolkit)"
 version: 1
 status: draft                    # draft | active | locked
 created: 2026-09-22
-updated: 2026-09-22
+updated: 2026-09-26
 prd_version: 1
 main_goal: learn
 top_blocker: time
@@ -41,8 +41,8 @@ DM przed sesją D&D potrzebuje czytelnej mapy bitewnej wyrównanej do siatki, a 
 
 | ID   | Change ID                | Outcome (user can …)                                                                 | Prerequisites | PRD refs                      | Status   |
 | ---- | ------------------------ | ------------------------------------------------------------------------------------ | ------------- | ----------------------------- | -------- |
-| F-01 | account-store-foundation | (foundation) baza kont działa w chmurze, a sesje przetrwają restart i uśpienie aplikacji | —             | FR-001, NFR (dane konta niewidoczne dla innych kont), Access Control | ready    |
-| S-01 | first-map-download       | DM generuje mapę, widzi podgląd wyrównany do siatki i pobiera zgodny z nim PNG        | —             | US-01, FR-003, FR-004, FR-006, NFR (czas generacji, Chrome i Firefox), Guardrail wyrównania do siatki | ready    |
+| F-01 | account-store-foundation | (foundation) baza kont działa w chmurze, a sesje przetrwają restart i uśpienie aplikacji | —             | FR-001, NFR (dane konta niewidoczne dla innych kont), Access Control | done |
+| S-01 | first-map-download       | DM generuje mapę, widzi podgląd wyrównany do siatki i pobiera zgodny z nim PNG        | —             | US-01, FR-003, FR-004, FR-006, NFR (czas generacji, Chrome i Firefox), Guardrail wyrównania do siatki | planning |
 | S-02 | regenerate-with-new-seed | DM generuje mapę ponownie i dostaje inny układ przy tych samych parametrach           | S-01          | US-01, FR-005                 | proposed |
 | S-03 | encounter-parameters     | DM wybiera rozmiar (S/M/L) i typ starcia, a mapa odpowiada wyborowi                   | S-01          | US-01, FR-002                 | blocked  |
 | S-04 | dm-email-login           | DM loguje się e-mailem i hasłem; bez zalogowania nie wygeneruje mapy                  | F-01, S-01    | US-01, FR-001, NFR (dane konta niewidoczne dla innych kont), Access Control | blocked  |
@@ -81,7 +81,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Wydzielone, bo łączy ręczne kroki w Azure z dwoma znanymi pułapkami (utrata kluczy sesji, błąd przy wybudzaniu bazy); wpięcie ich dopiero w S-04 zamieniłoby debugowanie logowania w debugowanie infrastruktury. Nie buduje logowania — to robi S-04.
-- **Status:** ready
+- **Status:** done
 
 ## Slices
 
@@ -97,7 +97,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - Jaki domyślny rozmiar i typ mapy przyjąć, zanim S-03 ustali znaczenie S/M/L? — Owner: user. Block: no (jeden stały rozmiar, wymieniony w S-03).
   - Czy przed S-04 generowanie na produkcji ma być publiczne? (zob. Open Roadmap Questions #4) — Owner: user. Block: no.
 - **Risk:** Najszerszy slice milestone'u (generator, kontrakt siatki, render, eksport, testy w dwóch przeglądarkach) — wybrany świadomie jako pierwszy, bo PRD ma jeden przepływ (US-01) i dopiero pobranie domyka kryterium sukcesu; jeśli `/10x-plan` uzna go za zbyt szeroki, podzielić na „podgląd” i „pobranie”, a nie na warstwy.
-- **Status:** ready
+- **Status:** planning
 
 ### S-02: DM generuje mapę ponownie
 
@@ -173,3 +173,5 @@ Foundations below assume these are present and do NOT re-scaffold them.
 ## Milestone History
 
 ## Done
+
+- **F-01: (foundation) baza kont działa w chmurze w tym samym regionie co aplikacja, połączenie przeżywa wybudzanie bazy, a klucze sesji są trwałe — restart lub uśpienie aplikacji nie wylogowuje użytkownika.** — Archived 2026-09-25 → `context/archive/2026-09-23-account-store-foundation/`. Lesson: —.
