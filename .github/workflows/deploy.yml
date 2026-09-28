@@ -43,9 +43,12 @@ jobs:
 
       # Built from the same commit as the app. The host builds without a connection string;
       # the deploy job passes one at run time.
+      # ef migrations bundle does not restore, and since tests moved to ci.yml no earlier step
+      # restores the API, so restore it explicitly.
       - name: Build migration bundle
         run: |
           dotnet tool restore
+          dotnet restore api
           dotnet ef migrations bundle --project api --self-contained -r linux-x64 -o efbundle/efbundle --force
 
       - name: Copy SPA into API wwwroot
