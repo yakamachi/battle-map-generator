@@ -501,9 +501,9 @@ The DM downloads the preview as a PNG. Playwright proves the whole flow in Chrom
 
 #### Automated
 
-- [x] 1.1 Both workflows parse and `deploy.yml` no longer runs tests
-- [x] 1.2 API tests still pass locally: `dotnet test api.Tests`
-- [x] 1.3 Web still type-checks and builds
+- [x] 1.1 Both workflows parse and `deploy.yml` no longer runs tests — 5c4c76f
+- [x] 1.2 API tests still pass locally: `dotnet test api.Tests` — 5c4c76f
+- [x] 1.3 Web still type-checks and builds — 5c4c76f
 
 #### Manual
 
