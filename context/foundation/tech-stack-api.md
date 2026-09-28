@@ -1,7 +1,7 @@
 ---
 starter_id: dotnet
 package_manager: dotnet
-project_name: battle-map-generator-api
+project_name: BattleMapGenerator.Api  # scaffolded as battle-map-generator-api; renamed 2026-09-28
 hints:
   language_family: dotnet
   team_size: solo

@@ -70,7 +70,7 @@ Zmienne: `RG=rg-battlemap`, `LOC=<region>`, `APP=battlemap-<unikalny-sufiks>`, `
 - [x] `az group create -n $RG -l $LOC`
 - [x] `az appservice plan create -g $RG -n plan-battlemap --is-linux --sku F1`
 - [x] `az webapp create -g $RG -p plan-battlemap -n $APP --runtime "DOTNETCORE:10.0"` (separator z Fazy 0)
-- [x] `az webapp update -g $RG -n $APP --https-only true`; `az webapp config set -g $RG -n $APP --startup-file "dotnet battle-map-generator-api.dll"`
+- [x] `az webapp update -g $RG -n $APP --https-only true`; `az webapp config set -g $RG -n $APP --startup-file "dotnet battle-map-generator-api.dll"` — superseded 2026-09-28: the startup command is now `dotnet BattleMapGenerator.Api.dll`, set on every deploy by `startup-command` in `.github/workflows/deploy.yml`
 - [x] `az webapp log config -g $RG -n $APP --docker-container-logging filesystem`
 - [x] **Tożsamość deployu bez sekretów:**
   - `az identity create -g $RG -n $ID`
