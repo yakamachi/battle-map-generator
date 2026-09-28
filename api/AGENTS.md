@@ -8,7 +8,8 @@ This app owns email/password authentication (ASP.NET Core Identity + EF Core), a
 
 ## Code conventions
 
-- Namespaces are PascalCase and follow the folder: `BattleMapGenerator.Api`, `BattleMapGenerator.Api.Maps`, tests in `BattleMapGenerator.Api.Tests`. The kebab-case project and assembly name (`battle-map-generator-api`) is a file name only; it also names the generated OpenAPI file, so leave it as is.
+- Namespaces are PascalCase and follow the folder: `BattleMapGenerator.Api`, `BattleMapGenerator.Api.Maps`, tests in `BattleMapGenerator.Api.Tests`. The project, assembly and generated OpenAPI file carry the same name (`BattleMapGenerator.Api.csproj`, `.dll`, `.json`).
+- The assembly name is also the App Service startup command (`dotnet BattleMapGenerator.Api.dll`), set by `startup-command` in `deploy.yml`. Renaming the assembly means changing that line in the same commit.
 
 ## Map generation contract
 

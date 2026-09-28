@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>BattleMapGenerator.Api</RootNamespace>
-    <!-- Every build writes battle-map-generator-api.json next to this file: the committed API
+    <!-- Every build writes BattleMapGenerator.Api.json next to this file: the committed API
          contract web/ reads. It runs Program's startup against a mock server, so startup must
          not need configuration or the database. -->
     <OpenApiGenerateDocumentsOnBuild>true</OpenApiGenerateDocumentsOnBuild>
@@ -32,7 +32,7 @@
     <!-- Local-only connection string and ready key; never ship them to App Service. -->
     <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
     <!-- The generated contract is a build artifact for web/, not app content. -->
-    <Content Update="battle-map-generator-api.json" CopyToOutputDirectory="Never" CopyToPublishDirectory="Never" />
+    <Content Update="BattleMapGenerator.Api.json" CopyToOutputDirectory="Never" CopyToPublishDirectory="Never" />
   </ItemGroup>
 
 </Project>

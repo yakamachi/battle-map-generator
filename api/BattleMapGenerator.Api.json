@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.1",
   "info": {
-    "title": "battle-map-generator-api | v1",
+    "title": "BattleMapGenerator.Api | v1",
     "version": "1.0.0"
   },
   "paths": {

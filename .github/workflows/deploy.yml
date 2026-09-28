@@ -150,10 +150,13 @@ jobs:
             --server "${{ vars.AZURE_SQL_SERVER }}" \
             --name "gh-runner-${{ github.run_id }}"
 
+      # The startup command ships with the package, so a renamed assembly and the command that
+      # starts it always change together (it used to be set once by hand in App Service).
       - uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ vars.AZURE_WEBAPP_NAME }}
           package: publish
+          startup-command: dotnet BattleMapGenerator.Api.dll
 
       - name: Smoke test
         # F1 cold start can take tens of seconds.

@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../api/battle-map-generator-api.csproj" />
+    <ProjectReference Include="../api/BattleMapGenerator.Api.csproj" />
   </ItemGroup>
 
   <ItemGroup>
