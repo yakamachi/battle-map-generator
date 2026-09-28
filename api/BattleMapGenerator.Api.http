@@ -1,0 +1,25 @@
+@HostAddress = http://localhost:5108
+# Local-only key from appsettings.Development.json.
+@health_ready_key = local-dev-only-ready-key
+
+GET {{HostAddress}}/api/health/live
+Accept: application/json
+
+###
+
+GET {{HostAddress}}/api/health/ready
+Accept: application/json
+X-Health-Key: {{health_ready_key}}
+
+###
+
+# Public and rate-limited (10 per minute per client IP). Omit the body or the seed for a random map.
+POST {{HostAddress}}/api/maps/generate
+Content-Type: application/json
+Accept: application/json
+
+{
+  "seed": 42
+}
+
+###

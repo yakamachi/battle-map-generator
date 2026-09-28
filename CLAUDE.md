@@ -54,3 +54,7 @@ Demonstrated on a Space Explorers example, not the SRS path. It is an escape hat
 Skills must not write to `context/archive/`. Archived changes are immutable; if a resolved target path starts with `context/archive/`, abort with: "This change is archived. Open a new change with `/10x-new` instead."
 
 <!-- END @przeprogramowani/10x-cli -->
+
+## Phase gate: review before the next phase
+
+After `/10x-implement` finishes a phase (gates green, phase committed), **stop and run `/10x-impl-review <change-id> phase <N>`** before starting phase N+1, and triage its findings. Never chain one phase's implementation straight into the next, even when the user picks "continue" in the next-phase prompt or asks for several phases in a row; offer the review first and continue only once it is done or the user explicitly skips it for that phase.

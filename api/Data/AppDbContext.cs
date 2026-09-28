@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace battle_map_generator_api.Data;
+namespace BattleMapGenerator.Api.Data;
 
 // The account store: Identity tables plus the Data Protection key ring, so keys survive
 // App Service restarts and sessions are not invalidated.

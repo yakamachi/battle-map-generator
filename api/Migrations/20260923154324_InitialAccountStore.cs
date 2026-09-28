@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace battle_map_generator_api.Migrations
+namespace BattleMapGenerator.Api.Migrations
 {
     /// <inheritdoc />
     public partial class InitialAccountStore : Migration

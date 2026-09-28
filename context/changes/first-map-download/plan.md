@@ -70,7 +70,7 @@ Work happens on a branch (`first-map-download`), with one PR per phase. Merging 
 ## Critical Implementation Details
 
 - **Branch protection order.** GitHub can require only check names it has already seen. Phase 1's PR must run `CI` once before protection is switched on; the owner then enables protection and merges that PR through it. Each later phase that adds a CI job (`contract`, `web-tests`, `e2e`) extends the list of required checks after its first green run.
-- **Build-time OpenAPI runs the app.** Anything added to startup must not need configuration or a database while the document is generated. The generated `api/battle-map-generator-api.json` is committed, and CI fails when a fresh build produces a different file, or when regenerating the TypeScript types does.
+- **Build-time OpenAPI runs the app.** Anything added to startup must not need configuration or a database while the document is generated. The generated `api/BattleMapGenerator.Api.json` is committed, and CI fails when a fresh build produces a different file, or when regenerating the TypeScript types does.
 - **Seed range.** Seeds are uint32 (0–4 294 967 295), so they stay exact as JavaScript numbers. A server-drawn seed comes from `RandomNumberGenerator`, the only randomness outside our own PRNG. The algorithm itself uses the PRNG only.
 - **Pixel-exact rendering.** The atlas script pre-renders every piece at exactly 140 px **and** in all 4 rotations. The renderer only ever calls `drawImage` with a 1:1 source and destination at integer multiples of 140, with smoothing off, and never uses `rotate` or `scale`. The output is then a pixel copy of the atlas, apart from alpha blending of layered pieces, which engines may round differently. Baselines are therefore kept per browser; Chromium and Firefox producing the same hash is reported, not required.
 - **Preview = export.** One canvas is sized `width×140` by `height×140` in bitmap pixels and scaled for display with CSS. The download is `toBlob` of that same canvas, so no `devicePixelRatio`, zoom or second render path can make the two differ.
@@ -207,11 +207,11 @@ Corridors are 1 cell wide. Internal parameters (minimum leaf size, room margins,
 
 #### 5. Build-time OpenAPI document
 
-**File**: `api/battle-map-generator-api.csproj`, `api/battle-map-generator-api.json` (generated, committed)
+**File**: `api/BattleMapGenerator.Api.csproj`, `api/BattleMapGenerator.Api.json` (generated, committed)
 
 **Intent**: Make the contract source available at build time for `web/` (`api/AGENTS.md:15`, `infrastructure.md:180`).
 
-**Contract**: Add `Microsoft.Extensions.ApiDescription.Server` 10.0.x (`PrivateAssets=all`) with `OpenApiGenerateDocumentsOnBuild=true` and `OpenApiDocumentsDirectory=$(MSBuildProjectDirectory)`. `dotnet build api` writes `api/battle-map-generator-api.json` with the `GenerateMap` operation and the `CellKind` string enum. `MapOpenApi()` stays Development-only.
+**Contract**: Add `Microsoft.Extensions.ApiDescription.Server` 10.0.x (`PrivateAssets=all`) with `OpenApiGenerateDocumentsOnBuild=true` and `OpenApiDocumentsDirectory=$(MSBuildProjectDirectory)`. `dotnet build api` writes `api/BattleMapGenerator.Api.json` with the `GenerateMap` operation and the `CellKind` string enum. `MapOpenApi()` stays Development-only.
 
 #### 6. Fixtures and tests
 
@@ -227,14 +227,14 @@ Corridors are 1 cell wide. Internal parameters (minimum leaf size, room margins,
   - the 11th request inside a minute returns 429 with `Retry-After`;
   - generation succeeds with an **unreachable** connection string (the database lesson);
   - an unknown `/api/maps/*` path returns 404.
-- `api/battle-map-generator-api.http` gains a generate request.
+- `api/BattleMapGenerator.Api.http` gains a generate request.
 
 ### Success Criteria:
 
 #### Automated Verification:
 
-- API builds and emits the contract: `dotnet build api` succeeds, and `grep -q '"GenerateMap"' api/battle-map-generator-api.json`
-- The committed contract is current: `dotnet build api && git diff --exit-code api/battle-map-generator-api.json`
+- API builds and emits the contract: `dotnet build api` succeeds, and `grep -q '"GenerateMap"' api/BattleMapGenerator.Api.json`
+- The committed contract is current: `dotnet build api && git diff --exit-code api/BattleMapGenerator.Api.json`
 - All API tests pass: `dotnet test api.Tests`
 
 #### Manual Verification:
@@ -242,7 +242,7 @@ Corridors are 1 cell wide. Internal parameters (minimum leaf size, room margins,
 - Before the merge, `ASPNETCORE_FORWARDEDHEADERS_ENABLED=true` is set as an App Service app setting (owner-approved `az webapp config appsettings set`). It is harmless without the limiter, and otherwise all production traffic would share the front end's IP as one 10/min bucket
 - The Phase 2 PR is green and merged; the deploy run is green
 - On production, `curl -X POST https://<app>/api/maps/generate -H 'content-type: application/json' -d '{"seed":42}'` returns a 30×20 map identical to `fixtures/grids/seed-42.json`
-- On production, 11 rapid calls from one machine give 429 on the 11th; a call from a different network (for example a phone hotspot) in the same minute still gets 200
+- On production, 11 rapid calls from one machine give 429 on the 11th; a call from a different network (for example a phone hotspot) in the same minute still gets 200; and 11 calls from one machine, each with a different `X-Forwarded-For: 203.0.113.<i>` header, still give 429 on the 11th (the limit can't be bypassed by spoofing the header; impl-review F2)
 - Generation cost is negligible: 1 000 local generations take under 1 s in total (a timing loop recorded in the PR description)
 
 **Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation from the human that the manual testing was successful before proceeding to the next phase.
@@ -267,7 +267,7 @@ Corridors are 1 cell wide. Internal parameters (minimum leaf size, room margins,
 - Dependency `openapi-fetch` 0.17.x.
 - Dev dependencies: `openapi-typescript` 7.13.x, `vitest` and `@vitest/browser-playwright` 5.0.x, `playwright`, `sharp` (atlas script only).
 - Scripts:
-  - `api:types`: `openapi-typescript ../api/battle-map-generator-api.json -o app/api/schema.d.ts`
+  - `api:types`: `openapi-typescript ../api/BattleMapGenerator.Api.json -o app/api/schema.d.ts`
   - `test`: `vitest run`
   - `atlas`: `node scripts/build-scribble-atlas.mjs`
 - Vitest runs in browser mode, headless, with instances `chromium` and `firefox`.
@@ -355,7 +355,7 @@ Corridors are 1 cell wide. Internal parameters (minimum leaf size, room margins,
   - the pixels are not all paper;
   - whether the Chromium and Firefox hashes are equal is logged, not asserted.
 - With `UPDATE_BASELINES=1`, `render.test.ts` writes the current browser's hashes instead of asserting (through a Vitest browser command, since the page can't write files). Baselines are generated headless, as CI runs them, and updated in the same commit as any fixture or atlas change.
-- CI gains a `contract` job: build the API, run `npm run api:types`, then `git diff --exit-code api/battle-map-generator-api.json web/app/api/schema.d.ts`.
+- CI gains a `contract` job: build the API, run `npm run api:types`, then `git diff --exit-code api/BattleMapGenerator.Api.json web/app/api/schema.d.ts`.
 - CI gains a `web-tests` job: `npm ci`, `npx playwright install --with-deps chromium firefox`, `npm test`.
 - Both are added to the required checks after their first green run.
 
@@ -365,7 +365,7 @@ Corridors are 1 cell wide. Internal parameters (minimum leaf size, room margins,
 
 - Types and build pass: `npm --prefix web run typecheck && npm --prefix web run build`
 - Rendering and mapping tests pass in Chromium and Firefox: `npm --prefix web test`
-- Generated contract files are current: `dotnet build api && npm --prefix web run api:types && git diff --exit-code api/battle-map-generator-api.json web/app/api/schema.d.ts`
+- Generated contract files are current: `dotnet build api && npm --prefix web run api:types && git diff --exit-code api/BattleMapGenerator.Api.json web/app/api/schema.d.ts`
 - The atlas is reproducible: `npm --prefix web run atlas && git diff --exit-code web/app/map/tileset/`
 
 #### Manual Verification:
@@ -507,24 +507,24 @@ The DM downloads the preview as a PNG. Playwright proves the whole flow in Chrom
 
 #### Manual
 
-- [ ] 1.4 The Phase 1 PR shows the `api` and `web` checks green
-- [ ] 1.5 `main` protection shows required checks `api`/`web` (strict), enforce_admins, 0 approvals, no force pushes or deletions
-- [ ] 1.6 After the merge, the deploy run is green with no `Test API` step, and the smoke tests pass
+- [x] 1.4 The Phase 1 PR shows the `api` and `web` checks green — 5c4c76f
+- [x] 1.5 `main` protection shows required checks `api`/`web` (strict), enforce_admins, 0 approvals, no force pushes or deletions — 5c4c76f
+- [x] 1.6 After the merge, the deploy run is green with no `Test API` step, and the smoke tests pass — 2436304
 
 ### Phase 2: Grid Contract and BSP Generator (API)
 
 #### Automated
 
-- [ ] 2.1 API builds and emits the contract with the `GenerateMap` operation
-- [ ] 2.2 The committed contract is current (`git diff --exit-code api/battle-map-generator-api.json`)
-- [ ] 2.3 All API tests pass: `dotnet test api.Tests`
+- [x] 2.1 API builds and emits the contract with the `GenerateMap` operation — 58d4ce6
+- [x] 2.2 The committed contract is current (`git diff --exit-code api/battle-map-generator-api.json`) — 58d4ce6
+- [x] 2.3 All API tests pass: `dotnet test api.Tests` — 58d4ce6
 
 #### Manual
 
 - [ ] 2.4 `ASPNETCORE_FORWARDEDHEADERS_ENABLED=true` is set on App Service before the merge (owner-approved)
 - [ ] 2.5 The Phase 2 PR is green and merged; the deploy run is green
 - [ ] 2.6 Production `generate` with seed 42 returns a 30×20 map identical to `fixtures/grids/seed-42.json`
-- [ ] 2.7 Production rate limit: 429 on the 11th call from one machine, 200 from a different network
+- [ ] 2.7 Production rate limit: 429 on the 11th call from one machine, 200 from a different network, and still 429 with spoofed `X-Forwarded-For` headers
 - [ ] 2.8 1 000 local generations take under 1 s in total (recorded in the PR)
 
 ### Phase 3: Web Client, Scribble Atlas and Preview

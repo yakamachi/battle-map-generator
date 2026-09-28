@@ -32,6 +32,15 @@ jobs:
       - name: Test API
         run: dotnet test api.Tests -c Release
 
+      # The same build steps deploy.yml runs after the merge, so a broken bundle or publish fails
+      # the pull request instead of the deploy. Nothing is uploaded.
+      - name: Build migration bundle and publish (as deploy.yml)
+        run: |
+          dotnet tool restore
+          dotnet restore api
+          dotnet ef migrations bundle --project api --self-contained -r linux-x64 -o efbundle/efbundle --force
+          dotnet publish api -c Release -o publish
+
   web:
     runs-on: ubuntu-latest
     timeout-minutes: 15

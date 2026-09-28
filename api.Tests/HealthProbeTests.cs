@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using System.Net;
-using battle_map_generator_api.Tests.Infrastructure;
+using BattleMapGenerator.Api.Tests.Infrastructure;
 
-namespace battle_map_generator_api.Tests;
+namespace BattleMapGenerator.Api.Tests;
 
 [Collection(SqlServerCollection.Name)]
 public sealed class HealthProbeTests(SqlServerFixture sql)

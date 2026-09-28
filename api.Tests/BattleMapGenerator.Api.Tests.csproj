@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
-    <RootNamespace>battle_map_generator_api.Tests</RootNamespace>
+    <RootNamespace>BattleMapGenerator.Api.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../api/battle-map-generator-api.csproj" />
+    <ProjectReference Include="../api/BattleMapGenerator.Api.csproj" />
   </ItemGroup>
 
   <ItemGroup>
