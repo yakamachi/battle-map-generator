@@ -28,10 +28,13 @@ A DM toolkit that generates grid-aligned D&D battle maps. Monorepo: `api/` (ASP.
 - `api/`: unit tests for the algorithm (grid invariants, connectivity, fixed-seed fixtures).
 - `web/`: rendering tests against the shared fixture grids.
 - End to end: Playwright in **Chrome and Firefox** (both required by the PRD), covering login, generate, regenerate and download.
+- Tests gate merges, not deploys: `.github/workflows/ci.yml` runs them on every pull request to `main`, and its jobs are required checks.
 
 ## Deployment
 
-- One GitHub Actions workflow on merge to `main`: build `web/`, copy `web/build/client` into the API's published `wwwroot`, publish `api/`, deploy with `azure/login` (OIDC) and `azure/webapps-deploy`.
+- Every change reaches `main` through a pull request, including `context/` docs and the chore commits that close or archive a change. `main` is protected: required `CI` checks, branch up to date, no direct or force pushes, admins included, no required approvals.
+- `ci.yml` has no `paths`/`paths-ignore` filters on purpose: a required check that never reports would block docs-only pull requests forever.
+- `.github/workflows/deploy.yml` runs on merge to `main` and does not re-run tests: build `web/`, copy `web/build/client` into the API's published `wwwroot`, publish `api/`, apply migrations, deploy with `azure/login` (OIDC) and `azure/webapps-deploy`, then smoke-test. This reverses F-01's "a failing test blocks the deploy": the test now blocks the merge instead.
 - Destructive or billing actions are human-only: raising the plan tier, "continue with charges" on the Azure SQL free offer, dropping a database, rotating secrets.
 
 ## Guards

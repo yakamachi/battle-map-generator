@@ -1,0 +1,52 @@
+name: CI
+
+# Gates every pull request to main; branch protection requires these jobs, and deploy.yml
+# no longer runs tests. No paths/paths-ignore filters on purpose: a required check that
+# never reports would block docs-only pull requests forever.
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    # The API tests pull a ~2.3 GB SQL Server image; a stalled pull or hung test must not
+    # hold the pull request for the 6-hour default.
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # Integration tests start SQL Server through Testcontainers (Docker is available on ubuntu-latest).
+      - name: Test API
+        run: dotnet test api.Tests -c Release
+
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Type-check and build web
+        working-directory: web
+        run: |
+          npm ci
+          npm run typecheck
+          npm run build

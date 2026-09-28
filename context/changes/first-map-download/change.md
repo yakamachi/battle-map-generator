@@ -1,7 +1,7 @@
 ---
 change_id: first-map-download
 title: First map download
-status: plan_reviewed
+status: implementing
 created: 2026-09-25
 updated: 2026-09-28
 archived_at: null
