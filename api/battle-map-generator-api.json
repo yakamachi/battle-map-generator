@@ -1,0 +1,141 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "battle-map-generator-api | v1",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/maps/generate": {
+      "post": {
+        "tags": [
+          "MapEndpoints"
+        ],
+        "operationId": "GenerateMap",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/GenerateMapRequest"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeneratedMap"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CellKind": {
+        "enum": [
+          "void",
+          "floor",
+          "corridor",
+          "wall",
+          "door"
+        ]
+      },
+      "GeneratedMap": {
+        "required": [
+          "seed",
+          "width",
+          "height",
+          "cells",
+          "rooms"
+        ],
+        "type": "object",
+        "properties": {
+          "seed": {
+            "type": "integer",
+            "format": "uint32"
+          },
+          "width": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "height": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cells": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CellKind"
+            }
+          },
+          "rooms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Room"
+            }
+          }
+        }
+      },
+      "GenerateMapRequest": {
+        "required": [
+          "seed"
+        ],
+        "type": "object",
+        "properties": {
+          "seed": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "uint32"
+          }
+        }
+      },
+      "Room": {
+        "required": [
+          "x",
+          "y",
+          "width",
+          "height"
+        ],
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "y": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "width": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "height": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "MapEndpoints"
+    }
+  ]
+}

@@ -1,7 +1,9 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.RateLimiting;
 using battle_map_generator_api.Data;
 using battle_map_generator_api.Health;
+using battle_map_generator_api.Maps;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
@@ -13,6 +15,32 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+// Cell kinds travel as camelCase strings ("floor", "door"), which also makes them a string enum in OpenAPI.
+builder.Services.ConfigureHttpJsonOptions(options => MapJson.Configure(options.SerializerOptions));
+
+// Generation is public, so a stuck client could burn the F1 plan's daily CPU quota.
+// Each client IP gets 10 generations per minute, with no queue. TestServer leaves the remote
+// address null, and a null partition key throws, hence the "unknown" bucket.
+// Behind App Service the client IP comes from X-Forwarded-For (ASPNETCORE_FORWARDEDHEADERS_ENABLED).
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = (context, _) =>
+    {
+        var retryAfter = context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var wait) ? wait : TimeSpan.FromMinutes(1);
+        context.HttpContext.Response.Headers.RetryAfter = ((int)Math.Ceiling(retryAfter.TotalSeconds)).ToString();
+        return ValueTask.CompletedTask;
+    };
+    options.AddPolicy(MapEndpoints.GenerateRateLimitPolicy, httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 10,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        }));
+});
 
 // Account store. The connection string is read when the context is built, not at startup:
 // the EF migrations bundle builds this host in CI without one (it gets --connection at run time),
@@ -60,6 +88,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseRateLimiter();
 
 // The SPA from web/build/client is copied into wwwroot at build time.
 // index.html is never cached so a deploy is picked up on refresh; hashed assets are immutable.
@@ -98,6 +127,8 @@ app.MapHealthChecks("/api/health/ready", new HealthCheckOptions { Predicate = ch
             return next(ctx);
         };
     });
+
+app.MapMapEndpoints();
 
 // Unknown API routes are 404s, never the SPA shell.
 app.MapFallback("/api/{**rest}", () => Results.NotFound());

@@ -507,17 +507,17 @@ The DM downloads the preview as a PNG. Playwright proves the whole flow in Chrom
 
 #### Manual
 
-- [ ] 1.4 The Phase 1 PR shows the `api` and `web` checks green
-- [ ] 1.5 `main` protection shows required checks `api`/`web` (strict), enforce_admins, 0 approvals, no force pushes or deletions
-- [ ] 1.6 After the merge, the deploy run is green with no `Test API` step, and the smoke tests pass
+- [x] 1.4 The Phase 1 PR shows the `api` and `web` checks green — 5c4c76f
+- [x] 1.5 `main` protection shows required checks `api`/`web` (strict), enforce_admins, 0 approvals, no force pushes or deletions — 5c4c76f
+- [x] 1.6 After the merge, the deploy run is green with no `Test API` step, and the smoke tests pass — 2436304
 
 ### Phase 2: Grid Contract and BSP Generator (API)
 
 #### Automated
 
-- [ ] 2.1 API builds and emits the contract with the `GenerateMap` operation
-- [ ] 2.2 The committed contract is current (`git diff --exit-code api/battle-map-generator-api.json`)
-- [ ] 2.3 All API tests pass: `dotnet test api.Tests`
+- [x] 2.1 API builds and emits the contract with the `GenerateMap` operation
+- [x] 2.2 The committed contract is current (`git diff --exit-code api/battle-map-generator-api.json`)
+- [x] 2.3 All API tests pass: `dotnet test api.Tests`
 
 #### Manual
 

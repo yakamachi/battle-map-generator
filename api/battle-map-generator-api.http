@@ -12,3 +12,14 @@ Accept: application/json
 X-Health-Key: {{health_ready_key}}
 
 ###
+
+# Public and rate-limited (10 per minute per client IP). Omit the body or the seed for a random map.
+POST {{battle_map_generator_api_HostAddress}}/api/maps/generate
+Content-Type: application/json
+Accept: application/json
+
+{
+  "seed": 42
+}
+
+###
