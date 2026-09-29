@@ -521,11 +521,11 @@ The DM downloads the preview as a PNG. Playwright proves the whole flow in Chrom
 
 #### Manual
 
-- [ ] 2.4 `ASPNETCORE_FORWARDEDHEADERS_ENABLED=true` is set on App Service before the merge (owner-approved)
-- [ ] 2.5 The Phase 2 PR is green and merged; the deploy run is green
-- [ ] 2.6 Production `generate` with seed 42 returns a 30×20 map identical to `fixtures/grids/seed-42.json`
-- [ ] 2.7 Production rate limit: 429 on the 11th call from one machine, 200 from a different network, and still 429 with spoofed `X-Forwarded-For` headers
-- [ ] 2.8 1 000 local generations take under 1 s in total (recorded in the PR)
+- [x] 2.4 `ASPNETCORE_FORWARDEDHEADERS_ENABLED=true` is set on App Service before the merge (owner-approved) — 58d4ce6
+- [x] 2.5 The Phase 2 PR is green and merged; the deploy run is green — 87b08be
+- [x] 2.6 Production `generate` with seed 42 returns a 30×20 map identical to `fixtures/grids/seed-42.json` — 87b08be
+- [x] 2.7 Production rate limit: 429 on the 11th call from one machine, 200 from a different network, and still 429 with spoofed `X-Forwarded-For` headers — 87b08be
+- [x] 2.8 1 000 local generations take under 1 s in total (recorded in the PR) — 58d4ce6
 
 ### Phase 3: Web Client, Scribble Atlas and Preview
 

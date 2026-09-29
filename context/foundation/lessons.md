@@ -43,3 +43,10 @@
 - **Problem**: Under the Development environment the app reads `appsettings.Development.json` (the developer's local container and ready key) and `ConnectionStrings__*` / `Health__*` environment variables, so a test can pass or fail depending on the machine. Tests that count rows (for example Data Protection keys) break when another test writes to the same database.
 - **Rule**: Host the app in the `Testing` environment with every setting it reads supplied through in-memory configuration added last (see `api.Tests/Infrastructure/ApiFactory.cs`). Give any test that asserts on counts or an empty state its own fresh database from the shared container.
 - **Applies to**: plan, implement, impl-review
+
+## Seeded code breaks ties explicitly, never by a library's ordering
+
+- **Context**: Any code whose output must be reproducible from a seed: `api/Maps/BspGenerator.cs` and any future generator logic in `api/` (S-03 room types), and seeded sprite or variant choices in `web/`.
+- **Problem**: The corridor search used `PriorityQueue`, which leaves the order of equal priorities undefined. Which of several equally cheap corridors a seed produced depended on .NET's heap implementation and could have changed with a runtime upgrade; fixing it moved 40–58 cells in every fixture (a6819dc).
+- **Rule**: When seeded code chooses among equal candidates (priority queues, `OrderBy`/`sort` on equal keys, `Dictionary`/`HashSet`/`Object.keys` iteration, `Math.max` over ties), make the tie-break explicit in our own code (for example a secondary key such as the cell index). Never rely on a library's or runtime's order for equal keys, just as we never rely on `System.Random`/`Math.random`.
+- **Applies to**: plan, implement, impl-review
