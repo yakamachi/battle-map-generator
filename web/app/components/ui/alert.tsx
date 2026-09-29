@@ -23,7 +23,8 @@ function Alert({
 }: React.ComponentProps<"div"> & VariantProps<typeof alertVariants>) {
   return (
     <div
-      role="alert"
+      // Errors interrupt (assertive); notices wait their turn (polite). Callers may override.
+      role={variant === "destructive" ? "alert" : "status"}
       data-slot="alert"
       data-variant={variant}
       className={cn(alertVariants({ variant, className }))}

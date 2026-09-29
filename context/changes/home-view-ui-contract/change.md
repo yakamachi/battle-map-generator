@@ -1,7 +1,7 @@
 ---
 change_id: home-view-ui-contract
 title: Home view UI contract
-status: implementing
+status: impl_reviewed
 created: 2026-09-29
 updated: 2026-09-29
 archived_at: null

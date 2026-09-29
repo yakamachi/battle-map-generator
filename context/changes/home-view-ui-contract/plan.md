@@ -518,15 +518,15 @@ None. No data or API changes. Screenshot baselines are new files.
 
 #### Automated
 
-- [x] 2.1 Type check and build pass
-- [x] 2.2 Colour-literal scan returns 0 hits on home.tsx and components
-- [x] 2.3 No `dark:` classes or arbitrary values in routes
-- [x] 2.4 E2E passes in both browsers with the locators unchanged
+- [x] 2.1 Type check and build pass — 6efae5e
+- [x] 2.2 Colour-literal scan returns 0 hits on home.tsx and components — 6efae5e
+- [x] 2.3 No `dark:` classes or arbitrary values in routes — 6efae5e
+- [x] 2.4 E2E passes in both browsers with the locators unchanged — 6efae5e
 
 #### Manual
 
-- [x] 2.5 Hover, focus ring and disabled state visible on both buttons, both browsers and themes
-- [x] 2.6 Error shows the destructive Alert, readable in both themes
+- [x] 2.5 Hover, focus ring and disabled state visible on both buttons, both browsers and themes — 6efae5e
+- [x] 2.6 Error shows the destructive Alert, readable in both themes — 6efae5e
 
 ### Phase 3: Preview and Entry States (C3, C4)
 
