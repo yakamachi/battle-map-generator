@@ -546,9 +546,9 @@ The DM downloads the preview as a PNG. Playwright proves the whole flow in Chrom
 
 #### Automated
 
-- [x] 4.1 E2E passes in both browsers
-- [x] 4.2 Unit and rendering tests still pass: `npm --prefix web test`
-- [x] 4.3 Type check and API tests still pass
+- [x] 4.1 E2E passes in both browsers — ab77d1c
+- [x] 4.2 Unit and rendering tests still pass: `npm --prefix web test` — ab77d1c
+- [x] 4.3 Type check and API tests still pass — ab77d1c
 
 #### Manual
 
