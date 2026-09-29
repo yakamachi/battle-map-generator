@@ -13,11 +13,15 @@ This app owns email/password authentication (ASP.NET Core Identity + EF Core), a
 
 ## Map generation contract
 
+- Code lives in `Maps/`: `Prng.cs` (seeded PRNG), `BspGenerator.cs` (layout), `MapModels.cs` (grid contract, default 30×20, cap 60×60), `MapEndpoints.cs` (`POST /api/maps/generate`).
+- Fixed-seed fixtures are `../fixtures/grids/*.json`, pinned by `MapFixtureTests`. After a deliberate algorithm change, rewrite them with `UPDATE_FIXTURES=1 dotnet test api.Tests --filter MapFixtureTests` and update `../web/app/map/render-baselines.json` in the same commit.
+- The generate endpoint is rate-limited to 10 requests per minute per client IP (policy `generate`, 429 with `Retry-After`). On App Service the client IP comes from `X-Forwarded-For`, which needs the app setting `ASPNETCORE_FORWARDEDHEADERS_ENABLED=true`; without it all traffic shares one bucket.
+- `dotnet build` writes the OpenAPI document to `BattleMapGenerator.Api.json` (committed; `Microsoft.Extensions.ApiDescription.Server` runs `Program.cs` at build time, so startup must need no configuration or database). Regenerate `../web/app/api/schema.d.ts` with `npm run api:types` in `../web/`; CI fails on drift in either file.
 - The generate endpoint returns JSON only, never image bytes: seed, parameters, width, height, a row-major **semantic grid** (what each cell is, not which sprite to draw) and the room list.
 - Seeded PRNG: implement a small generator (for example SplitMix64 or PCG) in this project and pass it through the algorithm explicitly. Do not use `System.Random` or ambient randomness.
 - Test grid correctness as invariants: every room reachable, everything inside the bounds, no half-cells, plus fixed-seed fixtures that pin the grid. Fixture grids are shared with `../web/` tests; update both in the same commit.
 - Rate-limit the generate endpoint and cap map size, so a stuck client cannot exhaust the hosting plan's CPU quota.
-- The OpenAPI document must be available at build time (`Program.cs` currently maps it only in Development); the frontend reads it as the contract source.
+- The OpenAPI document is generated at build time (see above; `MapOpenApi()` stays Development-only at run time); the frontend reads it as the contract source.
 
 ## Hosting constraints
 
