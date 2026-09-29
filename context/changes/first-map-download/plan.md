@@ -531,16 +531,16 @@ The DM downloads the preview as a PNG. Playwright proves the whole flow in Chrom
 
 #### Automated
 
-- [x] 3.1 Types and build pass — 70c7f5e
-- [x] 3.2 Rendering and mapping tests pass in Chromium and Firefox: `npm --prefix web test` — 70c7f5e
-- [x] 3.3 Generated contract files are current (API document and `schema.d.ts`) — 70c7f5e
-- [x] 3.4 The atlas is reproducible (`npm run atlas` leaves no diff) — 70c7f5e
+- [x] 3.1 Types and build pass — 554232a
+- [x] 3.2 Rendering and mapping tests pass in Chromium and Firefox: `npm --prefix web test` — 554232a
+- [x] 3.3 Generated contract files are current (API document and `schema.d.ts`) — 554232a
+- [x] 3.4 The atlas is reproducible (`npm run atlas` leaves no diff) — 554232a
 
 #### Manual
 
-- [x] 3.5 Locally, Generate shows a correct, aligned 30×20 Scribble map in Chrome and Firefox — 70c7f5e
-- [x] 3.6 Rapid clicking shows the "wait a minute" message after the 10th map — 70c7f5e
-- [ ] 3.7 The Phase 3 PR shows `api`, `web`, `contract` and `web-tests` green; deploy and production screen OK
+- [x] 3.5 Locally, Generate shows a correct, aligned 30×20 Scribble map in Chrome and Firefox — 554232a
+- [x] 3.6 Rapid clicking shows the "wait a minute" message after the 10th map — 554232a
+- [x] 3.7 The Phase 3 PR shows `api`, `web`, `contract` and `web-tests` green; deploy and production screen OK — 554232a
 
 ### Phase 4: PNG Download and End-to-End Tests
 
