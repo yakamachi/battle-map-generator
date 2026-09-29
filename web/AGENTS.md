@@ -10,8 +10,8 @@ React Router with TypeScript in SPA mode (`ssr: false`; the starter defaults to 
 
 ## Map rendering
 
-- One pure render function: `(grid, seed, tileSize) -> canvas`. It maps semantic cells to sprites, does wall autotiling and picks visual variants. Variant randomness is derived from the response seed, never from `Math.random()`.
-- **Download renders offscreen at a fixed 140 px per grid square** (twice Roll20's 70 px standard, so it also prints sharply at 1 inch per square), independent of the screen. The preview uses the same render function at a size that fits the screen. `devicePixelRatio`, browser zoom and display scaling must never affect the downloaded file.
+- One pure mapping from the grid to draw operations (`drawOps` in `app/map/tileset.ts`): it maps semantic cells to sprites, does wall autotiling and picks visual variants. Variant randomness is derived from the response seed, never from `Math.random()`.
+- **Render once, at a fixed 140 px per grid square, into one canvas** (twice Roll20's 70 px standard, so it also prints sharply at 1 inch per square). The preview is that same canvas scaled down with CSS, and the download is `toBlob` of that same canvas, so there is no second render path. `devicePixelRatio`, browser zoom and display scaling must never affect the canvas bitmap or the downloaded file.
 - Draw at integer pixel positions with image smoothing off, so tiles never show seams.
 - Keep the tileset as one atlas image with a hashed filename, so browsers cache it and it does not consume the hosting plan's daily bandwidth quota.
 - Mind browser canvas size limits when adding larger maps or higher export scales.
