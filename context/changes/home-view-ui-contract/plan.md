@@ -416,6 +416,7 @@ Pin the states in Playwright screenshot baselines generated and checked in the C
   - `ui:scan`: `node scripts/ui-scan.mjs` has two scopes:
     - **Views** (`app/routes`, `app/root.tsx`, `app/components/*.tsx` outside `ui/`): the full `/10x-ui` pattern plus `dark:`.
     - **Primitives** (`app/components/ui`): only the colour-literal part (hex/rgb/hsl/oklch functions and palette classes), so unmodified `shadcn add` output passes.
+    - **Token source** (`app/app.css`): `@custom-variant` or a `.dark` selector, so a `shadcn add` that rewrites the CSS can't silently switch dark mode to a class nothing sets (impl-review phase 1, F1).
     - It prints `file:line` hits with the scope that matched, and exits 1 if there are any.
   - `visual`: `playwright test -c playwright.visual.config.ts`
   - `visual:docker` and `visual:update`: run `npm ci && npm run build && npx playwright test -c playwright.visual.config.ts [--update-snapshots]` in `mcr.microsoft.com/playwright:v1.63.0-noble`, with the repo mounted, `--ipc=host --init`, `--user` set to the host UID/GID (so new baselines aren't owned by root), a writable `HOME`/npm cache, and `node_modules` in a named volume.
@@ -435,6 +436,7 @@ Pin the states in Playwright screenshot baselines generated and checked in the C
   - Components live in `app/components/ui`. Check there before creating one, and add missing ones with `npx shadcn@latest add <name>` (then drop `radix-ui` if the component only needs it for `asChild`) or the same manual path.
   - Views (routes, `root.tsx`, components outside `ui/`): no literal colours, palette classes, `dark:` classes or arbitrary values. Primitives in `ui/`: no literal colours or palette classes, but shadcn's token-based `dark:` refinements are fine. `npm run ui:scan` enforces both.
   - Dark mode is OS-driven; never add `@custom-variant dark`.
+  - After `shadcn add`, review the `app/app.css` diff. Remove any `.dark` block or `@custom-variant` the CLI wrote. Add any new variables it needs (for example `--popover`) by hand in both `:root` and the dark media block, and record them in `tokens.md`.
   - The screenshot gate lives in `visual/`. Update baselines only through `npm run visual:update`, and explain the visual change in the PR.
 - `web/CLAUDE.md` "Commands and gotchas" gains `ui:scan`, `visual` and `visual:update`.
 
@@ -445,6 +447,7 @@ Pin the states in Playwright screenshot baselines generated and checked in the C
 - The scan passes: `npm --prefix web run ui:scan`
 - The scan fails on a literal: temporarily add `bg-gray-900` to `home.tsx` and `dark:bg-primary` to `map-preview.tsx`, confirm `ui:scan` exits 1 and names both lines, then revert
 - The visual gate passes in the CI image locally: `npm --prefix web run visual:docker`
+- `ui:scan` fails on the token source: temporarily add `@custom-variant dark (&:is(.dark *));` to `app.css`, confirm it exits 1 and names the line, then revert
 - The pull request's `web`, `visual` and existing checks are green
 
 #### Manual Verification:
@@ -501,29 +504,29 @@ None. No data or API changes. Screenshot baselines are new files.
 
 #### Automated
 
-- [x] 1.1 Type check and build pass
-- [x] 1.2 Rendering tests unchanged
-- [x] 1.3 E2E still passes in both browsers
-- [x] 1.4 `app.css` has no palette classes or `@custom-variant`
+- [x] 1.1 Type check and build pass — 876dbbc
+- [x] 1.2 Rendering tests unchanged — 876dbbc
+- [x] 1.3 E2E still passes in both browsers — 876dbbc
+- [x] 1.4 `app.css` has no palette classes or `@custom-variant` — 876dbbc
 
 #### Manual
 
-- [x] 1.5 Parchment/ink light and charcoal/parchment dark page in Chrome and Firefox
-- [x] 1.6 `tokens.md` records contrast ≥ 4.5:1 for text pairs and ≥ 3:1 for ring, both themes
+- [x] 1.5 Parchment/ink light and charcoal/parchment dark page in Chrome and Firefox — 876dbbc
+- [x] 1.6 `tokens.md` records contrast ≥ 4.5:1 for text pairs and ≥ 3:1 for ring, both themes — 876dbbc
 
 ### Phase 2: Components and View Migration (C1, C2)
 
 #### Automated
 
-- [ ] 2.1 Type check and build pass
-- [ ] 2.2 Colour-literal scan returns 0 hits on home.tsx and components
-- [ ] 2.3 No `dark:` classes or arbitrary values in routes
-- [ ] 2.4 E2E passes in both browsers with the locators unchanged
+- [x] 2.1 Type check and build pass
+- [x] 2.2 Colour-literal scan returns 0 hits on home.tsx and components
+- [x] 2.3 No `dark:` classes or arbitrary values in routes
+- [x] 2.4 E2E passes in both browsers with the locators unchanged
 
 #### Manual
 
-- [ ] 2.5 Hover, focus ring and disabled state visible on both buttons, both browsers and themes
-- [ ] 2.6 Error shows the destructive Alert, readable in both themes
+- [x] 2.5 Hover, focus ring and disabled state visible on both buttons, both browsers and themes
+- [x] 2.6 Error shows the destructive Alert, readable in both themes
 
 ### Phase 3: Preview and Entry States (C3, C4)
 
@@ -549,6 +552,7 @@ None. No data or API changes. Screenshot baselines are new files.
 - [ ] 4.2 `ui:scan` fails on an injected literal
 - [ ] 4.3 Visual gate passes in the CI image locally
 - [ ] 4.4 Pull request checks green, including `visual`
+- [ ] 4.8 `ui:scan` fails on `@custom-variant` in app.css
 
 #### Manual
 

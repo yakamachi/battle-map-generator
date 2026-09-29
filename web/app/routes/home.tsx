@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Route } from "./+types/home";
+import { Alert } from "~/components/ui/alert";
+import { Button } from "~/components/ui/button";
 import { generateMap, type GenerateError, type GeneratedMap } from "~/api/client";
 import { downloadCanvas } from "~/map/download";
 import { loadAtlas, renderMap } from "~/map/render";
@@ -92,36 +94,22 @@ export default function Home() {
 
   return (
     <main className="container mx-auto flex flex-col gap-4 p-4">
-      <h1 className="text-2xl font-semibold">Battle Map Generator</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+        Battle Map Generator
+      </h1>
       <div className="flex items-center gap-4">
-        <button
-          type="button"
-          onClick={onGenerate}
-          disabled={status.kind === "loading"}
-          className="rounded bg-gray-900 px-4 py-2 text-white disabled:opacity-50 dark:bg-gray-100 dark:text-gray-900"
-        >
+        <Button onClick={onGenerate} disabled={status.kind === "loading"}>
           {status.kind === "loading" ? "Generating…" : "Generate"}
-        </button>
-        <button
-          type="button"
-          onClick={onDownload}
-          disabled={!canDownload}
-          className="rounded border border-gray-900 px-4 py-2 disabled:opacity-50 dark:border-gray-100"
-        >
+        </Button>
+        <Button variant="outline" onClick={onDownload} disabled={!canDownload}>
           Download PNG
-        </button>
-        {map && <span>Seed: {map.seed}</span>}
+        </Button>
+        {map && (
+          <span className="text-sm text-muted-foreground tabular-nums">Seed: {map.seed}</span>
+        )}
       </div>
-      {status.kind === "error" && (
-        <p role="alert" className="text-red-700 dark:text-red-400">
-          {status.message}
-        </p>
-      )}
-      {downloadError && (
-        <p role="alert" className="text-red-700 dark:text-red-400">
-          {downloadError}
-        </p>
-      )}
+      {status.kind === "error" && <Alert variant="destructive">{status.message}</Alert>}
+      {downloadError && <Alert variant="destructive">{downloadError}</Alert>}
       {map && (
         <canvas
           ref={canvasRef}
