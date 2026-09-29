@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Route } from "./+types/home";
 import { generateMap, type GenerateError, type GeneratedMap } from "~/api/client";
+import { downloadCanvas } from "~/map/download";
 import { loadAtlas, renderMap } from "~/map/render";
 
 export function meta({}: Route.MetaArgs) {
@@ -31,8 +32,13 @@ export default function Home() {
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const atlasRef = useRef<Promise<ImageBitmap> | null>(null);
+  // The map whose pixels are on the canvas. Rendering finishes after the atlas loads, so a map
+  // in state is not yet a map on screen; the download follows this, not the status.
+  const [renderedMap, setRenderedMap] = useState<GeneratedMap | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const map = status.kind === "ready" ? status.map : null;
+  const canDownload = map !== null && renderedMap === map;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -46,7 +52,9 @@ export default function Home() {
     });
     atlasRef.current
       .then((atlas) => {
-        if (!cancelled) renderMap(ctx, map, atlas);
+        if (cancelled) return;
+        renderMap(ctx, map, atlas);
+        setRenderedMap(map);
       })
       .catch((error: unknown) => {
         if (!cancelled) {
@@ -61,12 +69,25 @@ export default function Home() {
 
   async function onGenerate() {
     setStatus({ kind: "loading" });
+    setRenderedMap(null);
+    setDownloadError(null);
     const result = await generateMap();
     setStatus(
       result.ok
         ? { kind: "ready", map: result.map }
         : { kind: "error", message: errorMessage(result.error) },
     );
+  }
+
+  async function onDownload() {
+    const canvas = canvasRef.current;
+    if (!canDownload || !canvas) return;
+    setDownloadError(null);
+    try {
+      await downloadCanvas(canvas, map.seed);
+    } catch (error: unknown) {
+      setDownloadError(error instanceof Error ? error.message : String(error));
+    }
   }
 
   return (
@@ -81,11 +102,24 @@ export default function Home() {
         >
           {status.kind === "loading" ? "Generating…" : "Generate"}
         </button>
+        <button
+          type="button"
+          onClick={onDownload}
+          disabled={!canDownload}
+          className="rounded border border-gray-900 px-4 py-2 disabled:opacity-50 dark:border-gray-100"
+        >
+          Download PNG
+        </button>
         {map && <span>Seed: {map.seed}</span>}
       </div>
       {status.kind === "error" && (
         <p role="alert" className="text-red-700 dark:text-red-400">
           {status.message}
+        </p>
+      )}
+      {downloadError && (
+        <p role="alert" className="text-red-700 dark:text-red-400">
+          {downloadError}
         </p>
       )}
       {map && (

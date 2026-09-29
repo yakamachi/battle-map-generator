@@ -26,6 +26,7 @@ A DM toolkit that generates grid-aligned D&D battle maps. Monorepo: `api/` (ASP.
 ## Testing
 
 - `api/`: unit tests for the algorithm (grid invariants, connectivity, fixed-seed fixtures).
+- Shared fixture grids live in `fixtures/grids/*.json`: the API tests pin them and the web rendering tests draw them.
 - `web/`: rendering tests against the shared fixture grids.
 - End to end: Playwright in **Chrome and Firefox** (both required by the PRD), covering login, generate, regenerate and download.
 - Tests gate merges, not deploys: `.github/workflows/ci.yml` runs them on every pull request to `main`, and its jobs are required checks.

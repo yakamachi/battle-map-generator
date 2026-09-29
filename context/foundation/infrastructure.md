@@ -162,7 +162,7 @@ The blob-link fallback stays documented but is no longer expected to be needed.
 
 | Risk | Source | Likelihood | Impact | Mitigation |
 |---|---|---|---|---|
-| CPU or bandwidth quota exhausted, app returns 403 until midnight UTC | Devil's advocate / Pre-mortem | M | H | Render PNG client-side (or blob links); add ASP.NET rate limiter on the generate endpoint and cap map size; measure CPU-seconds per generation locally; Azure budget alert; move to B1 if hit |
+| CPU or bandwidth quota exhausted, app returns 403 until midnight UTC | Devil's advocate / Pre-mortem | M | H | Render PNG client-side (or blob links); add ASP.NET rate limiter on the generate endpoint and cap map size; measure CPU-seconds per generation locally; Azure budget alert; move to B1 if hit. **In place (S-01):** PNG rendered and downloaded in the browser; `generate` limited to 10/min per client IP (429, forwarded headers on App Service); map size capped at 60×60; 1 000 generations measured under 1 s |
 | Data Protection keys lost on restart, users logged out constantly | Devil's advocate / Unknown unknowns | H | H | Persist keys to the database (`Microsoft.AspNetCore.DataProtection.EntityFrameworkCore`) before the first deploy; verify with a forced restart |
 | Azure SQL resume error 40613 on first request | Research finding | H | L | `EnableRetryOnFailure` in EF Core; document the one-minute warm-up |
 | SQL free offer exhausted or locked; irreversible "continue with charges" | Pre-mortem | L | M | Choose auto-pause at the limit; keep the database idle when not in use; back up Identity data |
@@ -174,13 +174,13 @@ The blob-link fallback stays documented but is no longer expected to be needed.
 | No custom domain or TLS on F1 | Research finding | H | L | Use `*.azurewebsites.net`; upgrade to B1 for a custom domain |
 | .NET 10 runtime patch drift on App Service | Unknown unknowns | L | M | Pin the SDK in `global.json`; watch `az webapp list-runtimes` |
 | Client-side rendering breaks grid alignment (PRD guardrail) | Devil's advocate / Pre-mortem | L | H | Download rendered offscreen at a fixed 140 px/square, independent of `devicePixelRatio` and zoom; integer positions, smoothing off; one pure render function; grid invariants tested in C#; rendering tested against fixture grids |
-| Downloaded PNG differs from the preview | Devil's advocate | L | M | Preview and download share one render function and the same seed; Playwright checks the download's dimensions and that it is not blank |
-| Firefox canvas export blocked or randomized (strict tracking protection) | Unknown unknowns | L | M | Playwright end-to-end tests in Firefox cover the download; blob-link fallback documented if it ever fails |
+| Downloaded PNG differs from the preview | Devil's advocate | L | M | Preview and download share one render function and the same seed; Playwright checks the download's dimensions and that it is not blank. **In place (S-01):** one canvas for preview and download; the `e2e` CI job checks 4200×2800 and not blank in Chromium and Firefox |
+| Firefox canvas export blocked or randomized (strict tracking protection) | Unknown unknowns | L | M | Playwright end-to-end tests in Firefox cover the download; blob-link fallback documented if it ever fails. **In place (S-01):** the `e2e` CI job downloads the PNG in Firefox on every pull request |
 | API and web drift apart | Devil's advocate / Pre-mortem | L | M | Monorepo: API, client and shared fixture grids change in one commit; semantic grid changes only when the algorithm gains a concept; OpenAPI as the contract source |
 | Stale open tab runs an old client against a new API | Pre-mortem / Unknown unknowns | L | L | Accepted for two users (refresh); `index.html` served `no-cache`, hashed assets cached long-term |
 | Seeded maps change after a runtime upgrade or algorithm change | Devil's advocate / Pre-mortem | M | L | Own seeded PRNG in C# instead of `System.Random`; fixed-seed fixtures updated deliberately when the algorithm changes; store the grid, not the seed, if a library is added |
-| Very large maps exceed browser canvas limits at 140 px/square | Unknown unknowns | L | M | Cap map size in the API; check the largest size preset in Playwright |
-| No OpenAPI document available at build time (only mapped in Development) | Unknown unknowns | H | L | Generate the OpenAPI document at build time for `web/` |
+| Very large maps exceed browser canvas limits at 140 px/square | Unknown unknowns | L | M | Cap map size in the API; check the largest size preset in Playwright. **In place (S-01):** API cap 60×60 (8400 px per side) and a 16 384 px guard in the renderer; the largest-preset Playwright check waits for S-03's sizes |
+| No OpenAPI document available at build time (only mapped in Development) | Unknown unknowns | H | L | Generate the OpenAPI document at build time for `web/`. **In place (S-01):** `dotnet build` writes `api/BattleMapGenerator.Api.json`; the `contract` CI job fails on drift in it or in `web/app/api/schema.d.ts` |
 | Non-GA features relied on | Research finding | L | L | Status recorded 2026-09-21: App Service built-in MCP preview; Shared tier preview; Fly MCP experimental; Railway MCP beta; Vercel container functions / WebSocket / MCP beta; Fly Tigris beta; Render Workflows beta |
 
 ## Getting Started
