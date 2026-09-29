@@ -76,6 +76,16 @@
   --radius-xl: calc(var(--radius) * 1.4);
 }
 
+/*
+ * The map preview frame fits both the container width and the viewport height left under the
+ * header (main padding, heading, button row and gaps: 8.5rem), so the whole map is visible
+ * without scrolling. The frame sets --map-aspect (width / height in squares) and a matching
+ * aspect-ratio inline; the height follows from the width.
+ */
+@utility map-preview-fit {
+  width: min(100%, max(12rem, calc((100dvh - 8.5rem) * var(--map-aspect, 1.5))));
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

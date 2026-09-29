@@ -532,17 +532,17 @@ None. No data or API changes. Screenshot baselines are new files.
 
 #### Automated
 
-- [ ] 3.1 Type check and build pass
-- [ ] 3.2 Hardcoded-value scan returns 0 hits on the views, colour literals 0 on ui/
-- [ ] 3.3 E2E passes in both browsers including the second-map round
-- [ ] 3.4 Rendering tests unchanged
+- [x] 3.1 Type check and build pass
+- [x] 3.2 Hardcoded-value scan returns 0 hits on the views, colour literals 0 on ui/
+- [x] 3.3 E2E passes in both browsers including the second-map round
+- [x] 3.4 Rendering tests unchanged
 
 #### Manual
 
-- [ ] 3.5 No layout jump on generate/regenerate; map fully visible at 1280×720
-- [ ] 3.6 390 px width fits without horizontal scroll
-- [ ] 3.7 Network error returns the placeholder with the Alert and disables download
-- [ ] 3.8 Styled not-found page with a working link home
+- [x] 3.5 No layout jump on generate/regenerate; map fully visible at 1280×720
+- [x] 3.6 390 px width fits without horizontal scroll
+- [x] 3.7 Network error returns the placeholder with the Alert and disables download
+- [x] 3.8 Styled not-found page with a working link home
 
 ### Phase 4: Visual Gate and Guard
 
