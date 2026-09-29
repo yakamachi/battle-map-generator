@@ -1,10 +1,10 @@
 ---
 change_id: first-map-download
 title: First map download
-status: implemented
+status: archived
 created: 2026-09-25
 updated: 2026-09-29
-archived_at: null
+archived_at: 2026-09-29T12:08:59Z
 ---
 
 ## Notes
