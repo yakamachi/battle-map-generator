@@ -1,0 +1,14 @@
+{
+  "seed-1": {
+    "chromium": "6a9d66a8dab2547b182964b9fe8be8ca9d9ea896ce3d8507620353e812191508",
+    "firefox": "ceabd69990cdd47e234d9515c26da581a3c01475688c223619b38b8d8476b5f9"
+  },
+  "seed-20260925": {
+    "chromium": "178b20fdfd29d605be551373ae83147b7b20f8eb3ba3c0c5c308dbde6d46e43d",
+    "firefox": "1585a002ae2069bd4f9de7fed5517aa738900da50d41bd0e122d934dd7d78b7b"
+  },
+  "seed-42": {
+    "chromium": "031173c24adaf5ff35138104efeccdb17c5a9ac68a64f0101b40383f1e5af097",
+    "firefox": "a8edfa39a7fddd759988d302bb09d57e41301322bf2dad6d2f4f77755bd7673f"
+  }
+}

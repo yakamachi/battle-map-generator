@@ -6,3 +6,10 @@
 /.react-router/
 /build/
 
+
+# Vitest and Playwright output
+/.vitest/
+__screenshots__/
+/test-results/
+/playwright-report/
+/blob-report/

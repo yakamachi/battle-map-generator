@@ -59,3 +59,61 @@ jobs:
           npm ci
           npm run typecheck
           npm run build
+
+  # The OpenAPI document and the TypeScript types generated from it are committed; a fresh
+  # build that changes either means the contract drifted without the client following.
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build API (regenerates the OpenAPI document)
+        run: dotnet build api
+
+      - name: Regenerate client types
+        working-directory: web
+        run: |
+          npm ci
+          npm run api:types
+
+      - name: Fail on contract drift
+        run: git diff --exit-code api/BattleMapGenerator.Api.json web/app/api/schema.d.ts
+
+      # The render baselines hash the committed atlas, so it must be what the script produces
+      # from the vendored pieces, on any machine.
+      - name: Fail on atlas drift
+        working-directory: web
+        run: |
+          npm run atlas
+          git diff --exit-code app/map/tileset/
+
+  # Mapping and rendering tests in real Chromium and Firefox, against the shared fixture grids.
+  web-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Test web rendering
+        working-directory: web
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium firefox
+          npm test
