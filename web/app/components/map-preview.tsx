@@ -1,5 +1,6 @@
 import type { CSSProperties, Ref } from "react";
 import { cn } from "cn";
+import { TILE_SIZE } from "~/map/tileset";
 
 export type MapPreviewState = "empty" | "loading" | "ready";
 
@@ -39,6 +40,7 @@ export function MapPreview({
     >
       <canvas
         ref={canvasRef}
+        role="img"
         aria-label={label}
         className={cn(
           "absolute inset-0 size-full object-contain transition-opacity",
@@ -48,7 +50,8 @@ export function MapPreview({
       />
       {!drawn && !loading && (
         <p className="absolute inset-0 flex items-center justify-center p-4 text-center text-sm text-muted-foreground">
-          Click Generate to create a 30×20 battle map, then download it as a PNG (140 px per square)
+          Click Generate to create a {width}×{height} battle map, then download it as a PNG ({TILE_SIZE}{" "}
+          px per square)
         </p>
       )}
       {loading && (

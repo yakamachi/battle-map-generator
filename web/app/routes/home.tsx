@@ -53,6 +53,8 @@ export default function Home() {
       : status.kind === "ready"
         ? "ready"
         : "empty";
+  // One busy state for the button and the frame: a map is not done until it is drawn.
+  const busy = previewState === "loading";
   const previewSize = map ?? shownMap;
 
   useEffect(() => {
@@ -109,13 +111,15 @@ export default function Home() {
   }
 
   return (
+    // Rows above the preview count against its height: update map-preview-fit in app.css when
+    // adding one.
     <main className="container mx-auto flex flex-col gap-4 p-4">
       <h1 className="text-2xl font-semibold tracking-tight text-foreground">
         Battle Map Generator
       </h1>
       <div className="flex flex-wrap items-center gap-4">
-        <Button onClick={onGenerate} disabled={status.kind === "loading"}>
-          {status.kind === "loading" ? "Generating…" : "Generate"}
+        <Button onClick={onGenerate} disabled={busy}>
+          {busy ? "Generating…" : "Generate"}
         </Button>
         <Button variant="outline" onClick={onDownload} disabled={!canDownload}>
           Download PNG
