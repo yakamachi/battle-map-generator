@@ -546,12 +546,12 @@ The DM downloads the preview as a PNG. Playwright proves the whole flow in Chrom
 
 #### Automated
 
-- [x] 4.1 E2E passes in both browsers — ab77d1c
-- [x] 4.2 Unit and rendering tests still pass: `npm --prefix web test` — ab77d1c
-- [x] 4.3 Type check and API tests still pass — ab77d1c
+- [x] 4.1 E2E passes in both browsers — 4aa5271
+- [x] 4.2 Unit and rendering tests still pass: `npm --prefix web test` — 4aa5271
+- [x] 4.3 Type check and API tests still pass — 4aa5271
 
 #### Manual
 
-- [ ] 4.4 Production in Chrome and Firefox: the downloaded PNG is 4200×2800, matches the preview, and walls sit on square edges
-- [ ] 4.5 Optional: the PNG lines up with Roll20's grid at 30×20 units
-- [ ] 4.6 The Phase 4 PR shows all five checks green, and all five are required on `main`
+- [x] 4.4 Production in Chrome and Firefox: the downloaded PNG is 4200×2800, matches the preview, and walls sit on square edges — 4aa5271
+- [x] 4.5 Optional: the PNG lines up with Roll20's grid at 30×20 units — 4aa5271 (grid lines up; scale in Roll20 was off, deferred)
+- [x] 4.6 The Phase 4 PR shows all five checks green, and all five are required on `main` — 4aa5271
