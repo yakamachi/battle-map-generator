@@ -9,8 +9,9 @@ namespace BattleMapGenerator.Api.Tests.Infrastructure;
 // Data Protection keys ask for their own database, so other tests writing keys cannot disturb them.
 public sealed class SqlServerFixture : IAsyncLifetime
 {
-    // Same image as compose.yaml, so tests run against the SQL Server the app is developed on.
-    private const string Image = "mcr.microsoft.com/mssql/server:2022-latest";
+    // Same pinned image as compose.yaml, so tests run against the SQL Server the app is developed on.
+    // Bump both together.
+    private const string Image = "mcr.microsoft.com/mssql/server:2022-CU27-ubuntu-22.04";
 
     private readonly MsSqlContainer _container = new MsSqlBuilder(Image).Build();
 

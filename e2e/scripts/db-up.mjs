@@ -5,7 +5,16 @@ import { fileURLToPath } from "node:url";
 import { LOCAL_DB_CONNECTION_STRING } from "../local-db.ts";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
-const run = (command, args) => execFileSync(command, args, { cwd: root, stdio: "inherit" });
+// A failed command's own output is already on screen. Node's error would repeat the full argv,
+// connection string included, so report only the command and its exit code.
+function run(command, args) {
+  try {
+    execFileSync(command, args, { cwd: root, stdio: "inherit" });
+  } catch (error) {
+    console.error(`db:up: \`${command} ${args[0]}\` failed with exit code ${error.status ?? "unknown"}`);
+    process.exit(1);
+  }
+}
 
 run("docker", ["compose", "up", "-d", "--wait"]);
 run("dotnet", ["tool", "restore"]);

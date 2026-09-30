@@ -1,9 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
-import { LOCAL_DB_CONNECTION_STRING } from "./local-db";
+import { AUTH_FILE, LOCAL_DB_CONNECTION_STRING } from "./local-db";
 
 const BASE_URL = "http://localhost:5108";
-// Written by tests/auth.setup.ts; gitignored.
-const AUTH_FILE = "playwright/.auth/user.json";
 
 // End-to-end tests against the real .NET host serving the built SPA from api/wwwroot
 // (run `npm run build:app` first) and the SQL Server from ../compose.yaml (run `npm run db:up`
@@ -12,7 +10,8 @@ const AUTH_FILE = "playwright/.auth/user.json";
 //
 // The generate endpoint allows 10 calls per minute per IP, and both projects hit the same
 // server: keep the whole run well under that (today two calls per browser). A reused local
-// server keeps its counts between runs, so rapid reruns can meet a 429.
+// server keeps its counts between runs, so rapid reruns can meet a 429. Locally a server already
+// on 5108 is reused as it is: stop any API there that was not started against the compose database.
 export default defineConfig({
   testDir: "tests",
   forbidOnly: !!process.env.CI,

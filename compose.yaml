@@ -1,8 +1,14 @@
 # Local development only. The SA password below is a throwaway for this container;
 # Azure SQL uses the app's managed identity and has no password.
+# A fixed project name: every checkout of this repo (including git worktrees) shares one
+# container and volume, instead of each binding port 1433 for its own.
+name: battle-map-generator
+
 services:
   sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+    # Pinned, and bumped deliberately together with api.Tests/Infrastructure/SqlServerFixture.cs:
+    # the healthcheck below depends on the sqlcmd path inside the image.
+    image: mcr.microsoft.com/mssql/server:2022-CU27-ubuntu-22.04
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: "LocalDev_Only_Passw0rd!"

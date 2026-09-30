@@ -470,7 +470,7 @@ Add the login and register pages, put the home view behind a layout route that c
 
 #### Manual
 
-- [ ] 2.7 The e2e job run on the branch is green and its log shows the setup project passing
+- [x] 2.7 The e2e job run on the branch is green and its log shows the setup project passing — 5ca3041
 
 ### Phase 3: Guard generation, limit per account
 
