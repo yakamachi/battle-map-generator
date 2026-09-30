@@ -8,6 +8,12 @@ public static class AuthEndpoints
 {
     public const string AuthRateLimitPolicy = "auth";
 
+    // The AspNetUsers column width; a longer email would fail the insert instead of validation.
+    private const int MaxEmailLength = 256;
+
+    // Bounds the memory and hashing one request can cost; far above any real password.
+    private const int MaxPasswordLength = 128;
+
     // Register and login are public and hash a password, so they share one per-IP limit.
     // Logout and me are not limited: they cost no hashing and me needs a session.
     public static IEndpointRouteBuilder MapAuthEndpoints(this IEndpointRouteBuilder app)
@@ -35,9 +41,25 @@ public static class AuthEndpoints
     {
         // A JSON body may leave a field out or send null; Identity then reports it as invalid or too short.
         var email = request.Email ?? string.Empty;
+        var password = request.Password ?? string.Empty;
+        if (email.Length > MaxEmailLength)
+        {
+            return TypedResults.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["email"] = [$"Email must be at most {MaxEmailLength} characters."],
+            });
+        }
+        if (password.Length > MaxPasswordLength)
+        {
+            return TypedResults.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["password"] = [$"Passwords must be at most {MaxPasswordLength} characters."],
+            });
+        }
+
         var user = new IdentityUser { UserName = email, Email = email };
 
-        var result = await users.CreateAsync(user, request.Password ?? string.Empty);
+        var result = await users.CreateAsync(user, password);
         if (!result.Succeeded)
         {
             return TypedResults.ValidationProblem(ToFieldErrors(result, email, users.ErrorDescriber));
@@ -47,17 +69,25 @@ public static class AuthEndpoints
         return TypedResults.Ok(new AccountInfo(email));
     }
 
-    // Wrong password, unknown email and a locked-out account are indistinguishable to the caller.
+    // Wrong password, unknown email and a locked-out account get the same response. Timing is not
+    // equalised (only a known, unlocked account hashes a password): register already tells a caller
+    // whether an email is taken.
     private static async Task<Results<Ok<AccountInfo>, UnauthorizedHttpResult>> Login(
         AuthRequest request, UserManager<IdentityUser> users, SignInManager<IdentityUser> signIn)
     {
+        var password = request.Password ?? string.Empty;
+        if (password.Length > MaxPasswordLength)
+        {
+            return TypedResults.Unauthorized();
+        }
+
         var user = await users.FindByEmailAsync(request.Email ?? string.Empty);
         if (user is null)
         {
             return TypedResults.Unauthorized();
         }
 
-        var result = await signIn.PasswordSignInAsync(user, request.Password ?? string.Empty, isPersistent: true, lockoutOnFailure: true);
+        var result = await signIn.PasswordSignInAsync(user, password, isPersistent: true, lockoutOnFailure: true);
         if (!result.Succeeded)
         {
             return TypedResults.Unauthorized();
@@ -86,6 +116,9 @@ public static class AuthEndpoints
     {
         var passwordErrors = result.Errors.Where(e => e.Code.StartsWith("Password", StringComparison.Ordinal)).ToList();
         var emailErrors = result.Errors.Except(passwordErrors).ToList();
+        // Identity always asks for one distinct character, which only an empty password fails;
+        // "too short" already says it.
+        passwordErrors.RemoveAll(e => e.Code == nameof(IdentityErrorDescriber.PasswordRequiresUniqueChars));
         if (emailErrors.Any(e => e.Code.EndsWith("Email", StringComparison.Ordinal)))
         {
             emailErrors.RemoveAll(e => e.Code.EndsWith("UserName", StringComparison.Ordinal));

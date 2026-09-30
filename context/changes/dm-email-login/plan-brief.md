@@ -67,10 +67,11 @@ Identity's application cookie, protected by the database key ring, carries the s
 
 ## Open Risks & Assumptions
 
-- Whether `ASPNETCORE_FORWARDEDHEADERS_ENABLED` is set in production is unknown. Without it the cookie lacks `Secure` and all users share one `auth` bucket; the deployed-app check in phase 4 finds out, and setting it is the owner's step.
+- `ASPNETCORE_FORWARDEDHEADERS_ENABLED` is `true` on the App Service (checked 2026-09-30, phase 1 review F3), so the cookie gets `Secure` and the `auth` limit sees real client IPs. It lives only in App Service configuration: a re-created app must set it again, and the deployed-app check in phase 4 still confirms the `Secure` flag.
 - The limit resets on every restart, and each new account gets its own 10 per minute. Accepted for the MVP; a stored quota is a later change.
 - Register and login share 10 calls per minute per IP, and a full e2e run uses 6. Quick local reruns can meet a 429.
 - A login right after the database auto-paused can take a minute or fail once.
+- Accepted for the MVP (phase 1 review, F5): anyone who knows an account's email can keep it locked out with 5 wrong passwords every 5 minutes. Lockout stays because it stops password guessing; there is no reset or unlock path yet.
 - `AddIdentityCookies()` and the 401-instead-of-redirect behaviour are taken from docs and general knowledge; phase 1 tests pin both.
 - The plan rewords one comment in `MapEndpoints.cs` that becomes false, beyond the brief's "only add `.RequireAuthorization()`".
 

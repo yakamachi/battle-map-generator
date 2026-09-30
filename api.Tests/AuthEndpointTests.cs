@@ -17,9 +17,6 @@ public sealed class AuthEndpointTests(SqlServerFixture sql)
     private const string LogoutPath = "/api/auth/logout";
     private const string MePath = "/api/auth/me";
 
-    // Nothing listens on port 1, so a connection attempt is refused at once (see HealthProbeTests).
-    private const string UnreachableConnectionString =
-        "Server=127.0.0.1,1;Database=battlemap;User Id=sa;Password=unused;Connect Timeout=2;Encrypt=False";
 
     [Fact]
     public async Task Register_signs_the_account_in_and_me_returns_its_email()
@@ -278,19 +275,121 @@ public sealed class AuthEndpointTests(SqlServerFixture sql)
 
     // The database lesson: a request without a session cookie is refused without touching the database.
     [Fact]
-    public async Task Startup_and_anonymous_me_answer_401_quickly_with_an_unreachable_database()
+    public async Task Startup_and_anonymous_me_and_logout_answer_quickly_with_an_unreachable_database()
     {
         var stopwatch = Stopwatch.StartNew();
-        await using var factory = new ApiFactory(UnreachableConnectionString);
+        await using var factory = new ApiFactory(ApiFactory.UnreachableConnectionString);
         var client = factory.CreateClient();
 
-        var response = await client.GetAsync(MePath);
+        var me = await client.GetAsync(MePath);
+        var logout = await client.PostAsync(LogoutPath, content: null);
 
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(5), $"Startup and me took {stopwatch.Elapsed}.");
+        Assert.Equal(HttpStatusCode.Unauthorized, me.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, logout.StatusCode);
+        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(5), $"Startup, me and logout took {stopwatch.Elapsed}.");
     }
 
-    private static string NewEmail() => $"dm-{Guid.NewGuid():N}@example.com";
+    // Static files are served before authentication, so a session cookie on them never loads the key
+    // ring. A database of its own starts with no key; the first read of a cookie creates one.
+    [Fact]
+    public async Task A_session_cookie_on_a_static_file_does_not_load_the_key_ring()
+    {
+        string cookie;
+        await using (var issuer = new ApiFactory(sql.ConnectionString))
+        {
+            var registered = await issuer.CreateClient().PostAsJsonAsync(RegisterPath, Credentials(NewEmail()));
+            cookie = SessionCookie(registered).Split(';')[0];
+        }
+
+        var connectionString = await sql.CreateMigratedDatabaseAsync();
+        await using var factory = new ApiFactory(connectionString);
+        var client = factory.CreateClient(new() { HandleCookies = false });
+
+        var file = new HttpRequestMessage(HttpMethod.Get, "/index.html");
+        file.Headers.Add("Cookie", cookie);
+        Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(file)).StatusCode);
+        Assert.Equal(0, await SqlServerFixture.CountKeysAsync(connectionString));
+
+        // The same cookie on an API route is read, which is what loads the key ring.
+        var me = new HttpRequestMessage(HttpMethod.Get, MePath);
+        me.Headers.Add("Cookie", cookie);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.SendAsync(me)).StatusCode);
+        Assert.Equal(1, await SqlServerFixture.CountKeysAsync(connectionString));
+    }
+
+    [Fact]
+    public async Task Register_with_an_email_over_256_characters_returns_400_keyed_by_email()
+    {
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync(RegisterPath, Credentials(new string('a', 245) + "@example.com"));
+
+        var errors = await ReadValidationErrorsAsync(response);
+        Assert.Equal(["email"], errors.Keys);
+        Assert.Equal(["Email must be at most 256 characters."], errors["email"]);
+    }
+
+    [Fact]
+    public async Task Register_with_an_empty_password_returns_one_message()
+    {
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync(RegisterPath, Credentials(NewEmail(), ""));
+
+        var errors = await ReadValidationErrorsAsync(response);
+        Assert.Equal(["password"], errors.Keys);
+        Assert.Equal(["Passwords must be at least 8 characters."], errors["password"]);
+    }
+
+    // A password is capped before it reaches the hasher: register says so, login answers its usual 401.
+    [Fact]
+    public async Task A_password_over_128_characters_is_refused_by_register_and_login()
+    {
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = factory.CreateClient();
+        var email = NewEmail();
+        var longest = new string('p', 128);
+        var tooLong = new string('p', 129);
+
+        var errors = await ReadValidationErrorsAsync(await client.PostAsJsonAsync(RegisterPath, Credentials(email, tooLong)));
+        Assert.Equal(["password"], errors.Keys);
+        Assert.Equal(["Passwords must be at most 128 characters."], errors["password"]);
+
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync(RegisterPath, Credentials(email, longest))).StatusCode);
+        await client.PostAsync(LogoutPath, content: null);
+
+        var login = await client.PostAsJsonAsync(LoginPath, Credentials(email, tooLong));
+        Assert.Equal(HttpStatusCode.Unauthorized, login.StatusCode);
+        Assert.False(login.Headers.Contains("Set-Cookie"));
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync(LoginPath, Credentials(email, longest))).StatusCode);
+    }
+
+    // There are no antiforgery tokens: the endpoints take JSON only, which a cross-site form cannot send.
+    [Theory]
+    [InlineData(RegisterPath, "application/x-www-form-urlencoded")]
+    [InlineData(RegisterPath, "text/plain")]
+    [InlineData(LoginPath, "application/x-www-form-urlencoded")]
+    [InlineData(LoginPath, "text/plain")]
+    public async Task Register_and_login_refuse_bodies_a_cross_site_form_can_send(string path, string contentType)
+    {
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
+        var email = (await ReadEmailAsync(await client.GetAsync(MePath)))!;
+        await client.PostAsync(LogoutPath, content: null);
+
+        var body = contentType == "text/plain"
+            ? $$"""{"email":"{{email}}","password":"{{ApiFactory.TestPassword}}"}"""
+            : $"email={Uri.EscapeDataString(email)}&password={ApiFactory.TestPassword}";
+        var response = await client.PostAsync(path, new StringContent(body, null, contentType));
+
+        Assert.False(response.IsSuccessStatusCode, $"{path} accepted {contentType} with {(int)response.StatusCode}.");
+        Assert.False(response.Headers.Contains("Set-Cookie"));
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync(MePath)).StatusCode);
+    }
+
+    private static string NewEmail() => ApiFactory.NewEmail();
 
     private static object Credentials(string email, string password = ApiFactory.TestPassword) => new { email, password };
 

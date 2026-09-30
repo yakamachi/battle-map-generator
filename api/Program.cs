@@ -142,14 +142,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Authentication and authorization run before the limiter: it must be able to see the user,
-// and a request refused with 401 must not spend a permit.
-app.UseAuthentication();
-app.UseAuthorization();
-app.UseRateLimiter();
-
 // The SPA from web/build/client is copied into wwwroot at build time.
 // index.html is never cached so a deploy is picked up on refresh; hashed assets are immutable.
+// Served before authentication: a file needs no session, and reading a cookie loads the key ring
+// from the database.
 app.UseDefaultFiles();
 app.UseStaticFiles(new StaticFileOptions
 {
@@ -166,6 +162,12 @@ app.UseStaticFiles(new StaticFileOptions
         }
     }
 });
+
+// Authentication and authorization run before the limiter: it must be able to see the user,
+// and a request refused with 401 must not spend a permit.
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseRateLimiter();
 
 // Liveness runs no checks: 200 while the process serves requests.
 app.MapHealthChecks("/api/health/live", new HealthCheckOptions { Predicate = _ => false });

@@ -15,14 +15,11 @@ public sealed class MapEndpointTests
 {
     private const string GeneratePath = "/api/maps/generate";
 
-    // Nothing listens on port 1, so a connection attempt is refused at once (see HealthProbeTests).
-    private const string UnreachableConnectionString =
-        "Server=127.0.0.1,1;Database=battlemap;User Id=sa;Password=unused;Connect Timeout=2;Encrypt=False";
 
     [Fact]
     public async Task Generate_returns_the_default_size_grid_with_string_cell_kinds_for_the_given_seed()
     {
-        await using var factory = new ApiFactory(UnreachableConnectionString);
+        await using var factory = new ApiFactory(ApiFactory.UnreachableConnectionString);
         var client = factory.CreateClient();
 
         var response = await client.PostAsJsonAsync(GeneratePath, new { seed = 42 });
@@ -55,7 +52,7 @@ public sealed class MapEndpointTests
     [Fact]
     public async Task Generate_with_an_empty_body_or_no_seed_draws_a_seed()
     {
-        await using var factory = new ApiFactory(UnreachableConnectionString);
+        await using var factory = new ApiFactory(ApiFactory.UnreachableConnectionString);
         var client = factory.CreateClient();
 
         var withoutBody = await client.PostAsync(GeneratePath, new StringContent("", null, "application/json"));
@@ -72,7 +69,7 @@ public sealed class MapEndpointTests
     [Fact]
     public async Task The_eleventh_generate_within_a_minute_returns_429_with_retry_after()
     {
-        await using var factory = new ApiFactory(UnreachableConnectionString);
+        await using var factory = new ApiFactory(ApiFactory.UnreachableConnectionString);
         var client = factory.CreateClient();
 
         for (var i = 1; i <= 10; i++)
@@ -93,7 +90,7 @@ public sealed class MapEndpointTests
     public async Task Generate_succeeds_quickly_with_an_unreachable_database()
     {
         var stopwatch = Stopwatch.StartNew();
-        await using var factory = new ApiFactory(UnreachableConnectionString);
+        await using var factory = new ApiFactory(ApiFactory.UnreachableConnectionString);
         var client = factory.CreateClient();
 
         var response = await client.PostAsJsonAsync(GeneratePath, new { seed = 1 });
@@ -109,7 +106,7 @@ public sealed class MapEndpointTests
     [InlineData("POST", "/api/maps/generate/extra")]
     public async Task Unknown_maps_paths_return_404(string method, string path)
     {
-        await using var factory = new ApiFactory(UnreachableConnectionString);
+        await using var factory = new ApiFactory(ApiFactory.UnreachableConnectionString);
         var client = factory.CreateClient();
 
         var response = await client.SendAsync(new HttpRequestMessage(new HttpMethod(method), path));

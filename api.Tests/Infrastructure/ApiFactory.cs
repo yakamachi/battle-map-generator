@@ -18,6 +18,11 @@ public sealed class ApiFactory(string? connectionString, string? readyKey = ApiF
     public const string SpaShellMarker = "spa-shell-stub";
     public const string TestPassword = "test-password";
 
+    // Nothing listens on port 1, so the connection is refused at once. The short Connect Timeout
+    // keeps the suite fast even if the refusal turns into a timeout on some network setups.
+    public const string UnreachableConnectionString =
+        "Server=127.0.0.1,1;Database=battlemap;User Id=sa;Password=unused;Connect Timeout=2;Encrypt=False";
+
     // The real wwwroot is empty in CI (the SPA is copied in after the tests run), and then the SPA
     // fallback answers 404 too, which would hide a missing /api guard. A stub index.html makes the
     // fallback answer 200, so an /api path that ever reaches it fails the tests.
@@ -47,10 +52,12 @@ public sealed class ApiFactory(string? connectionString, string? readyKey = ApiF
     {
         var client = CreateClient();
         var response = await client.PostAsJsonAsync("/api/auth/register",
-            new { email = email ?? $"dm-{Guid.NewGuid():N}@example.com", password = TestPassword });
+            new { email = email ?? NewEmail(), password = TestPassword });
         response.EnsureSuccessStatusCode();
         return client;
     }
+
+    public static string NewEmail() => $"dm-{Guid.NewGuid():N}@example.com";
 
     public override async ValueTask DisposeAsync()
     {

@@ -335,7 +335,7 @@ Add the login and register pages, put the home view behind a layout route that c
 **Contract**:
 - `routes.ts`: `layout("routes/protected.tsx", [index("routes/home.tsx")])`, `route("login", "routes/login.tsx")`, `route("register", "routes/register.tsx")`.
 - `protected.tsx`: `clientLoader` calls `getSession()`; `null` throws `redirect("/login")`; an account is returned as loader data. A `HydrateFallback` renders an empty `main` with the page background so nothing flashes. The component renders a header row (app-wide, above the outlet) with the account email and a "Log out" button, then `<Outlet />`. Log out calls `logout()` and navigates to `/login`.
-- `login.tsx` and `register.tsx`: each has a `clientLoader` that redirects to `/` when `getSession()` returns an account. A form with labelled "Email" and "Password" fields and a submit button named "Log in" or "Create account"; a link to the other page. While submitting, the button is disabled and reads "Logging in…" or "Creating account…". Errors show in an `Alert`: invalid credentials, the API's validation messages, rate-limited, network, and a generic HTTP error. Register shows the hint "At least 8 characters". Success navigates to `/`. Each route exports `meta` with a title.
+- `login.tsx` and `register.tsx`: each has a `clientLoader` that redirects to `/` when `getSession()` returns an account. A form with labelled "Email" and "Password" fields and a submit button named "Log in" or "Create account"; a link to the other page. While submitting, the button is disabled and reads "Logging in…" or "Creating account…". Errors show in an `Alert`: invalid credentials, the API's validation messages, rate-limited, network, and a generic HTTP error. (Phase 1 review, F7 and F8: any 5xx reads "The server is not ready yet. Try again in a minute.", since a waking database surfaces as a 500; and a 400 without an `errors` field, which a malformed body gets, falls back to the generic HTTP error.) Register shows the hint "At least 8 characters". Success navigates to `/`. Each route exports `meta` with a title.
 - Accessible names above are the contract e2e locates by; keep them exact.
 
 #### 3. UI primitives and preview height
@@ -446,16 +446,16 @@ Add the login and register pages, put the home view behind a layout route that c
 
 #### Automated
 
-- [x] 1.1 API tests pass
-- [x] 1.2 The API builds without configuration and rewrites the OpenAPI document
-- [x] 1.3 Client types regenerate and the contract has no drift
-- [x] 1.4 The migrations bundle still builds without a connection string
-- [x] 1.5 No new migration is pending
-- [x] 1.6 Web still type-checks against the new schema
+- [x] 1.1 API tests pass — 3d13765
+- [x] 1.2 The API builds without configuration and rewrites the OpenAPI document — 3d13765
+- [x] 1.3 Client types regenerate and the contract has no drift — 3d13765
+- [x] 1.4 The migrations bundle still builds without a connection string — 3d13765
+- [x] 1.5 No new migration is pending — 3d13765
+- [x] 1.6 Web still type-checks against the new schema — 3d13765
 
 #### Manual
 
-- [x] 1.7 The requests in the .http file register an account, return it from me, and return 401 from me after logout
+- [x] 1.7 The requests in the .http file register an account, return it from me, and return 401 from me after logout — 3d13765
 
 ### Phase 2: e2e database and saved session
 
