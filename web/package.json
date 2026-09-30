@@ -9,9 +9,7 @@
     "typecheck": "react-router typegen && tsc",
     "api:types": "openapi-typescript ../api/BattleMapGenerator.Api.json -o app/api/schema.d.ts",
     "test": "vitest run",
-    "atlas": "node scripts/build-scribble-atlas.mjs",
-    "e2e:prepare": "react-router build && node -e \"import('node:fs').then((fs) => { fs.rmSync('../api/wwwroot', { recursive: true, force: true }); fs.cpSync('build/client', '../api/wwwroot', { recursive: true }); })\"",
-    "e2e": "playwright test"
+    "atlas": "node scripts/build-scribble-atlas.mjs"
   },
   "dependencies": {
     "@react-router/node": "^8.4.0",

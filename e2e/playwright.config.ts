@@ -3,13 +3,13 @@ import { defineConfig, devices } from "@playwright/test";
 const BASE_URL = "http://localhost:5108";
 
 // End-to-end tests against the real .NET host serving the built SPA from api/wwwroot
-// (run `npm run e2e:prepare` first). Both browsers are required by the PRD.
+// (run `npm run build:app` first). Both browsers are required by the PRD.
 //
 // The generate endpoint allows 10 calls per minute per IP, and both projects hit the same
-// server: keep the whole run well under that (today one call per browser). A reused local
+// server: keep the whole run well under that (today two calls per browser). A reused local
 // server keeps its counts between runs, so rapid reruns can meet a 429.
 export default defineConfig({
-  testDir: "e2e",
+  testDir: "tests",
   forbidOnly: !!process.env.CI,
   retries: 0,
   reporter: [["list"], ["html", { open: "never" }]],

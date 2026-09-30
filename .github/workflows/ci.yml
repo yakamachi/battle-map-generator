@@ -134,19 +134,28 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: web/package-lock.json
+          cache-dependency-path: |
+            web/package-lock.json
+            e2e/package-lock.json
+
+      - name: Install web and e2e dependencies
+        run: |
+          npm ci --prefix web
+          npm ci --prefix e2e
+
+      - name: Type-check the end-to-end tests
+        working-directory: e2e
+        run: npm run typecheck
 
       - name: Build the SPA into the API's wwwroot
-        working-directory: web
-        run: |
-          npm ci
-          npm run e2e:prepare
+        working-directory: e2e
+        run: npm run build:app
 
       - name: Run end-to-end tests
-        working-directory: web
+        working-directory: e2e
         run: |
           npx playwright install --with-deps chromium firefox
-          npm run e2e
+          npm test
 
       - name: Upload Playwright report
         if: failure()
@@ -154,6 +163,6 @@ jobs:
         with:
           name: playwright-report
           path: |
-            web/playwright-report/
-            web/test-results/
+            e2e/playwright-report/
+            e2e/test-results/
           retention-days: 7

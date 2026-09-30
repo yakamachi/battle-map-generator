@@ -1,0 +1,15 @@
+{
+  "name": "battle-map-generator-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:app": "node scripts/build-app.mjs",
+    "test": "playwright test",
+    "typecheck": "tsc"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "^22.20.4",
+    "typescript": "^5.9.3"
+  }
+}

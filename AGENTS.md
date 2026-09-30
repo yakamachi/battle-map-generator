@@ -1,13 +1,13 @@
 # Battle Map Generator
 
-A DM toolkit that generates grid-aligned D&D battle maps. Monorepo: `api/` (ASP.NET Core, .NET 10) and `web/` (React Router SPA, TypeScript), deployed as one app on Azure App Service.
+A DM toolkit that generates grid-aligned D&D battle maps. Monorepo: `api/` (ASP.NET Core, .NET 10) and `web/` (React Router SPA, TypeScript), deployed as one app on Azure App Service, plus `e2e/` (Playwright tests of the whole deployed shape: the .NET host serving the built SPA).
 
 ## Context
 
 - Product scope: `context/foundation/prd.md`. Decision history and unresolved requirements: `context/foundation/shape-notes.md`.
 - Stack: `context/foundation/tech-stack.md` (combined), with per-app hand-offs in `tech-stack-api.md` and `tech-stack-web.md`.
 - Deployment, hosting, database or CI work: read `context/foundation/infrastructure.md` first (platform, quotas, risk register, operational story).
-- Each app has its own `AGENTS.md` with rules for that side. Read it before changing code there.
+- Each app (`api/`, `web/`) and the `e2e/` package has its own `AGENTS.md` with rules for that side. Read it before changing code there.
 
 ## Ownership split
 
@@ -28,7 +28,7 @@ A DM toolkit that generates grid-aligned D&D battle maps. Monorepo: `api/` (ASP.
 - `api/`: unit tests for the algorithm (grid invariants, connectivity, fixed-seed fixtures).
 - Shared fixture grids live in `fixtures/grids/*.json`: the API tests pin them and the web rendering tests draw them.
 - `web/`: rendering tests against the shared fixture grids.
-- End to end: Playwright in **Chrome and Firefox** (both required by the PRD), covering login, generate, regenerate and download.
+- End to end: the root `e2e/` package, Playwright in **Chrome and Firefox** (both required by the PRD), covering login, generate, regenerate and download. It tests the app as deployed (both sides together), so it lives outside `web/` and `api/`; tests of one side stay with that side (`api.Tests/`, `web/app/**/*.test.ts`).
 - Tests gate merges, not deploys: `.github/workflows/ci.yml` runs them on every pull request to `main`, and its jobs are required checks.
 
 ## Deployment
