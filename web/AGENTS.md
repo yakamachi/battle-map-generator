@@ -24,5 +24,5 @@ React Router with TypeScript in SPA mode (`ssr: false`; the starter defaults to 
 
 - Rendering tests use the shared fixture grids in `../fixtures/grids/` (written by the API tests): fixed grid and seed in, stable image out. Each browser's pixel hash is pinned in `app/map/render-baselines.json`.
 - The baselines were generated locally and matched Ubuntu CI exactly on the first run, so regenerating them locally (`UPDATE_BASELINES=1 npm test`) is fine for now. Update them in the same commit as any fixture, atlas or mapping change.
-- Playwright end-to-end tests (`e2e/`, `playwright.config.ts`) run in both Chromium and Firefox against the real .NET host serving the built SPA, including the PNG download (dimensions match the grid × 140 px, and the file is not blank). They need no database.
-- Commands: `npm test` (Vitest browser mode, mapping and rendering, both browsers), `npm run e2e:prepare && npm run e2e` (end to end), `npm run typecheck`.
+- End-to-end tests live in the root `../e2e/` package, not here: they test the whole app (the .NET host serving this SPA). Changes to markup they locate (button names, the single canvas, the `Seed: N` text) must keep them green; see `../e2e/AGENTS.md`.
+- Commands: `npm test` (Vitest browser mode, mapping and rendering, both browsers), `npm run typecheck`.
