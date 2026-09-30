@@ -60,6 +60,41 @@ jobs:
           npm run typecheck
           npm run build
 
+      # Views use tokens and components, never literal colours, palette classes or dark: classes.
+      - name: Scan for hardcoded UI values
+        working-directory: web
+        run: npm run ui:scan
+
+  # Screenshot gate for the home view (API mocked), in the image the baselines were made in.
+  visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      options: --user 1001 --ipc=host
+    env:
+      # The image has no home directory for UID 1001; npm needs a writable one.
+      HOME: /tmp
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and run the visual tests
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+          npm run visual
+
+      - name: Upload visual report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-report
+          path: |
+            web/playwright-report/
+            web/test-results/
+          retention-days: 7
+
   # The OpenAPI document and the TypeScript types generated from it are committed; a fresh
   # build that changes either means the contract drifted without the client following.
   contract:

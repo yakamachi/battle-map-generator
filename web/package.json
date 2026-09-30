@@ -9,11 +9,17 @@
     "typecheck": "react-router typegen && tsc",
     "api:types": "openapi-typescript ../api/BattleMapGenerator.Api.json -o app/api/schema.d.ts",
     "test": "vitest run",
-    "atlas": "node scripts/build-scribble-atlas.mjs"
+    "atlas": "node scripts/build-scribble-atlas.mjs",
+    "ui:scan": "node scripts/ui-scan.mjs",
+    "visual": "playwright test -c playwright.visual.config.ts",
+    "visual:docker": "node scripts/visual-docker.mjs",
+    "visual:update": "node scripts/visual-docker.mjs --update"
   },
   "dependencies": {
     "@react-router/node": "^8.4.0",
     "@react-router/serve": "^8.4.0",
+    "class-variance-authority": "^0.7.1",
+    "cn": "^0.4.0",
     "isbot": "^5.1.36",
     "openapi-fetch": "^0.17.0",
     "react": "^19.2.8",

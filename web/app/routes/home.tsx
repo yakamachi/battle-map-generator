@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { Route } from "./+types/home";
+import { Alert } from "~/components/ui/alert";
+import { Button } from "~/components/ui/button";
+import { MapPreview, type MapPreviewState } from "~/components/map-preview";
 import { generateMap, type GenerateError, type GeneratedMap } from "~/api/client";
 import { downloadCanvas } from "~/map/download";
 import { loadAtlas, renderMap } from "~/map/render";
@@ -35,10 +38,24 @@ export default function Home() {
   // The map whose pixels are on the canvas. Rendering finishes after the atlas loads, so a map
   // in state is not yet a map on screen; the download follows this, not the status.
   const [renderedMap, setRenderedMap] = useState<GeneratedMap | null>(null);
+  // The map whose drawing is on screen. Unlike renderedMap it survives a new Generate, so the
+  // last drawing stays visible (dimmed) while the next one loads; an error clears it.
+  const [shownMap, setShownMap] = useState<GeneratedMap | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const map = status.kind === "ready" ? status.map : null;
   const canDownload = map !== null && renderedMap === map;
+  const drawnMap = canDownload ? map : null;
+  // A map in state is not on screen until the atlas has loaded and it is drawn.
+  const previewState: MapPreviewState =
+    status.kind === "loading" || (status.kind === "ready" && !canDownload)
+      ? "loading"
+      : status.kind === "ready"
+        ? "ready"
+        : "empty";
+  // One busy state for the button and the frame: a map is not done until it is drawn.
+  const busy = previewState === "loading";
+  const previewSize = map ?? shownMap;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -55,10 +72,12 @@ export default function Home() {
         if (cancelled) return;
         renderMap(ctx, map, atlas);
         setRenderedMap(map);
+        setShownMap(map);
       })
       .catch((error: unknown) => {
         if (!cancelled) {
           const detail = error instanceof Error ? error.message : String(error);
+          setShownMap(null);
           setStatus({ kind: "error", message: `Could not draw the map: ${detail}` });
         }
       });
@@ -72,6 +91,7 @@ export default function Home() {
     setRenderedMap(null);
     setDownloadError(null);
     const result = await generateMap();
+    if (!result.ok) setShownMap(null);
     setStatus(
       result.ok
         ? { kind: "ready", map: result.map }
@@ -91,44 +111,33 @@ export default function Home() {
   }
 
   return (
+    // Rows above the preview count against its height: update map-preview-fit in app.css when
+    // adding one.
     <main className="container mx-auto flex flex-col gap-4 p-4">
-      <h1 className="text-2xl font-semibold">Battle Map Generator</h1>
-      <div className="flex items-center gap-4">
-        <button
-          type="button"
-          onClick={onGenerate}
-          disabled={status.kind === "loading"}
-          className="rounded bg-gray-900 px-4 py-2 text-white disabled:opacity-50 dark:bg-gray-100 dark:text-gray-900"
-        >
-          {status.kind === "loading" ? "Generating…" : "Generate"}
-        </button>
-        <button
-          type="button"
-          onClick={onDownload}
-          disabled={!canDownload}
-          className="rounded border border-gray-900 px-4 py-2 disabled:opacity-50 dark:border-gray-100"
-        >
+      <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+        Battle Map Generator
+      </h1>
+      <div className="flex flex-wrap items-center gap-4">
+        <Button onClick={onGenerate} disabled={busy}>
+          {busy ? "Generating…" : "Generate"}
+        </Button>
+        <Button variant="outline" onClick={onDownload} disabled={!canDownload}>
           Download PNG
-        </button>
-        {map && <span>Seed: {map.seed}</span>}
+        </Button>
+        {drawnMap && (
+          <span className="text-sm text-muted-foreground tabular-nums">Seed: {drawnMap.seed}</span>
+        )}
       </div>
-      {status.kind === "error" && (
-        <p role="alert" className="text-red-700 dark:text-red-400">
-          {status.message}
-        </p>
-      )}
-      {downloadError && (
-        <p role="alert" className="text-red-700 dark:text-red-400">
-          {downloadError}
-        </p>
-      )}
-      {map && (
-        <canvas
-          ref={canvasRef}
-          aria-label={`Battle map, seed ${map.seed}`}
-          style={{ maxWidth: "100%", height: "auto" }}
-        />
-      )}
+      {status.kind === "error" && <Alert variant="destructive">{status.message}</Alert>}
+      {downloadError && <Alert variant="destructive">{downloadError}</Alert>}
+      <MapPreview
+        canvasRef={canvasRef}
+        width={previewSize?.width}
+        height={previewSize?.height}
+        state={previewState}
+        drawn={shownMap !== null}
+        label={shownMap ? `Battle map, seed ${shownMap.seed}` : undefined}
+      />
     </main>
   );
 }

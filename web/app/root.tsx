@@ -1,5 +1,6 @@
 import {
   isRouteErrorResponse,
+  Link,
   Links,
   Meta,
   Outlet,
@@ -8,6 +9,8 @@ import {
 } from "react-router";
 
 import type { Route } from "./+types/root";
+import { buttonVariants } from "~/components/ui/button";
+import { cn } from "cn";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
@@ -62,11 +65,14 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <main className="pt-16 p-4 container mx-auto">
-      <h1>{message}</h1>
-      <p>{details}</p>
+    <main className="container mx-auto flex flex-col items-start gap-4 p-4 pt-16">
+      <h1 className="text-2xl font-semibold tracking-tight text-foreground">{message}</h1>
+      <p className="text-muted-foreground">{details}</p>
+      <Link to="/" className={cn(buttonVariants({ variant: "outline" }))}>
+        Back to the generator
+      </Link>
       {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
+        <pre className="w-full overflow-x-auto rounded-lg bg-muted p-4 text-sm">
           <code>{stack}</code>
         </pre>
       )}

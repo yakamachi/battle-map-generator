@@ -10,6 +10,8 @@
 # Vitest and Playwright output
 /.vitest/
 __screenshots__/
+# The visual gate's baselines are committed (npm run visual:update).
+!/visual/__screenshots__/
 /test-results/
 /playwright-report/
 /blob-report/
