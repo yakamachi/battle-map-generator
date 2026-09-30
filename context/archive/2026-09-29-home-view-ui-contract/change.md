@@ -1,10 +1,10 @@
 ---
 change_id: home-view-ui-contract
 title: Home view UI contract
-status: implementing
+status: archived
 created: 2026-09-29
 updated: 2026-09-30
-archived_at: null
+archived_at: 2026-09-30T12:23:01Z
 ---
 
 ## Notes
@@ -12,7 +12,7 @@ archived_at: null
 `/10x-ui` change (Module 2, Lesson 5).
 
 - **View:** `web/app/routes/home.tsx`, the only route and the one every DM uses (generate → preview → download).
-- **Token source:** `web/app/app.css`. Values go in `:root` / `.dark` and are published through `@theme inline`, so classes like `bg-primary` exist. Today `@theme` only sets `--font-sans`.
+- **Token source:** `web/app/app.css`. Values go in `:root` plus the `prefers-color-scheme: dark` media block (no `.dark` class; decided during research) and are published through `@theme inline`, so classes like `bg-primary` exist. Today `@theme` only sets `--font-sans`.
 - **Contract variant: no design system.** Introducing the contract is the change, under three conditions:
   1. Any new dependency (for example shadcn/ui, or its `cn`/`clsx` helpers) is marked as such, and the user decides whether to add it.
   2. The scope is one token block (primary, surface, border, muted, destructive, radius, spacing) plus the 2–3 components this view uses (Button, alert or error message, maybe the preview frame). Not a whole library.

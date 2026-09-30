@@ -1,10 +1,11 @@
 // Serves the built SPA (build/client) for the visual tests, without .NET or new dependencies.
 // Usage: node scripts/serve-spa.mjs <port>
 //
-// Unknown paths fall back to index.html, as the ASP.NET Core host does. /api/* always returns
-// 404 (the tests mock it with page.route), so a missing mock fails loudly instead of loading
-// the SPA shell as JSON.
-import { createReadStream } from "node:fs";
+// Unknown extensionless paths fall back to index.html, as the ASP.NET Core host does; a missing
+// file path (one with an extension, such as a lost /assets chunk) returns 404, as it does there.
+// /api/* always returns 404 (the tests mock it with page.route), so a missing mock fails loudly
+// instead of loading the SPA shell as JSON.
+import { createReadStream, existsSync } from "node:fs";
 import { stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import { extname, join, normalize, resolve, sep } from "node:path";
@@ -17,6 +18,11 @@ if (!Number.isInteger(port) || port <= 0) {
 
 const ROOT = resolve(import.meta.dirname, "../build/client");
 const INDEX = join(ROOT, "index.html");
+
+if (!existsSync(INDEX)) {
+  console.error("serve-spa: build/client/index.html is missing — run npm run build");
+  process.exit(1);
+}
 
 const TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -48,11 +54,25 @@ async function fileAt(pathname) {
   }
 }
 
+// Headers go out only once the file is open, so a read error before that becomes a 500; one
+// mid-body destroys the response, so a truncated file is never taken as complete.
 function send(res, status, path) {
-  res.writeHead(status, {
-    "Content-Type": TYPES[extname(path).toLowerCase()] ?? "application/octet-stream",
+  const stream = createReadStream(path);
+  stream.on("open", () => {
+    res.writeHead(status, {
+      "Content-Type": TYPES[extname(path).toLowerCase()] ?? "application/octet-stream",
+    });
+    stream.pipe(res);
   });
-  createReadStream(path).pipe(res);
+  stream.on("error", (error) => {
+    console.error(`serve-spa: cannot read ${path}: ${error.message}`);
+    if (res.headersSent) res.destroy(error);
+    else res.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" }).end("Internal error");
+  });
+}
+
+function notFound(res) {
+  res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" }).end("Not found");
 }
 
 const server = createServer(async (req, res) => {
@@ -65,7 +85,7 @@ const server = createServer(async (req, res) => {
   }
 
   if (pathname === "/api" || pathname.startsWith("/api/")) {
-    res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" }).end("Not found");
+    notFound(res);
     return;
   }
 
@@ -75,7 +95,9 @@ const server = createServer(async (req, res) => {
   } catch {
     // A malformed escape in the path: treat it as unknown.
   }
-  send(res, 200, file ?? INDEX);
+  if (file) send(res, 200, file);
+  else if (extname(pathname)) notFound(res);
+  else send(res, 200, INDEX);
 });
 
 server.listen(port, "127.0.0.1", () => {

@@ -68,6 +68,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
     <main className="container mx-auto flex flex-col items-start gap-4 p-4 pt-16">
       <h1 className="text-2xl font-semibold tracking-tight text-foreground">{message}</h1>
       <p className="text-muted-foreground">{details}</p>
+      {/* cn resolves the base border-transparent against the outline variant's border-border. */}
       <Link to="/" className={cn(buttonVariants({ variant: "outline" }))}>
         Back to the generator
       </Link>

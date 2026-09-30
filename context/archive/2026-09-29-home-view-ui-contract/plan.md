@@ -10,6 +10,26 @@ This change gives the home view (`web/app/routes/home.tsx`, the only route) a de
 
 It is a `/10x-ui` change: one view plus global tokens.
 
+### Implementation notes (what shipped differs from the text below)
+
+Added at closeout (full review F5, 2026-09-30). Where these notes and a phase block disagree, the notes describe the code on `main`:
+
+- **Button radius:** `rounded-lg` (the `--radius` token, the same as upstream shadcn primitives), not `rounded-md` (impl-review-phase-2 F2).
+- **Button focus:** `outline-hidden`, not `outline-none`, so focus stays visible in forced-colors mode (impl-review-phase-2 F1).
+- **Alert role:** by variant: `destructive` renders `role="alert"`, `default` renders `role="status"` (impl-review-phase-2 F3).
+- **Generate button:** one `busy` state drives its label and `disabled` together with the preview overlay. The canvas has `role="img"`. The empty-state copy is built from the map size and `TILE_SIZE` (impl-review-phase-3 F1, F2, F4).
+- **`web/vite.config.ts`:** `preview.host: "127.0.0.1"`. The SPA build prerenders through `vite preview`, and in the Playwright container (IPv6 loopback) `localhost` made that fail with ECONNREFUSED. Found in Phase 4.
+- **404 link:** `web/app/root.tsx` wraps `buttonVariants(...)` in `cn(...)`. The raw cva string holds both `border-transparent` and `border-border`, and without the merge the transparent one won, so the link had no border. Found in Phase 4 by the visual gate.
+- **Screenshot tolerance:** `maxDiffPixels: 50, threshold: 0.05`, not `maxDiffPixelRatio: 0.01`. The planned tolerance let that missing border (~400 px at 1.45:1 contrast) pass. It's safe to be strict because baselines and CI render in the same image.
+- **Fixtures:** the visual spec uses only `fixtures/grids/seed-42.json`. The regenerate shot holds the second request, so `seed-1.json` is never drawn.
+- **Baselines:** `web/.gitignore` un-ignores `visual/__screenshots__/`, which a blanket ignore rule would have excluded.
+- **Closeout (full review F1–F4, F6):**
+  - The visual spec serves a vendored Inter woff2 instead of Google Fonts.
+  - `ui:scan` covers border sides and `caret`/`accent`/`decoration`/`ring-offset`/`placeholder`, and walks `app/components` recursively.
+  - `serve-spa.mjs` fails clearly without a build, and 404s missing files.
+  - Mobile shots are `fullPage`.
+- **Delivery:** all four phases shipped in one PR (#9, squash `dcb83c9`), not one PR per phase. The e2e moved to the root `e2e/` package mid-change (#8); the commands above already use it.
+
 ## Current State Analysis
 
 From `research.md`:
@@ -506,58 +526,58 @@ None. No data or API changes. Screenshot baselines are new files.
 
 #### Automated
 
-- [x] 1.1 Type check and build pass — 06b97cf
-- [x] 1.2 Rendering tests unchanged — 06b97cf
-- [x] 1.3 E2E still passes in both browsers — 06b97cf
-- [x] 1.4 `app.css` has no palette classes or `@custom-variant` — 06b97cf
+- [x] 1.1 Type check and build pass — dcb83c9
+- [x] 1.2 Rendering tests unchanged — dcb83c9
+- [x] 1.3 E2E still passes in both browsers — dcb83c9
+- [x] 1.4 `app.css` has no palette classes or `@custom-variant` — dcb83c9
 
 #### Manual
 
-- [x] 1.5 Parchment/ink light and charcoal/parchment dark page in Chrome and Firefox — 06b97cf
-- [x] 1.6 `tokens.md` records contrast ≥ 4.5:1 for text pairs and ≥ 3:1 for ring, both themes — 06b97cf
+- [x] 1.5 Parchment/ink light and charcoal/parchment dark page in Chrome and Firefox — dcb83c9
+- [x] 1.6 `tokens.md` records contrast ≥ 4.5:1 for text pairs and ≥ 3:1 for ring, both themes — dcb83c9
 
 ### Phase 2: Components and View Migration (C1, C2)
 
 #### Automated
 
-- [x] 2.1 Type check and build pass — 8672ddb
-- [x] 2.2 Colour-literal scan returns 0 hits on home.tsx and components — 8672ddb
-- [x] 2.3 No `dark:` classes or arbitrary values in routes — 8672ddb
-- [x] 2.4 E2E passes in both browsers with the locators unchanged — 8672ddb
+- [x] 2.1 Type check and build pass — dcb83c9
+- [x] 2.2 Colour-literal scan returns 0 hits on home.tsx and components — dcb83c9
+- [x] 2.3 No `dark:` classes or arbitrary values in routes — dcb83c9
+- [x] 2.4 E2E passes in both browsers with the locators unchanged — dcb83c9
 
 #### Manual
 
-- [x] 2.5 Hover, focus ring and disabled state visible on both buttons, both browsers and themes — 8672ddb
-- [x] 2.6 Error shows the destructive Alert, readable in both themes — 8672ddb
+- [x] 2.5 Hover, focus ring and disabled state visible on both buttons, both browsers and themes — dcb83c9
+- [x] 2.6 Error shows the destructive Alert, readable in both themes — dcb83c9
 
 ### Phase 3: Preview and Entry States (C3, C4)
 
 #### Automated
 
-- [x] 3.1 Type check and build pass — 8336eea
-- [x] 3.2 Hardcoded-value scan returns 0 hits on the views, colour literals 0 on ui/ — 8336eea
-- [x] 3.3 E2E passes in both browsers including the second-map round — 8336eea
-- [x] 3.4 Rendering tests unchanged — 8336eea
+- [x] 3.1 Type check and build pass — dcb83c9
+- [x] 3.2 Hardcoded-value scan returns 0 hits on the views, colour literals 0 on ui/ — dcb83c9
+- [x] 3.3 E2E passes in both browsers including the second-map round — dcb83c9
+- [x] 3.4 Rendering tests unchanged — dcb83c9
 
 #### Manual
 
-- [x] 3.5 No layout jump on generate/regenerate; map fully visible at 1280×720 — 8336eea
-- [x] 3.6 390 px width fits without horizontal scroll — 8336eea
-- [x] 3.7 Network error returns the placeholder with the Alert and disables download — 8336eea
-- [x] 3.8 Styled not-found page with a working link home — 8336eea
+- [x] 3.5 No layout jump on generate/regenerate; map fully visible at 1280×720 — dcb83c9
+- [x] 3.6 390 px width fits without horizontal scroll — dcb83c9
+- [x] 3.7 Network error returns the placeholder with the Alert and disables download — dcb83c9
+- [x] 3.8 Styled not-found page with a working link home — dcb83c9
 
 ### Phase 4: Visual Gate and Guard
 
 #### Automated
 
-- [x] 4.1 `ui:scan` passes
-- [x] 4.2 `ui:scan` fails on an injected literal
-- [x] 4.3 Visual gate passes in the CI image locally
-- [ ] 4.4 Pull request checks green, including `visual`
-- [x] 4.8 `ui:scan` fails on `@custom-variant` in app.css
+- [x] 4.1 `ui:scan` passes — dcb83c9
+- [x] 4.2 `ui:scan` fails on an injected literal — dcb83c9
+- [x] 4.3 Visual gate passes in the CI image locally — dcb83c9
+- [x] 4.4 Pull request checks green, including `visual` — dcb83c9
+- [x] 4.8 `ui:scan` fails on `@custom-variant` in app.css — dcb83c9
 
 #### Manual
 
-- [x] 4.5 Every committed baseline reviewed in both themes and mobile
-- [ ] 4.6 `visual` added to required checks on `main`
-- [x] 4.7 `web/AGENTS.md` has the UI rule section
+- [x] 4.5 Every committed baseline reviewed in both themes and mobile — dcb83c9
+- [x] 4.6 `visual` added to required checks on `main` — dcb83c9
+- [x] 4.7 `web/AGENTS.md` has the UI rule section — dcb83c9
