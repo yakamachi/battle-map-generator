@@ -8,12 +8,14 @@ public static class MapEndpoints
 {
     public const string GenerateRateLimitPolicy = "generate";
 
-    // Public until S-04 adds login; the rate limit and the fixed default size bound its cost.
+    // Generation requires a session (401 without one) and is rate-limited per account; the limit and
+    // the fixed default size bound its cost.
     // Generation is pure computation: it must never resolve AppDbContext or touch the database.
     public static IEndpointRouteBuilder MapMapEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapPost("/api/maps/generate", Generate)
             .WithName("GenerateMap")
+            .RequireAuthorization()
             .RequireRateLimiting(GenerateRateLimitPolicy);
         return app;
     }

@@ -476,15 +476,15 @@ Add the login and register pages, put the home view behind a layout route that c
 
 #### Automated
 
-- [ ] 3.1 API tests pass
-- [ ] 3.2 The contract has no drift after a rebuild
-- [ ] 3.3 e2e passes in both browsers, map.spec.ts unchanged
-- [ ] 3.4 map.spec.ts has no diff against main
-- [ ] 3.5 The Generate handler has no diff against main
+- [x] 3.1 API tests pass
+- [x] 3.2 The contract has no drift after a rebuild
+- [x] 3.3 e2e passes in both browsers, map.spec.ts unchanged
+- [x] 3.4 map.spec.ts has no diff against main
+- [x] 3.5 The Generate handler has no diff against main
 
 #### Manual
 
-- [ ] 3.6 A local curl to generate without a session prints 401 and no Set-Cookie or Location
+- [x] 3.6 A local curl to generate without a session prints 401 and no Set-Cookie or Location
 
 ### Phase 4: Login UI
 

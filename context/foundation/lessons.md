@@ -35,6 +35,7 @@
 - **Context**: `api/` startup, `/api/health/live`, hosted services, and any new endpoint (S-01 generate, S-04 auth) on the F1 plan with the Azure SQL free offer.
 - **Problem**: A framework hosted service (`DataProtectionHostedService`) preloaded the key ring and woke the auto-paused database on every cold start, burning free vCore-seconds and slowing startup (F-01 impl review F1). A "harmless" warm-up or a probe that queries the database does the same.
 - **Rule**: Only `/api/health/ready` and requests that really need stored data (after S-04, auth cookies through Data Protection) may open a database connection; app startup, `/api/health/live` and endpoints that don't read stored data (the S-01 map generator) never do. Pin it with a test: start the app against an unreachable or empty database and assert startup plus the endpoint succeed without writing or waiting on it.
+- **S-04 update**: the exception has landed. Requests carrying a session cookie on API routes and the SPA fallback (the cookie is decrypted with the key ring in the database), plus register and login, may touch the database. Anonymous requests (including a refused generate), static files, startup and liveness stay database-free; `AuthEndpointTests` and `MapEndpointTests` pin it with an unreachable database.
 - **Applies to**: plan, implement, impl-review
 
 ## API tests control their own configuration and never share counted state

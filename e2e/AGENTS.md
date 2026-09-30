@@ -8,7 +8,7 @@ Read the root `../AGENTS.md` first. This package tests the whole app the way it 
 - Run against the real .NET host in the Production environment and the SQL Server from `../compose.yaml` (`playwright.config.ts` starts the host on port 5108; its connection string lives in `local-db.ts`). Run `npm run db:up` once before `npm test`. Never mock the API here; mocked, SPA-only tests belong in `../web/`.
 - Tests start logged in as `e2e@example.com`: the `setup` project (`tests/auth.setup.ts`) registers or logs in that account and saves the session for both browser projects. A spec that needs a logged-out browser resets `storageState` itself. If setup reports that the account exists with another password, reset the local database with `docker compose down -v` (from the repo root) and rerun `npm run db:up`.
 - Locate elements the way a user finds them (role and accessible name, visible text), so a restyle in `web/` doesn't break the tests, and a broken flow does.
-- The generate endpoint allows 10 calls per minute per IP, and both browser projects hit the same server: keep a full run well under that (today 4 calls).
+- The generate endpoint allows 10 calls per minute per account, and both browser projects use the one e2e account: keep a full run well under that (today 4 generations). Register and login share 10 calls per minute per IP (every call comes from 127.0.0.1): a full run uses at most 6, so do not add auth calls lightly. `tests/access.spec.ts` checks that a request without a session gets 401; it makes no auth call and spends no generate permit.
 - Changing a locator here because the UI changed on purpose is fine; loosening an assertion to make a run green is not.
 
 ## Commands

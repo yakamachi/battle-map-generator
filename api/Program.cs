@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.RateLimiting;
@@ -20,10 +21,12 @@ builder.Services.AddOpenApi();
 // Cell kinds travel as camelCase strings ("floor", "door"), which also makes them a string enum in OpenAPI.
 builder.Services.ConfigureHttpJsonOptions(options => MapJson.Configure(options.SerializerOptions));
 
-// Generation is public, so a stuck client could burn the F1 plan's daily CPU quota.
-// Each client IP gets 10 generations per minute, with no queue. TestServer leaves the remote
-// address null, and a null partition key throws, hence the "unknown" bucket.
-// Behind App Service the client IP comes from X-Forwarded-For (ASPNETCORE_FORWARDEDHEADERS_ENABLED).
+// A stuck client could burn the F1 plan's daily CPU quota. Generation requires a session, so each
+// account gets 10 generations per minute wherever it connects from, with no queue, and accounts
+// behind one IP do not share a budget. Authorization runs first, so the "anonymous" bucket is
+// unreachable; it is there because a null partition key throws.
+// The per-IP auth policy uses the "unknown" bucket for the same reason: TestServer leaves the remote
+// address null. Behind App Service the client IP comes from X-Forwarded-For (ASPNETCORE_FORWARDEDHEADERS_ENABLED).
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -34,7 +37,7 @@ builder.Services.AddRateLimiter(options =>
         return ValueTask.CompletedTask;
     };
     options.AddPolicy(MapEndpoints.GenerateRateLimitPolicy, httpContext => RateLimitPartition.GetFixedWindowLimiter(
-        httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
         _ => new FixedWindowRateLimiterOptions
         {
             PermitLimit = 10,
