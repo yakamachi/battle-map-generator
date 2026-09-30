@@ -132,6 +132,8 @@
             "format": "uint32"
           },
           "roomCount": {
+            "maximum": 12,
+            "minimum": 2,
             "type": [
               "null",
               "integer"

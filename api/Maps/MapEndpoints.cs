@@ -1,5 +1,7 @@
 using System.Buffers.Binary;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Cryptography;
+using System.Text.Json;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BattleMapGenerator.Api.Maps;
@@ -21,28 +23,33 @@ public static class MapEndpoints
     // Invalid parameters are the client's error: a 400 naming the field, never a generator exception.
     private static Results<Ok<GeneratedMap>, ValidationProblem> Generate(GenerateMapRequest? request)
     {
-        var roomCount = request?.RoomCount ?? MapSize.DefaultRoomCount;
-        var encounter = request?.Encounter ?? EncounterType.Skirmish;
-        var bossSize = request?.BossSize;
-
-        var errors = new Dictionary<string, string[]>();
-        if (roomCount < MapSize.MinRoomCount || roomCount > MapSize.MaxRoomCount)
-        {
-            errors["roomCount"] = [$"Room count must be between {MapSize.MinRoomCount} and {MapSize.MaxRoomCount}."];
-        }
-        // An unknown encounter or boss size never gets this far: JSON binding rejects it with a 400.
-        if (encounter == EncounterType.Boss && bossSize is null)
-        {
-            errors["bossSize"] = ["A boss fight needs a boss size: 'large', 'huge' or 'gargantuan'."];
-        }
-        if (errors.Count > 0)
+        request ??= new GenerateMapRequest(Seed: null);
+        if (Validate(request) is { Count: > 0 } errors)
         {
             return TypedResults.ValidationProblem(errors);
         }
 
-        // A boss size sent with a skirmish is ignored.
-        var parameters = new MapParameters(roomCount, encounter, encounter == EncounterType.Boss ? bossSize : null);
-        return TypedResults.Ok(BspGenerator.Generate(request?.Seed ?? NewSeed(), parameters));
+        return TypedResults.Ok(BspGenerator.Generate(request.Seed ?? NewSeed(), request.ToParameters()));
+    }
+
+    // Runs the request's data annotations by hand. The framework does this itself once
+    // AddValidation() is registered in Program.cs; switch to that when S-04 has landed.
+    // Errors are keyed by the JSON field name ("roomCount"), as the client wrote it.
+    private static Dictionary<string, string[]> Validate(object request)
+    {
+        var results = new List<ValidationResult>();
+        Validator.TryValidateObject(request, new ValidationContext(request), results, validateAllProperties: true);
+
+        var errors = new Dictionary<string, string[]>();
+        foreach (var result in results)
+        {
+            foreach (var member in result.MemberNames)
+            {
+                var field = JsonNamingPolicy.CamelCase.ConvertName(member);
+                errors[field] = [.. errors.GetValueOrDefault(field, []), result.ErrorMessage ?? "Invalid value."];
+            }
+        }
+        return errors;
     }
 
     // A fresh seed only picks which map to generate, so it comes from the OS generator

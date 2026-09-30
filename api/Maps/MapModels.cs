@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -46,11 +47,32 @@ public sealed record GeneratedMap(uint Seed, MapParameters Parameters, int Width
 
 // The body and every field are optional: without a seed the server draws one, and the other
 // fields fall back to the defaults (6 rooms, skirmish).
+// The rules are data annotations, run by the endpoint (see MapEndpoints).
 public sealed record GenerateMapRequest(
     uint? Seed,
-    int? RoomCount = null,
+    [property: Range(MapSize.MinRoomCount, MapSize.MaxRoomCount)] int? RoomCount = null,
     EncounterType? Encounter = null,
-    BossSize? BossSize = null);
+    BossSize? BossSize = null) : IValidatableObject
+{
+    // Runs only once every field is valid on its own.
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (Encounter == EncounterType.Boss && BossSize is null)
+        {
+            yield return new ValidationResult(
+                "A boss fight needs a boss size: 'large', 'huge' or 'gargantuan'.", [nameof(BossSize)]);
+        }
+    }
+
+    // The parameters this request asks for, with the defaults filled in.
+    // A boss size sent with a skirmish is ignored.
+    public MapParameters ToParameters()
+    {
+        var encounter = Encounter ?? EncounterType.Skirmish;
+        return new MapParameters(RoomCount ?? MapSize.DefaultRoomCount, encounter,
+            encounter == EncounterType.Boss ? BossSize : null);
+    }
+}
 
 public static class MapSize
 {
@@ -115,8 +137,9 @@ public static class MapSize
 // integer in the OpenAPI contract "integer | string" for the generated client.
 // Enums are strict too: only their names, as the contract says, never their numbers. One leniency
 // remains: the framework converter reads a comma list of names ("large, huge") as combined flags,
-// which gives some other valid value. Wrapping the converter to reject that makes the OpenAPI
-// generator drop the enum schemas, so it is left as it is.
+// which gives some other valid value. Binding the request's enums as text with [AllowedValues]
+// would catch it, but the OpenAPI generator then types them as plain strings; wrapping the converter
+// makes it drop the enum schemas altogether. So it is left as it is.
 public static class MapJson
 {
     public static void Configure(JsonSerializerOptions options)
