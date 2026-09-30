@@ -7,8 +7,9 @@
 
 /*
  * Semantic design tokens: the parchment & ink motif.
- * Values and their contrast ratios are recorded in
- * context/changes/home-view-ui-contract/tokens.md; change them there too.
+ * The original values and their contrast ratios are recorded (read-only) in
+ * context/archive/2026-09-29-home-view-ui-contract/tokens.md. A change that edits a value
+ * rechecks contrast in both themes and records it in its own change folder.
  * Dark mode follows the OS (prefers-color-scheme); there is no .dark class.
  */
 :root {
