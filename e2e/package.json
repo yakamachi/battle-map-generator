@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "build:app": "node scripts/build-app.mjs",
+    "db:up": "node scripts/db-up.mjs",
     "test": "playwright test",
     "typecheck": "tsc"
   },

@@ -1,9 +1,14 @@
 import { defineConfig, devices } from "@playwright/test";
+import { LOCAL_DB_CONNECTION_STRING } from "./local-db";
 
 const BASE_URL = "http://localhost:5108";
+// Written by tests/auth.setup.ts; gitignored.
+const AUTH_FILE = "playwright/.auth/user.json";
 
 // End-to-end tests against the real .NET host serving the built SPA from api/wwwroot
-// (run `npm run build:app` first). Both browsers are required by the PRD.
+// (run `npm run build:app` first) and the SQL Server from ../compose.yaml (run `npm run db:up`
+// first). Both browsers are required by the PRD. The setup project logs in once and both
+// browser projects start with its saved session.
 //
 // The generate endpoint allows 10 calls per minute per IP, and both projects hit the same
 // server: keep the whole run well under that (today two calls per browser). A reused local
@@ -18,14 +23,23 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "firefox", use: { ...devices["Desktop Firefox"] } },
+    { name: "setup", testMatch: /.*\.setup\.ts/ },
+    {
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"], storageState: AUTH_FILE },
+      dependencies: ["setup"],
+    },
+    {
+      name: "firefox",
+      use: { ...devices["Desktop Firefox"], storageState: AUTH_FILE },
+      dependencies: ["setup"],
+    },
   ],
   webServer: {
     // No launch profile and the Production environment, so a local run matches CI: no
-    // appsettings.Development.json and no database (startup and generation never touch it).
+    // appsettings.Development.json, and the database is the compose SQL Server named here.
     command: `dotnet run --project ../api --no-launch-profile --urls ${BASE_URL}`,
-    env: { ASPNETCORE_ENVIRONMENT: "Production" },
+    env: { ASPNETCORE_ENVIRONMENT: "Production", ConnectionStrings__AppDb: LOCAL_DB_CONNECTION_STRING },
     url: `${BASE_URL}/api/health/live`,
     reuseExistingServer: !process.env.CI,
     // dotnet run builds the API first, which takes a while on a cold CI runner.

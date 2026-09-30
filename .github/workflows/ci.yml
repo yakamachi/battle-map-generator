@@ -154,7 +154,7 @@ jobs:
           npm test
 
   # Generate, preview and download in Chromium and Firefox against the .NET host serving the
-  # built SPA. No database: startup and generation never touch it.
+  # built SPA, logged in against SQL Server from compose.yaml (the same database a local run uses).
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -177,6 +177,11 @@ jobs:
         run: |
           npm ci --prefix web
           npm ci --prefix e2e
+
+      # Starts SQL Server from compose.yaml, waits until it is healthy and applies the migrations.
+      - name: Start and migrate the database
+        working-directory: e2e
+        run: npm run db:up
 
       - name: Type-check the end-to-end tests
         working-directory: e2e

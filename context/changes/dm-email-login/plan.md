@@ -461,12 +461,12 @@ Add the login and register pages, put the home view behind a layout route that c
 
 #### Automated
 
-- [ ] 2.1 The database comes up healthy and migrated
-- [ ] 2.2 e2e specs type-check
-- [ ] 2.3 e2e passes in both browsers with the setup project
-- [ ] 2.4 A second run straight after also passes
-- [ ] 2.5 The saved session file is ignored
-- [ ] 2.6 ci.yml parses
+- [x] 2.1 The database comes up healthy and migrated
+- [x] 2.2 e2e specs type-check
+- [x] 2.3 e2e passes in both browsers with the setup project
+- [x] 2.4 A second run straight after also passes
+- [x] 2.5 The saved session file is ignored
+- [x] 2.6 ci.yml parses
 
 #### Manual
 
