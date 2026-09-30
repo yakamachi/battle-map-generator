@@ -19,7 +19,8 @@ public static class BspGenerator
     private const int RoomMargin = MapSize.RoomMargin;
 
     // Path costs: corridors reuse existing corridors, prefer straight runs, and avoid running
-    // alongside another corridor (which would read as a 2-wide corridor).
+    // alongside another corridor (which would read as a 2-wide corridor). One-cell-wide corridors
+    // hold through these costs, not by construction: the tests check it, so recheck after a change here.
     private const int NewCellCost = 2;
     private const int ExistingCorridorCost = 1;
     private const int TurnCost = 3;
@@ -100,7 +101,7 @@ public static class BspGenerator
         var arenaLeaf = side + 2 * RoomMargin;
         if (area.Width < arenaLeaf + MinLeaf || area.Height < arenaLeaf)
         {
-            throw new ArgumentOutOfRangeException(nameof(roomCount), roomCount,
+            throw new ArgumentOutOfRangeException("width",
                 $"A {area.Width}x{area.Height} map cannot hold a boss arena with a {side}x{side} floor next to another room.");
         }
 
@@ -159,8 +160,7 @@ public static class BspGenerator
         }
         if (capacity < target || leaves.Count > target)
         {
-            throw new ArgumentOutOfRangeException(nameof(roomCount), roomCount,
-                "The map is too small to hold that many rooms.");
+            throw new ArgumentOutOfRangeException("width", $"The map is too small to hold {roomCount} rooms.");
         }
 
         var cuts = new List<int>();
@@ -292,6 +292,7 @@ public static class BspGenerator
         var left = Connect(node.Left, layout);
         var right = Connect(node.Right, layout);
 
+        // Equally close pairs keep the first one in tree order (left before right, outer loop first).
         var bestA = left[0];
         var bestB = right[0];
         var bestDistance = int.MaxValue;

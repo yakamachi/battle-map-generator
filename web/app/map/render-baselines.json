@@ -10,5 +10,9 @@
   "seed-42": {
     "chromium": "940b4091b7d67d0467da3d6f45868f4b630e2b53e73ee2f5dc7e899bfae78c34",
     "firefox": "fc6b99a2d78d8fa81cac0871e87b78ecbf3af7603706e782406a8eb079d41bea"
+  },
+  "seed-42-rooms-3": {
+    "chromium": "f5eec23470d46376536faaed48d5dff0c0520041be780ea6fb981114c965dba8",
+    "firefox": "46c1c68b11e85fbf6f05ab7489d653fda8016f0e1ed4bd2b90f4fdaca522f8d5"
   }
 }

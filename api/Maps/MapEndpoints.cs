@@ -30,16 +30,8 @@ public static class MapEndpoints
         {
             errors["roomCount"] = [$"Room count must be between {MapSize.MinRoomCount} and {MapSize.MaxRoomCount}."];
         }
-        // The enum converter also reads numbers, so a number outside the enum gets this far.
-        if (!Enum.IsDefined(encounter))
-        {
-            errors["encounter"] = ["Encounter must be 'skirmish' or 'boss'."];
-        }
-        if (bossSize is { } size && !Enum.IsDefined(size))
-        {
-            errors["bossSize"] = ["Boss size must be 'large', 'huge' or 'gargantuan'."];
-        }
-        else if (encounter == EncounterType.Boss && bossSize is null)
+        // An unknown encounter or boss size never gets this far: JSON binding rejects it with a 400.
+        if (encounter == EncounterType.Boss && bossSize is null)
         {
             errors["bossSize"] = ["A boss fight needs a boss size: 'large', 'huge' or 'gargantuan'."];
         }

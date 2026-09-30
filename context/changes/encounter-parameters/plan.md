@@ -382,19 +382,19 @@ The parameters flow is tested against the real host in both browsers, and the ag
 
 #### Automated
 
-- [x] 1.1 New request properties are absent from `required` in `api/BattleMapGenerator.Api.json`
-- [x] 1.2 API tests pass: `dotnet test api.Tests`
-- [x] 1.3 No contract drift after `dotnet build api` and `npm run api:types`
-- [x] 1.4 Web type-check and build pass with `client.ts` untouched
-- [x] 1.5 Web rendering tests pass: `npm test` in `web/`
-- [x] 1.6 Visual gate passes: `npm run visual:docker` in `web/`
-- [x] 1.7 Existing end-to-end test passes unchanged
-- [x] 1.8 Boundary files are identical to main
+- [x] 1.1 New request properties are absent from `required` in `api/BattleMapGenerator.Api.json` — 8b348ba
+- [x] 1.2 API tests pass: `dotnet test api.Tests` — 8b348ba
+- [x] 1.3 No contract drift after `dotnet build api` and `npm run api:types` — 8b348ba
+- [x] 1.4 Web type-check and build pass with `client.ts` untouched — 8b348ba
+- [x] 1.5 Web rendering tests pass: `npm test` in `web/` — 8b348ba
+- [x] 1.6 Visual gate passes: `npm run visual:docker` in `web/` — 8b348ba
+- [x] 1.7 Existing end-to-end test passes unchanged — 8b348ba
+- [x] 1.8 Boundary files are identical to main — 8b348ba
 
 #### Manual
 
-- [x] 1.9 The three regenerated default fixtures, viewed in the running app, look like sensible 6-room maps
-- [x] 1.10 A boss request sent by hand (12 rooms, Gargantuan) returns a 54×30 map in well under a second
+- [x] 1.9 The three regenerated default fixtures, viewed in the running app, look like sensible 6-room maps — 8b348ba
+- [x] 1.10 A boss request sent by hand (12 rooms, Gargantuan) returns a 54×30 map in well under a second — 8b348ba
 
 ### Phase 2: Arena in the picture
 

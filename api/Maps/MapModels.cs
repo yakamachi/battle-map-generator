@@ -113,11 +113,15 @@ public static class MapSize
 // One place for the map's JSON shape, so the endpoint and the fixture files serialise identically.
 // Numbers are strict: the web defaults also accept numbers written as strings, which would make every
 // integer in the OpenAPI contract "integer | string" for the generated client.
+// Enums are strict too: only their names, as the contract says, never their numbers. One leniency
+// remains: the framework converter reads a comma list of names ("large, huge") as combined flags,
+// which gives some other valid value. Wrapping the converter to reject that makes the OpenAPI
+// generator drop the enum schemas, so it is left as it is.
 public static class MapJson
 {
     public static void Configure(JsonSerializerOptions options)
     {
         options.NumberHandling = JsonNumberHandling.Strict;
-        options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+        options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: false));
     }
 }

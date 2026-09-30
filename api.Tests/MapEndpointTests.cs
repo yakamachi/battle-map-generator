@@ -227,4 +227,44 @@ public sealed class MapEndpointTests
         Assert.Equal(MapSize.DefaultHeight, root.GetProperty("height").GetInt32());
         Assert.DoesNotContain("bossArena", root.GetProperty("cells").EnumerateArray().Select(cell => cell.GetString()));
     }
+
+    // The contract lists the enums as strings: a number and a number in a string are rejected.
+    [Theory]
+    [InlineData("""{ "seed": 42, "encounter": 1, "bossSize": "large" }""")]
+    [InlineData("""{ "seed": 42, "encounter": "1", "bossSize": "large" }""")]
+    [InlineData("""{ "seed": 42, "encounter": "boss", "bossSize": 2 }""")]
+    [InlineData("""{ "seed": 42, "encounter": "skirmish", "bossSize": 9 }""")]
+    public async Task An_enum_sent_as_a_number_returns_400(string body)
+    {
+        await using var factory = new ApiFactory(UnreachableConnectionString);
+        var client = factory.CreateClient();
+
+        var response = await client.PostAsync(GeneratePath, new StringContent(body, null, "application/json"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    // What the web client sends before it knows about parameters: no body, or a body without them.
+    [Theory]
+    [InlineData("")]
+    [InlineData("{}")]
+    [InlineData("""{ "seed": null }""")]
+    public async Task An_empty_body_or_a_body_without_parameters_gives_the_default_map(string body)
+    {
+        await using var factory = new ApiFactory(UnreachableConnectionString);
+        var client = factory.CreateClient();
+
+        var response = await client.PostAsync(GeneratePath, new StringContent(body, null, "application/json"));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var root = json.RootElement;
+        Assert.Equal(MapSize.DefaultWidth, root.GetProperty("width").GetInt32());
+        Assert.Equal(MapSize.DefaultHeight, root.GetProperty("height").GetInt32());
+        Assert.Equal(MapSize.DefaultRoomCount, root.GetProperty("rooms").GetArrayLength());
+        var parameters = root.GetProperty("parameters");
+        Assert.Equal(MapSize.DefaultRoomCount, parameters.GetProperty("roomCount").GetInt32());
+        Assert.Equal("skirmish", parameters.GetProperty("encounter").GetString());
+        Assert.Equal(JsonValueKind.Null, parameters.GetProperty("bossSize").ValueKind);
+    }
 }

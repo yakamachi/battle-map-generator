@@ -19,8 +19,21 @@ public sealed class MapFixtureTests
     public void Default_size_map_matches_its_fixture(uint seed)
     {
         var map = BspGenerator.Generate(seed, MapSize.DefaultWidth, MapSize.DefaultHeight);
+        AssertMatchesFixture(map, $"seed-{seed}.json");
+    }
+
+    // A room count other than the default, so the splitting to an exact count is pinned too.
+    [Fact]
+    public void Three_room_map_matches_its_fixture()
+    {
+        var map = BspGenerator.Generate(42, new MapParameters(3, EncounterType.Skirmish, null));
+        AssertMatchesFixture(map, "seed-42-rooms-3.json");
+    }
+
+    private static void AssertMatchesFixture(GeneratedMap map, string fileName)
+    {
         var actual = JsonSerializer.Serialize(map, FixtureJson) + "\n";
-        var path = Path.Combine(FindRepoRoot(), "fixtures", "grids", $"seed-{seed}.json");
+        var path = Path.Combine(FindRepoRoot(), "fixtures", "grids", fileName);
 
         if (Environment.GetEnvironmentVariable("UPDATE_FIXTURES") == "1")
         {
