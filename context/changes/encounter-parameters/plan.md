@@ -400,11 +400,11 @@ The parameters flow is tested against the real host in both browsers, and the ag
 
 #### Automated
 
-- [ ] 2.1 API tests pass, including the boss fixture: `dotnet test api.Tests`
-- [ ] 2.2 Web mapping and rendering tests pass in both browsers: `npm test` in `web/`
-- [ ] 2.3 Web type-check passes: `npm run typecheck` in `web/`
-- [ ] 2.4 Visual gate passes: `npm run visual:docker` in `web/`
-- [ ] 2.5 Atlas is unchanged
+- [x] 2.1 API tests pass, including the boss fixture: `dotnet test api.Tests`
+- [x] 2.2 Web mapping and rendering tests pass in both browsers: `npm test` in `web/`
+- [x] 2.3 Web type-check passes: `npm run typecheck` in `web/`
+- [x] 2.4 Visual gate passes: `npm run visual:docker` in `web/`
+- [x] 2.5 Atlas is unchanged
 
 #### Manual
 

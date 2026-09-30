@@ -1,18 +1,22 @@
 {
   "seed-1": {
-    "chromium": "09069c798d42481653a8ec8ee2efd60a4fda982eec3c40944d183601bc164557",
-    "firefox": "a90d69bc4ff2075638a7f04c3f9f067d873c2175ea46cf957136437d5990d3bf"
+    "chromium": "db2cfe5ef66bc035bf991dd00cbd69ae9d7ff265ed6659dbbd1ee033d4bc5827",
+    "firefox": "bc97f3ff33d16897dc9cb2c2fc45f45ae05551a3baf9c51abd9cf828a33aa2b6"
   },
   "seed-20260925": {
-    "chromium": "85e0e405e6d2dba700fb924ac27d5d10064a3b51413cdaafd2d1d40437c1983f",
-    "firefox": "efb83810d10f83c79ddbef605817a96088438dfa5b15d094b4fd3385730afe49"
+    "chromium": "f1851d335c221fa6741126fb6080410413b54a74dbb57550a8e1ecd89d38a4d0",
+    "firefox": "433568e9e7eba8ab759cb0538ec762e5ec552d7813a8403fe2f0fcaf1d46e622"
   },
   "seed-42": {
-    "chromium": "940b4091b7d67d0467da3d6f45868f4b630e2b53e73ee2f5dc7e899bfae78c34",
-    "firefox": "fc6b99a2d78d8fa81cac0871e87b78ecbf3af7603706e782406a8eb079d41bea"
+    "chromium": "b94f4735edaf1313c1b2786e3b9b049115fe94a4bd0f6b14f4bb799dc336290f",
+    "firefox": "a34f45aec046220ae0da184ad525f2b262ffc34856434075a3dbf7ad94b69608"
+  },
+  "seed-42-boss-huge": {
+    "chromium": "ff8a4f44f2e93d3278129e0fb4d5471915c043d193865448daa043f5b82f40d7",
+    "firefox": "516e1d1655d812cd8ca4cac27c822baa6ac5f43a65e003c15f4266e7540535df"
   },
   "seed-42-rooms-3": {
-    "chromium": "f5eec23470d46376536faaed48d5dff0c0520041be780ea6fb981114c965dba8",
-    "firefox": "46c1c68b11e85fbf6f05ab7489d653fda8016f0e1ed4bd2b90f4fdaca522f8d5"
+    "chromium": "61ce501b583f0ec54662cbc34438dbd204ea4b54118aff7fc08a27b3523d323e",
+    "firefox": "dbcdbbe402cb99d3dc665917fe68f4d568ba3eb24ea04a4d1c09a8ce92283016"
   }
 }

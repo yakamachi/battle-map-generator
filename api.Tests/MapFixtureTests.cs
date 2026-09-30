@@ -30,6 +30,14 @@ public sealed class MapFixtureTests
         AssertMatchesFixture(map, "seed-42-rooms-3.json");
     }
 
+    // A boss fight, so the arena's placement and its cells are pinned and web/ draws an arena.
+    [Fact]
+    public void Boss_map_matches_its_fixture()
+    {
+        var map = BspGenerator.Generate(42, new MapParameters(6, EncounterType.Boss, BossSize.Huge));
+        AssertMatchesFixture(map, "seed-42-boss-huge.json");
+    }
+
     private static void AssertMatchesFixture(GeneratedMap map, string fileName)
     {
         var actual = JsonSerializer.Serialize(map, FixtureJson) + "\n";

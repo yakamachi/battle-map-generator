@@ -30,7 +30,6 @@ export function atlasPosition(piece: Piece, rotation: Rotation): { x: number; y:
 }
 
 const CRACKED_CHANCE = 0.06;
-const DECORATIVE_CHANCE = 0.04;
 
 // Sides in clockwise order; a piece's rotation is the clockwise turn from its N-facing art.
 const SIDES = [
@@ -49,8 +48,13 @@ const CORNERS = [
   { a: 2, b: 3, dx: -1, dy: 1, rotation: 270 },
 ] as const;
 
+// The boss arena's floor is room floor in every rule; only its piece differs.
+function isRoomFloor(kind: CellKind | undefined): boolean {
+  return kind === "floor" || kind === "bossArena";
+}
+
 function isWalkable(kind: CellKind | undefined): boolean {
-  return kind === "floor" || kind === "corridor" || kind === "door";
+  return isRoomFloor(kind) || kind === "corridor" || kind === "door";
 }
 
 // Edge-wall model (research.md, Model B): wall and void cells stay blank paper, and every
@@ -70,14 +74,11 @@ export function drawOps(map: MapGrid): DrawOp[] {
       const kind = kindAt(cellX, cellY);
       if (!isWalkable(kind)) continue;
 
-      if (kind === "floor") {
-        const roll = random();
-        const piece: Piece =
-          roll < CRACKED_CHANCE
-            ? "tiles_cracked"
-            : roll < CRACKED_CHANCE + DECORATIVE_CHANCE
-              ? "tiles_decorative"
-              : "tiles";
+      if (kind === "bossArena") {
+        // Every arena cell gets the decorative piece, so plain floors never do.
+        floors.push({ piece: "tiles_decorative", rotation: 0, cellX, cellY });
+      } else if (kind === "floor") {
+        const piece: Piece = random() < CRACKED_CHANCE ? "tiles_cracked" : "tiles";
         floors.push({ piece, rotation: 0, cellX, cellY });
       } else {
         // Corridors and doors both lie on a plain tile; the door bar goes on top.
@@ -128,11 +129,11 @@ function doorRotation(
 ): Rotation {
   const northSouth = isWalkable(kindAt(x, y - 1)) && isWalkable(kindAt(x, y + 1));
   if (northSouth) {
-    if (kindAt(x, y - 1) === "floor") return 0;
-    if (kindAt(x, y + 1) === "floor") return 180;
+    if (isRoomFloor(kindAt(x, y - 1))) return 0;
+    if (isRoomFloor(kindAt(x, y + 1))) return 180;
     return 0;
   }
-  if (kindAt(x - 1, y) === "floor") return 270;
-  if (kindAt(x + 1, y) === "floor") return 90;
+  if (isRoomFloor(kindAt(x - 1, y))) return 270;
+  if (isRoomFloor(kindAt(x + 1, y))) return 90;
   return 270;
 }
