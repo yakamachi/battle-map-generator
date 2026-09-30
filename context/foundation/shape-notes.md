@@ -11,7 +11,7 @@ timeline_budget:
   hard_deadline: 2027-01-10
   after_hours_only: true
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-09-30
 checkpoint:
   current_phase: 8
   phases_completed: [1, 2, 3, 4, 5, 6, 7]
@@ -21,14 +21,18 @@ checkpoint:
     - topic: "persona scope"
       decision: "konkretny użytkownik (autor jako DM + narzeczona), z otwartością na rozszerzenie do niszy hobbystycznej (znajomi DM-owie) później"
     - topic: "auth strategy"
-      decision: "login (e-mail/hasło), płaski model ról — każde konto ma te same uprawnienia, 2 konta na start"
+      decision: "login (e-mail/hasło), płaski model ról — każde konto ma te same uprawnienia; od 2026-09-30 otwarta samodzielna rejestracja (wcześniej: 2 konta na start)"
     - topic: "MVP timeline"
       decision: "commit do dłuższego harmonogramu (4-5 tygodni po godzinach na etap 1) zamiast dalszego przycinania zakresu; zaakceptowane świadomie"
     - topic: "FR-006 (biblioteka z tytułem)"
       decision: "usunięte z MVP na wniosek rundy sokratejskiej — biblioteka odłożona całkowicie do etapu 2"
     - topic: "non-goals"
       decision: "AI image-generation jako silnik map, offline, pełna hierarchia Kampania/Sesja, integracja z Roll20 API, dodatkowe motywy/pułapki/skarby — wszystkie jawnie wykluczone z MVP"
-  frs_drafted: 6
+    - topic: "parametry generowania (peer feedback 2026-09-30)"
+      decision: "liczba pokoi 2–12 (domyślnie 6) zamiast rozmiaru S/M/L; walka z bossem dodaje jeden większy pokój-arenę skalowany rozmiarem bossa (Duży / Ogromny / Gigantyczny)"
+    - topic: "triage pomysłów z peer feedback (2026-09-30)"
+      decision: "pętle w układzie i teren (trudny / nieprzechodni) — kandydaci na slice'y; wiele poziomów ze schodami, prosty wirtualny stół i subskrypcje — odłożone"
+  frs_drafted: 8
   quality_check_status: warned
 ---
 
@@ -61,23 +65,28 @@ mapę bitewną pod konkretne starcie i wyeksportować ją do Roll20.
 ### Secondary persona
 
 Inni DM-owie (znajomi autora) — potencjalni kolejni użytkownicy tego samego
-narzędzia, jeśli pomysł się sprawdzi. Nie są celem MVP, ale kształt access
-control i skali powinien nie wykluczać rozszerzenia w przyszłości.
+narzędzia, jeśli pomysł się sprawdzi. Pierwsi znajomi DM-owie przetestowali
+już MVP i dali feedback (2026-09-30); od tego momentu mogą sami założyć konto
+(otwarta rejestracja).
 
 ## Access Control
 
-Login (e-mail/hasło). Płaski model ról — każde konto ma te same uprawnienia,
-nie ma podziału na właściciela kampanii vs gościa. Start: 2 konta (autor +
-narzeczona). Model nie wyklucza dodania kolejnych kont w przyszłości (nisza
-hobbystyczna), ale role pozostają płaskie, dopóki nie pojawi się konkretna
-potrzeba rozróżnienia uprawnień.
+Login (e-mail/hasło) oraz otwarta samodzielna rejestracja (e-mail/hasło) —
+decyzja 2026-09-30, zastępuje „2 konta na start”. Płaski model ról — każde
+konto ma te same uprawnienia, nie ma podziału na właściciela kampanii vs gościa.
+Niezalogowany użytkownik widzi tylko stronę logowania / rejestracji i nie może
+wygenerować mapy — także z pominięciem formularza. Weryfikacja adresu e-mail nie wchodzi do
+MVP (wymagałaby usługi wysyłki poczty). Każde konto ma limit generowań, który
+chroni darmowy plan hostingu przed nadużyciem otwartej rejestracji. Role
+pozostają płaskie, dopóki nie pojawi się konkretna potrzeba rozróżnienia — np.
+płatny plan z większą liczbą generowań (odłożone, zob. Forward: post-MVP).
 
 ## Success Criteria
 
 ### Primary
 
-- Etap 1 działa end-to-end: DM loguje się, ustawia parametry starcia (rozmiar,
-  typ: zwykła potyczka / walka z bossem), generuje mapę, widzi
+- Etap 1 działa end-to-end: DM zakłada konto i loguje się, ustawia parametry
+  starcia (liczba pokoi, typ: zwykła potyczka / walka z bossem), generuje mapę, widzi
   wynikowy PNG i pobiera go — bez błędu, gotowy do wgrania do Roll20.
 
 ### Secondary
@@ -104,19 +113,25 @@ więcej niż absolutne minimum. Docelowy termin: 6 grudnia 2026 lub 10 stycznia
 
 ### Access
 
-- FR-001: DM może zalogować się (e-mail/hasło). Priority: must-have
+- FR-001: DM może założyć konto i zalogować się (e-mail/hasło). Priority: must-have
   > Socratic: Kontrargument rozważony: "przy 2 znanych kontach login to zbędna
   > złożoność, prościej byłoby bez auth". Rozstrzygnięcie: zostaje login —
   > przyda się przy ewentualnym rozszerzeniu do innych DM-ów, i to też element
   > workflow, który autor chce przećwiczyć.
+  > Aktualizacja 2026-09-30: otwarta rejestracja zamiast kont zakładanych przez
+  > autora — znajomi DM-owie mają móc zacząć bez udziału autora; limit
+  > generowań na konto ogranicza koszt na darmowym planie.
 
 ### Generowanie mapy
 
-- FR-002: DM może ustawić parametry generowania mapy (rozmiar starcia, typ
-  starcia: potyczka / walka z bossem). Priority: must-have
+- FR-002: DM może ustawić parametry generowania mapy: liczbę pokoi (2–12,
+  domyślnie 6) i typ starcia (potyczka / walka z bossem; przy walce z bossem
+  także rozmiar bossa: Duży / Ogromny / Gigantyczny). Priority: must-have
   > Socratic: Kontrargument rozważony: "za mało parametrów — generator będzie
   > sztywny/mało użyteczny". Rozstrzygnięcie: zostaje minimalny zestaw w MVP,
   > rozbudowa parametrów to praca po MVP.
+  > Aktualizacja 2026-09-30 (peer feedback): rozmiar S/M/L zastąpiony liczbą
+  > pokoi — DM od razu wie, co dostanie, a rozmiar mapy wynika z liczby pokoi.
 - FR-003: DM może wygenerować spójną mapę bitewną z pokojami i korytarzami, wyrównaną do siatki. Priority: must-have
   > Socratic: Kontrargument rozważony: "BSP może dawać zbyt monotonne układy
   > dla walki z bossem". Rozstrzygnięcie: czyste BSP zostaje w MVP; większa
@@ -129,6 +144,13 @@ więcej niż absolutne minimum. Docelowy termin: 6 grudnia 2026 lub 10 stycznia
   > pełnej edycji.
 - FR-005: DM może wygenerować mapę ponownie (nowy seed, te same parametry),
   jeśli wynik go nie satysfakcjonuje. Priority: must-have
+- FR-007: DM może wygenerować mapę z pętlami ("okrężny" loch): drużyna może
+  ruszyć w dowolną stronę i obejść wszystkie pokoje bez cofania się tą samą
+  drogą. Priority: nice-to-have (peer feedback 2026-09-30; po M-1)
+- FR-008: DM może wygenerować mapę z terenem: trudnym (ruch kosztuje
+  podwójnie, reguła D&D 5e) oraz nieprzechodnim (np. przepaść na środku
+  pokoju), który nie przerywa spójności mapy. Priority: nice-to-have (peer
+  feedback 2026-09-30; po M-1)
 
 ### Eksport
 
@@ -140,7 +162,7 @@ więcej niż absolutne minimum. Docelowy termin: 6 grudnia 2026 lub 10 stycznia
 ### US-01: DM generuje i pobiera mapę bitewną na sesję
 
 - **Given** zalogowany DM
-- **When** ustawia parametry starcia (rozmiar, typ) i klika "generuj"
+- **When** ustawia parametry starcia (liczba pokoi, typ) i klika "generuj"
 - **Then** widzi wygenerowaną mapę jako PNG, wyrównaną do siatki; może ją
   wygenerować ponownie (inny seed) jeśli nie jest zadowolony, a na koniec
   pobrać plik gotowy do wgrania do Roll20
@@ -156,8 +178,15 @@ więcej niż absolutne minimum. Docelowy termin: 6 grudnia 2026 lub 10 stycznia
 
 System proceduralnie generuje spójny, wyrównany do siatki układ mapy bitewnej (pokoje + korytarze) na podstawie zadanych parametrów starcia i rozmiaru — deterministycznie, bez AI.
 
-Reguła konsumuje jako wejście: rozmiar mapy (S/M/L) i typ starcia (zwykła
-potyczka / walka z bossem), podane przez DM w formularzu. Wyjściem jest gotowy,
+Reguła konsumuje jako wejście: liczbę pokoi (2–12) i typ starcia (zwykła
+potyczka / walka z bossem, a przy walce z bossem rozmiar bossa), podane przez
+DM w formularzu. Mapa ma dokładnie tyle pokoi, ile wybrał DM, a jej rozmiar
+wynika z liczby pokoi (w granicach limitu rozmiaru mapy). Walka z bossem dodaje
+jeden pokój-arenę, wyraźnie większy od pozostałych i oznaczony jako arena
+bossa; minimalna podłoga areny zależy od rozmiaru bossa: Duży (2×2 kratki)
+→ 8×8, Ogromny (3×3) → 10×10, Gigantyczny (4×4+) → 12×12. Uzasadnienie:
+boss, jego zasięg (2–3 kratki) i 4–6 postaci poruszających się o 6 kratek na
+turę muszą mieć miejsce na flankowanie i trzymanie dystansu. Wyjściem jest gotowy,
 grywalny układ mapy — pokoje i korytarze rozmieszczone spójnie i wyrównane do
 siatki, wyrenderowane graficznie z zestawu kafelków. DM spotyka tę regułę w
 momencie kliknięcia "generuj": zamiast projektować mapę ręcznie, opisuje
@@ -184,8 +213,35 @@ zamiar, a system zwraca gotowy wynik do ewentualnej regeneracji lub pobrania.
 - **Dodatkowe motywy graficzne, pułapki, skarby, dekoracje na mapie** — MVP
   generuje tylko podstawowy układ pokoi/korytarzy z jednym tileset; rozszerzenia
   wizualne i treściowe to praca po MVP.
+- **Wiele poziomów lochu w jednym generowaniu (połączonych schodami)** —
+  odłożone (peer feedback 2026-09-30): wiele siatek w jednej odpowiedzi
+  i dopasowanie schodów między poziomami to duża zmiana kontraktu.
+- **Prosty wirtualny stół (tokeny, interakcja na mapie)** — odłożone (peer
+  feedback 2026-09-30): stoi w sprzeczności z założeniem „pobierz PNG do
+  Roll20”; to osobny produkt, nie rozszerzenie generatora.
+- **Subskrypcje / płatne plany z większą liczbą generowań** — odłożone
+  (2026-09-30): rozważane, jeśli liczba użytkowników urośnie; razem z nimi
+  przejście na wyższy plan hostingu (decyzja billingowa, tylko człowiek).
+
+## Peer feedback (2026-09-30)
+
+Znajomi DM-owie przetestowali MVP po S-01. Triage:
+
+- **Liczba pokoi zamiast S/M/L** — przyjęte: zmienia FR-002, rozwiązuje Open
+  Question o znaczeniu rozmiaru.
+- **Większy pokój dla bossa, dopasowany do reguł D&D** — przyjęte: arena
+  skalowana rozmiarem bossa (zob. Business Logic).
+- **Okrężne lochy (pętle)** — przyjęte jako FR-007, nice-to-have po M-1.
+- **Teren trudny i nieprzechodni** — przyjęte jako FR-008, nice-to-have po M-1;
+  wymaga nowych pojęć w siatce semantycznej.
+- **Wiele poziomów ze schodami** — odłożone (Non-Goals).
+- **Generator jako prosty wirtualny stół** — odłożone (Non-Goals).
 
 ## Open Questions
+
+(Rozstrzygnięte 2026-09-30: znaczenie parametrów rozmiaru i typu starcia —
+zob. FR-002 i Business Logic; tworzenie kont i dostęp bez logowania — zob.
+Access Control.)
 
 1. **Konflikt wymagań kompatybilności z filtrem PRD** — Eksport do Roll20 oraz
    działanie w Chrome i Firefox pozostają ustalonymi wymaganiami produktu.
@@ -209,6 +265,10 @@ zamiar, a system zwraca gotowy wynik do ewentualnej regeneracji lub pobrania.
   backend + frontend i uruchamiający oba testy przy każdym pushu/PR.
 
 ## Forward: post-MVP / ambicja opcjonalna
+
+- Subskrypcja lub darmowy plan z limitem generowań i płatny z większym
+  limitem, jeśli użytkowników przybędzie; wtedy przejście na wyższy plan
+  Azure (decyzja billingowa — wyłącznie właściciel).
 
 - Wave Function Collapse jako alternatywny/lepszy algorytm generowania (v2).
 - Refaktoryzacja modułu generującego do osobnego, skalowalnego serwisu.
