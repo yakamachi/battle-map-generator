@@ -550,14 +550,14 @@ None. No data or API changes. Screenshot baselines are new files.
 
 #### Automated
 
-- [x] 4.1 `ui:scan` passes
-- [x] 4.2 `ui:scan` fails on an injected literal
-- [x] 4.3 Visual gate passes in the CI image locally
-- [ ] 4.4 Pull request checks green, including `visual`
-- [x] 4.8 `ui:scan` fails on `@custom-variant` in app.css
+- [x] 4.1 `ui:scan` passes — 5de944b
+- [x] 4.2 `ui:scan` fails on an injected literal — 5de944b
+- [x] 4.3 Visual gate passes in the CI image locally — 5de944b
+- [x] 4.4 Pull request checks green, including `visual` — 5de944b
+- [x] 4.8 `ui:scan` fails on `@custom-variant` in app.css — 5de944b
 
 #### Manual
 
-- [x] 4.5 Every committed baseline reviewed in both themes and mobile
-- [ ] 4.6 `visual` added to required checks on `main`
-- [x] 4.7 `web/AGENTS.md` has the UI rule section
+- [x] 4.5 Every committed baseline reviewed in both themes and mobile — 5de944b
+- [x] 4.6 `visual` added to required checks on `main` — 5de944b
+- [x] 4.7 `web/AGENTS.md` has the UI rule section — 5de944b
