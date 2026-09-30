@@ -1,9 +1,56 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { expect, test, type Page, type Route } from "@playwright/test";
+import { test as base, expect, type Page, type Route } from "@playwright/test";
 
 // Screenshot baselines for every reachable state of the home view. The API is mocked here, so
 // these pin the SPA only; the real flow against the .NET host is tested in ../../e2e/.
+
+// The app loads Inter from Google Fonts (app/root.tsx). Every test answers those requests with
+// the vendored file in ./fonts, so the gate never waits on the network and a change in the files
+// Google serves cannot move the baselines. Any other Google Fonts request is aborted and fails
+// the test. The routes are on the context, so a test's page.unrouteAll() leaves them in place.
+const INTER_WOFF2 = readFileSync(resolve(import.meta.dirname, "fonts/inter-latin-wght-normal.woff2"));
+const VENDORED_FONT_URL = "https://fonts.gstatic.com/__vendored/inter.woff2";
+const INTER_CSS = `@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: block;
+  src: url(${VENDORED_FONT_URL}) format("woff2");
+}
+`;
+
+const test = base.extend<{ hermeticFonts: void }>({
+  hermeticFonts: [
+    async ({ context }, use) => {
+      const stray: string[] = [];
+      await context.route("https://fonts.googleapis.com/**", (route) => {
+        const url = new URL(route.request().url());
+        if (url.pathname === "/css2" && url.searchParams.get("family")?.startsWith("Inter:")) {
+          return route.fulfill({ status: 200, contentType: "text/css; charset=utf-8", body: INTER_CSS });
+        }
+        stray.push(url.href);
+        return route.abort();
+      });
+      await context.route("https://fonts.gstatic.com/**", (route) => {
+        if (route.request().url() === VENDORED_FONT_URL) {
+          // Fonts are fetched in CORS mode, so the cross-origin response must allow it.
+          return route.fulfill({
+            status: 200,
+            contentType: "font/woff2",
+            headers: { "Access-Control-Allow-Origin": "*" },
+            body: INTER_WOFF2,
+          });
+        }
+        stray.push(route.request().url());
+        return route.abort();
+      });
+      await use();
+      expect(stray, "Google Fonts requests the visual gate does not vendor").toEqual([]);
+    },
+    { auto: true },
+  ],
+});
 
 const GENERATE = "**/api/maps/generate";
 const SEED_42 = readFileSync(resolve(import.meta.dirname, "../../fixtures/grids/seed-42.json"), "utf8");
@@ -18,9 +65,14 @@ function fulfilMap(route: Route, body: string) {
 // anything or call fulfill/continue; the test ends with unrouteAll({ behavior: "ignoreErrors" }).
 function hold() {}
 
+// The mobile shots take the full page, so content below the 844 px fold is pinned too.
 async function shot(page: Page, name: string) {
   await page.evaluate(() => document.fonts.ready.then(() => undefined));
-  await expect(page).toHaveScreenshot(`${name}.png`, { animations: "disabled", caret: "hide" });
+  await expect(page).toHaveScreenshot(`${name}.png`, {
+    animations: "disabled",
+    caret: "hide",
+    fullPage: test.info().project.name === "mobile",
+  });
 }
 
 async function openHome(page: Page) {

@@ -44,7 +44,7 @@ This change introduces a small design-system contract: semantic tokens plus a fe
 | Preview | Fit to the viewport at the map's aspect ratio; canvas always mounted; previous map dimmed while loading | Removes the jump and the scroll, so you see what you'll download | Plan (user) |
 | Visual gate | Playwright `toHaveScreenshot`, Chromium, desktop light + dark + 390 px mobile, API mocked from `fixtures/grids`, run in the Playwright container | A real CI gate on the states with no new dependency, deterministic, off the rate limit | Plan (user) |
 | Component scope | Only what home uses: Button (default, outline), Alert, MapPreview | Keeps the 2–3 component scope; S-03 and S-04 add Input/Label via the rule | Plan (user) |
-| Guard | `ui:scan` Node script in CI (strict on views; colour literals only on `ui/` primitives, so `shadcn add` output passes) plus a `## UI` rule in `web/AGENTS.md` | There is no linter, and a failing check beats a forgotten rule | Plan + plan review F1 |
+| Guard | `ui:scan` Node script in CI (strict on views; colour literals only on `ui/` primitives, so `shadcn add` output passes; `app.css` fails on `@custom-variant` or `.dark`) plus a `## UI` rule in `web/AGENTS.md` | There is no linter, and a failing check beats a forgotten rule | Plan + plan review F1 + impl-review-phase-1 F1 |
 
 ## Scope
 
@@ -89,7 +89,7 @@ The visual spec serves the built SPA with a tiny Node server, mocks `/api/maps/g
 | 4. Visual gate + guard | screenshot baselines in CI container, `ui:scan`, UI rule | baselines drift from font or network flakiness |
 
 **Prerequisites:** PR #7 (S-01 closeout) merged; Docker for `visual:update`; the owner can edit branch protection.
-**Estimated effort:** about 3–4 sessions, one PR per phase with an impl review between phases.
+**Estimated effort:** about 3–4 sessions, an impl review between phases (shipped as one PR, #9).
 
 ## Open Risks & Assumptions
 

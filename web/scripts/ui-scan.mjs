@@ -3,21 +3,22 @@
 // Usage: node scripts/ui-scan.mjs (run from web/, or through `npm run ui:scan`)
 //
 // Scopes:
-// - views (app/routes/**, app/root.tsx, app/components/*.tsx outside ui/): literal colours,
+// - views (app/routes/**, app/root.tsx, app/components/** outside ui/): literal colours,
 //   palette classes, arbitrary px/rem values and any dark: class.
 // - primitives (app/components/ui/**): literal colours and palette classes only, so shadcn's
 //   token-based dark: refinements in unmodified `shadcn add` output pass.
 // - tokens (app/app.css): @custom-variant or a .dark selector. Dark mode follows the OS; a
 //   `shadcn add` that rewrites the CSS must not switch it to a class nothing sets.
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { join, relative, resolve, sep } from "node:path";
 
 const WEB = resolve(import.meta.dirname, "..");
 const APP = join(WEB, "app");
 
 const PALETTE =
   "slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|white|black";
-const UTILITIES = "bg|text|border|ring|outline|from|via|to|fill|stroke|shadow|divide";
+const UTILITIES =
+  "bg|text|border(-[xytrbl])?|ring-offset|ring|outline|from|via|to|fill|stroke|shadow|divide|caret|accent|decoration|placeholder";
 const COLOUR = `#[0-9a-fA-F]{3,8}\\b|rgba?\\(|hsla?\\(|oklch\\(|\\b(${UTILITIES})-(${PALETTE})\\b`;
 
 // The /10x-ui pattern: colours, arbitrary px/rem values and palette classes, plus dark:.
@@ -34,15 +35,16 @@ function walk(dir) {
   });
 }
 
+// Everything under app/components/ui/ is a primitive; every other component, at any depth, is a view.
 const UI_DIR = join(APP, "components", "ui");
+const isPrimitive = (file) => file.startsWith(UI_DIR + sep);
+const components = walk(join(APP, "components")).filter((f) => SOURCE.test(f));
 const views = [
   ...walk(join(APP, "routes")).filter((f) => SOURCE.test(f)),
   join(APP, "root.tsx"),
-  ...readdirSync(join(APP, "components"))
-    .map((name) => join(APP, "components", name))
-    .filter((f) => SOURCE.test(f) && statSync(f).isFile()),
+  ...components.filter((f) => !isPrimitive(f)),
 ];
-const primitives = walk(UI_DIR).filter((f) => SOURCE.test(f));
+const primitives = components.filter(isPrimitive);
 
 const scopes = [
   { scope: "views", files: views, pattern: VIEW_PATTERN },
