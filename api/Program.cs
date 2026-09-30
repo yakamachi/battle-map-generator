@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.RateLimiting;
+using BattleMapGenerator.Api.Auth;
 using BattleMapGenerator.Api.Data;
 using BattleMapGenerator.Api.Health;
 using BattleMapGenerator.Api.Maps;
@@ -40,6 +41,15 @@ builder.Services.AddRateLimiter(options =>
             Window = TimeSpan.FromMinutes(1),
             QueueLimit = 0,
         }));
+    // Register and login are public and hash a password: 10 calls per minute per client IP across both.
+    options.AddPolicy(AuthEndpoints.AuthRateLimitPolicy, httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 10,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        }));
 });
 
 // Account store. The connection string is read when the context is built, not at startup:
@@ -59,9 +69,52 @@ builder.Services.AddDbContext<AppDbContext>((services, options) =>
     }
 });
 
-// Identity services only; login endpoints come with S-04.
-builder.Services.AddIdentityCore<IdentityUser>()
-    .AddEntityFrameworkStores<AppDbContext>();
+// Email and password accounts. The email is the user name, so it must be unique.
+// Length is the only password rule; lockout slows guessing one account's password.
+builder.Services.AddIdentityCore<IdentityUser>(options =>
+    {
+        options.User.RequireUniqueEmail = true;
+        options.Password.RequiredLength = 8;
+        options.Password.RequireDigit = false;
+        options.Password.RequireLowercase = false;
+        options.Password.RequireUppercase = false;
+        options.Password.RequireNonAlphanumeric = false;
+        options.Lockout.MaxFailedAccessAttempts = 5;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+    })
+    .AddEntityFrameworkStores<AppDbContext>()
+    .AddSignInManager();
+
+// All Identity cookie schemes, not only the application one: SignOutAsync also signs out
+// the external and two-factor schemes.
+builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
+    .AddIdentityCookies();
+
+// The session cookie is protected by the key ring in the database, so it survives a restart.
+// Secure follows the request scheme: App Service terminates TLS, local development is plain HTTP.
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.ExpireTimeSpan = TimeSpan.FromDays(14);
+    options.SlidingExpiration = true;
+
+    // There is no server-side login page to send anyone to. The framework answers API endpoints
+    // with 401/403 but still adds a Location header pointing at /Account/Login; send the bare status.
+    options.Events.OnRedirectToLogin = context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        return Task.CompletedTask;
+    };
+    options.Events.OnRedirectToAccessDenied = context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        return Task.CompletedTask;
+    };
+});
+
+builder.Services.AddAuthorization();
 
 // Keys live in the database so restarts and idle unloads keep the same key ring.
 // A fixed application name keeps purpose isolation independent of the content root path.
@@ -88,6 +141,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Authentication and authorization run before the limiter: it must be able to see the user,
+// and a request refused with 401 must not spend a permit.
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseRateLimiter();
 
 // The SPA from web/build/client is copied into wwwroot at build time.
@@ -129,6 +187,7 @@ app.MapHealthChecks("/api/health/ready", new HealthCheckOptions { Predicate = ch
     });
 
 app.MapMapEndpoints();
+app.MapAuthEndpoints();
 
 // Unknown API routes are 404s, never the SPA shell.
 app.MapFallback("/api/{**rest}", () => Results.NotFound());

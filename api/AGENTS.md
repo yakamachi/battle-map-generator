@@ -11,6 +11,17 @@ This app owns email/password authentication (ASP.NET Core Identity + EF Core), a
 - Namespaces are PascalCase and follow the folder: `BattleMapGenerator.Api`, `BattleMapGenerator.Api.Maps`, tests in `BattleMapGenerator.Api.Tests`. The project, assembly and generated OpenAPI file carry the same name (`BattleMapGenerator.Api.csproj`, `.dll`, `.json`).
 - The assembly name is also the App Service startup command (`dotnet BattleMapGenerator.Api.dll`), set by `startup-command` in `deploy.yml`. Renaming the assembly means changing that line in the same commit.
 
+## Authentication
+
+- Code lives in `Auth/`: `AuthEndpoints.cs` and `AuthModels.cs`. Routes: `POST /api/auth/register` and `POST /api/auth/login` (body `{ email, password }`, 200 with `{ email }` and the session cookie), `POST /api/auth/logout` (204, also without a session) and `GET /api/auth/me` (200 with the caller's own `{ email }`, 401 without a session).
+- Register answers 400 with a validation problem whose `errors` are keyed by `email` or `password`. Login answers the same bodiless 401 for a wrong password, an unknown email and a locked-out account (5 failed attempts lock an account for 5 minutes). The only password rule is a length of at least 8.
+- The session is the Identity application cookie: HttpOnly, `SameSite=Lax`, `Secure` when the request is HTTPS, persistent for 14 days with sliding expiration, protected by the key ring in the database so it survives a restart. There are no bearer tokens and no antiforgery tokens, so every state-changing endpoint must stay a POST.
+- There is no server-side login page: an unauthenticated or forbidden API request gets a bare 401 or 403, never a redirect or a `Location` header.
+- Register and login share the rate-limit policy `auth`: 10 requests per minute per client IP across both, 429 with `Retry-After`. Logout and `me` are not limited.
+- Pipeline order is `UseAuthentication`, `UseAuthorization`, `UseRateLimiter`: the limiter must be able to see the user, and a 401 must not spend a permit.
+- Only a request carrying a session cookie, register and login may touch the database. Startup, liveness and anonymous requests never do; `AuthEndpointTests` pins it with an unreachable database.
+- Tests get a logged-in client from `ApiFactory.CreateLoggedInClientAsync`; each call spends one permit of that factory's `auth` bucket.
+
 ## Map generation contract
 
 - Code lives in `Maps/`: `Prng.cs` (seeded PRNG), `BspGenerator.cs` (layout), `MapModels.cs` (grid contract, default 30×20, cap 60×60), `MapEndpoints.cs` (`POST /api/maps/generate`).

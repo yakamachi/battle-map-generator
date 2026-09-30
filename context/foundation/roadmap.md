@@ -45,7 +45,7 @@ DM przed sesją D&D potrzebuje czytelnej mapy bitewnej wyrównanej do siatki, a 
 | S-01 | first-map-download       | DM generuje mapę, widzi podgląd wyrównany do siatki i pobiera zgodny z nim PNG        | —             | US-01, FR-003, FR-004, FR-006, NFR (czas generacji, Chrome i Firefox), Guardrail wyrównania do siatki | done        |
 | S-02 | regenerate-with-new-seed | DM generuje mapę ponownie i dostaje inny układ przy tych samych parametrach           | S-01          | US-01, FR-005                 | ready    |
 | S-03 | encounter-parameters     | DM wybiera liczbę pokoi (2–12) i typ starcia; walka z bossem dodaje arenę skalowaną rozmiarem bossa | S-01 | US-01, FR-002, Business Logic | ready    |
-| S-04 | dm-email-login           | DM zakłada konto i loguje się e-mailem i hasłem; bez zalogowania nie wygeneruje mapy, a generowania na konto są limitowane | F-01, S-01 | US-01, FR-001, NFR (dane konta niewidoczne dla innych kont), Access Control | ready    |
+| S-04 | dm-email-login           | DM zakłada konto i loguje się e-mailem i hasłem; bez zalogowania nie wygeneruje mapy, a generowania na konto są limitowane | F-01, S-01 | US-01, FR-001, NFR (dane konta niewidoczne dla innych kont), Access Control | in-progress |
 
 ## Streams
 
@@ -135,7 +135,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Unknowns:**
   - Jaki limit generowań na konto (ile i w jakim oknie czasu), żeby otwarta rejestracja nie wyczerpała limitów CPU planu F1? — Owner: user. Block: no (`/10x-plan` proponuje wartość domyślną).
 - **Risk:** Otwarta rejestracja wystawia generowanie każdemu, kto założy konto — limit generowań na konto zastępuje ochronę, którą dziś daje brak kont; `/10x-plan` może wydzielić limit w osobną zmianę, jeśli slice okaże się za szeroki.
-- **Status:** ready
+- **Status:** in-progress
 
 ## Backlog Handoff
 

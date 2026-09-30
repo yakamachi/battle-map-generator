@@ -23,3 +23,42 @@ Accept: application/json
 }
 
 ###
+
+# Auth needs the local database (docker compose up -d, then dotnet ef database update --project api).
+# Register and login share 10 calls per minute per client IP. Both answer with the session cookie,
+# which the client keeps for the requests below.
+@email = dm@example.com
+@password = local-dev-password
+
+POST {{HostAddress}}/api/auth/register
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+###
+
+POST {{HostAddress}}/api/auth/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+###
+
+# 200 with the account's email while logged in, 401 otherwise.
+GET {{HostAddress}}/api/auth/me
+Accept: application/json
+
+###
+
+# 204, also when no one is logged in.
+POST {{HostAddress}}/api/auth/logout
+
+###

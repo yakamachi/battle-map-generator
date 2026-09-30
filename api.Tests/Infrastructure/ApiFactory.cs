@@ -1,3 +1,4 @@
+using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
@@ -15,6 +16,7 @@ public sealed class ApiFactory(string? connectionString, string? readyKey = ApiF
     public const string ReadyKey = "test-ready-key";
     public const string ReadyKeyHeader = "X-Health-Key";
     public const string SpaShellMarker = "spa-shell-stub";
+    public const string TestPassword = "test-password";
 
     // The real wwwroot is empty in CI (the SPA is copied in after the tests run), and then the SPA
     // fallback answers 404 too, which would hide a missing /api guard. A stub index.html makes the
@@ -36,6 +38,17 @@ public sealed class ApiFactory(string? connectionString, string? readyKey = ApiF
     {
         var client = CreateClient();
         client.DefaultRequestHeaders.Add(ReadyKeyHeader, ReadyKey);
+        return client;
+    }
+
+    // Registers an account (a unique one unless an email is given) and returns the client that keeps
+    // its session cookie. Needs a migrated database and spends one permit of this factory's auth limit.
+    public async Task<HttpClient> CreateLoggedInClientAsync(string? email = null)
+    {
+        var client = CreateClient();
+        var response = await client.PostAsJsonAsync("/api/auth/register",
+            new { email = email ?? $"dm-{Guid.NewGuid():N}@example.com", password = TestPassword });
+        response.EnsureSuccessStatusCode();
         return client;
     }
 

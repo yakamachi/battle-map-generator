@@ -23,7 +23,8 @@ public sealed class HealthProbeTests(SqlServerFixture sql)
     }
 
     // The key ring loads lazily: app startup and liveness never touch the database, so a cold start
-    // does not wake a paused Azure SQL database. Only ready (and, later, auth) reads the key ring.
+    // does not wake a paused Azure SQL database. Only ready and requests that read or write a
+    // session cookie load the key ring.
     // A database of its own keeps other tests' keys out of the count.
     [Fact]
     public async Task Startup_and_live_do_not_touch_the_database_but_ready_creates_the_key()
