@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, test } from "vitest";
 import { server } from "vitest/browser";
-import { loadAtlas, renderMap } from "./render";
+import { MAX_CANVAS_SIDE, loadAtlas, renderMap } from "./render";
 import { TILE_SIZE, type MapGrid } from "./tileset";
 
 type Baselines = Record<string, Partial<Record<string, string>>>;
@@ -71,5 +71,23 @@ describe("renderMap", () => {
     if (!ctx) throw new Error("no 2d context");
     const huge: MapGrid = { seed: 1, width: 118, height: 1, cells: Array(118).fill("void") };
     expect(() => renderMap(ctx, huge, atlas)).toThrow(/too large/);
+  });
+
+  test("refuses a canvas area beyond the limit even when each side fits", () => {
+    const ctx = document.createElement("canvas").getContext("2d");
+    if (!ctx) throw new Error("no 2d context");
+    // 117 squares is 16380 px, inside the side cap; the area is 268 M pixels.
+    const wide: MapGrid = { seed: 1, width: 117, height: 117, cells: Array(117 * 117).fill("void") };
+    expect(117 * TILE_SIZE).toBeLessThanOrEqual(MAX_CANVAS_SIDE);
+    expect(() => renderMap(ctx, wide, atlas)).toThrow(/area/);
+  });
+
+  test("renders the largest S-03 map (54×30 squares, 7560×4200 px)", () => {
+    const ctx = document.createElement("canvas").getContext("2d");
+    if (!ctx) throw new Error("no 2d context");
+    const largest: MapGrid = { seed: 1, width: 54, height: 30, cells: Array(54 * 30).fill("void") };
+    renderMap(ctx, largest, atlas);
+    expect(ctx.canvas.width).toBe(7560);
+    expect(ctx.canvas.height).toBe(4200);
   });
 });

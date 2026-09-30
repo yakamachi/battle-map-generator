@@ -6,9 +6,11 @@ import { TILE_SIZE, atlasPosition, drawOps, type MapGrid } from "./tileset";
 export const PAPER = "#ffffff";
 
 // A deliberately conservative per-side cap. Browsers allow sides up to about 32767 px but also
-// cap the area (Chromium at about 16384² px) and fail silently beyond it; staying at or under
-// 16384 per side keeps any map inside that. Larger maps (S-03) need an area check too.
+// cap the area (Chromium at about 16384² px) and fail silently beyond it.
 export const MAX_CANVAS_SIDE = 16384;
+// The area cap: the API's 60×60 size cap at 140 px per square (8400² px, 70.6 M pixels), well
+// under Chromium's. The largest S-03 map, 54×30 squares, is 7560×4200 px (31.8 M pixels).
+export const MAX_CANVAS_AREA = 8400 * 8400;
 
 export async function loadAtlas(): Promise<ImageBitmap> {
   const response = await fetch(atlasUrl);
@@ -27,6 +29,11 @@ export function renderMap(ctx: CanvasRenderingContext2D, map: MapGrid, atlas: Im
   const height = map.height * TILE_SIZE;
   if (width > MAX_CANVAS_SIDE || height > MAX_CANVAS_SIDE) {
     throw new Error(`Map is too large to render: ${width}x${height} px exceeds ${MAX_CANVAS_SIDE} px`);
+  }
+  if (width * height > MAX_CANVAS_AREA) {
+    throw new Error(
+      `Map is too large to render: ${width}x${height} px exceeds ${MAX_CANVAS_AREA} px of area`,
+    );
   }
 
   // Resizing resets the context state, so smoothing is switched off afterwards.
