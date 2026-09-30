@@ -56,13 +56,13 @@ From `research.md`:
   - not to write literal colours or arbitrary values in views
 - **Verify:**
   - `npm run ui:scan`
-  - `npm run e2e` (unchanged locators, both browsers)
+  - `npm --prefix e2e test` (unchanged locators, both browsers)
   - the `visual` CI job
   - reviewing the committed baselines
 
 ### Key Discoveries:
 
-- E2E locators that must survive (`web/e2e/map.spec.ts`):
+- E2E locators that must survive (`e2e/tests/map.spec.ts`):
   - `:38` button name "Generate" (substring match)
   - `:41-42` "Download PNG" with the native `disabled` attribute
   - `:44-57` exactly one `<canvas>`, 4200×2800 intrinsic
@@ -196,7 +196,7 @@ It notes the source ("parchment & ink motif, chosen in /10x-plan 2026-09-29").
 
 - Type check and build pass: `npm --prefix web run typecheck && npm --prefix web run build`
 - Rendering tests unchanged: `npm --prefix web test`
-- E2E still passes in both browsers: `npm --prefix web run e2e:prepare && npm --prefix web run e2e`
+- E2E still passes in both browsers: `npm --prefix e2e run build:app && npm --prefix e2e test`
 - `app.css` has no palette classes or `@custom-variant`: `! grep -nE '(bg|text|border)-(white|black|gray|red)|@custom-variant' web/app/app.css`
 
 #### Manual Verification:
@@ -271,7 +271,7 @@ Add the repo-owned `Button` and `Alert` and move `home.tsx` onto them and onto t
 - Type check and build pass: `npm --prefix web run typecheck && npm --prefix web run build`
 - The colour-literal part of the hardcoded-value scan (the `/10x-ui` pattern) returns 0 hits on `web/app/routes/home.tsx` and `web/app/components/`
 - There are no `dark:` classes or numeric arbitrary values in `web/app/routes/`: `! grep -rnE 'dark:|-\[[0-9.]+(px|rem)\]' web/app/routes`
-- E2E passes in both browsers with the locators unchanged: `npm --prefix web run e2e:prepare && npm --prefix web run e2e`
+- E2E passes in both browsers with the locators unchanged: `npm --prefix e2e run build:app && npm --prefix e2e test`
 
 #### Manual Verification:
 
@@ -341,7 +341,7 @@ Add a preview frame that fits the viewport and never jumps, with a real empty st
 
 - Type check and build pass: `npm --prefix web run typecheck && npm --prefix web run build`
 - The full hardcoded-value scan, including `dark:` and numeric arbitrary values, returns 0 hits on `web/app/routes/`, `web/app/root.tsx` and `web/app/components/map-preview.tsx`. The colour-literal part returns 0 hits on `web/app/components/ui/`
-- E2E passes in both browsers, including the second-map round, with one canvas and the pixel checks: `npm --prefix web run e2e:prepare && npm --prefix web run e2e`
+- E2E passes in both browsers, including the second-map round, with one canvas and the pixel checks: `npm --prefix e2e run build:app && npm --prefix e2e test`
 - Rendering tests unchanged: `npm --prefix web test`
 
 #### Manual Verification:
@@ -468,7 +468,7 @@ Pin the states in Playwright screenshot baselines generated and checked in the C
 
 ### Integration Tests:
 
-- **E2E** (`web/e2e/map.spec.ts`, both browsers, real API) is unchanged and must stay green after every phase. It proves the locators, the single canvas and the preview-equals-PNG invariant survive the restyle.
+- **E2E** (`e2e/tests/map.spec.ts`, both browsers, real API) is unchanged and must stay green after every phase. It proves the locators, the single canvas and the preview-equals-PNG invariant survive the restyle.
 - **Visual** (`web/visual/`, Chromium, mocked API, in the CI container) covers the 7-state matrix at desktop light, desktop dark and a 390 px mobile width.
 
 ### Manual Testing Steps:
@@ -493,10 +493,12 @@ None. No data or API changes. Screenshot baselines are new files.
 - Research: `context/changes/home-view-ui-contract/research.md` (charges C1–C4, constraints, stack docs)
 - Change identity and contract variant: `context/changes/home-view-ui-contract/change.md`
 - `/10x-ui` checklist: `.claude/skills/10x-ui/references/ui-quality-checklist.md` (local tooling, gitignored)
-- E2E locators: `web/e2e/map.spec.ts:18,38,41-60`
+- E2E locators: `e2e/tests/map.spec.ts:18,38,41-60`
 - shadcn radix-nova Button: `https://ui.shadcn.com/r/styles/radix-nova/button.json` (fetched 2026-09-29)
 
 ## Progress
+
+> SHAs rebased 2026-09-30 onto `main` after the e2e move (#8): 876dbbc → 06b97cf, 6efae5e → 8672ddb, 32d84c6 → 8336eea. The review reports keep the original SHAs.
 
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.
 
@@ -504,45 +506,45 @@ None. No data or API changes. Screenshot baselines are new files.
 
 #### Automated
 
-- [x] 1.1 Type check and build pass — 876dbbc
-- [x] 1.2 Rendering tests unchanged — 876dbbc
-- [x] 1.3 E2E still passes in both browsers — 876dbbc
-- [x] 1.4 `app.css` has no palette classes or `@custom-variant` — 876dbbc
+- [x] 1.1 Type check and build pass — 06b97cf
+- [x] 1.2 Rendering tests unchanged — 06b97cf
+- [x] 1.3 E2E still passes in both browsers — 06b97cf
+- [x] 1.4 `app.css` has no palette classes or `@custom-variant` — 06b97cf
 
 #### Manual
 
-- [x] 1.5 Parchment/ink light and charcoal/parchment dark page in Chrome and Firefox — 876dbbc
-- [x] 1.6 `tokens.md` records contrast ≥ 4.5:1 for text pairs and ≥ 3:1 for ring, both themes — 876dbbc
+- [x] 1.5 Parchment/ink light and charcoal/parchment dark page in Chrome and Firefox — 06b97cf
+- [x] 1.6 `tokens.md` records contrast ≥ 4.5:1 for text pairs and ≥ 3:1 for ring, both themes — 06b97cf
 
 ### Phase 2: Components and View Migration (C1, C2)
 
 #### Automated
 
-- [x] 2.1 Type check and build pass — 6efae5e
-- [x] 2.2 Colour-literal scan returns 0 hits on home.tsx and components — 6efae5e
-- [x] 2.3 No `dark:` classes or arbitrary values in routes — 6efae5e
-- [x] 2.4 E2E passes in both browsers with the locators unchanged — 6efae5e
+- [x] 2.1 Type check and build pass — 8672ddb
+- [x] 2.2 Colour-literal scan returns 0 hits on home.tsx and components — 8672ddb
+- [x] 2.3 No `dark:` classes or arbitrary values in routes — 8672ddb
+- [x] 2.4 E2E passes in both browsers with the locators unchanged — 8672ddb
 
 #### Manual
 
-- [x] 2.5 Hover, focus ring and disabled state visible on both buttons, both browsers and themes — 6efae5e
-- [x] 2.6 Error shows the destructive Alert, readable in both themes — 6efae5e
+- [x] 2.5 Hover, focus ring and disabled state visible on both buttons, both browsers and themes — 8672ddb
+- [x] 2.6 Error shows the destructive Alert, readable in both themes — 8672ddb
 
 ### Phase 3: Preview and Entry States (C3, C4)
 
 #### Automated
 
-- [x] 3.1 Type check and build pass — 32d84c6
-- [x] 3.2 Hardcoded-value scan returns 0 hits on the views, colour literals 0 on ui/ — 32d84c6
-- [x] 3.3 E2E passes in both browsers including the second-map round — 32d84c6
-- [x] 3.4 Rendering tests unchanged — 32d84c6
+- [x] 3.1 Type check and build pass — 8336eea
+- [x] 3.2 Hardcoded-value scan returns 0 hits on the views, colour literals 0 on ui/ — 8336eea
+- [x] 3.3 E2E passes in both browsers including the second-map round — 8336eea
+- [x] 3.4 Rendering tests unchanged — 8336eea
 
 #### Manual
 
-- [x] 3.5 No layout jump on generate/regenerate; map fully visible at 1280×720 — 32d84c6
-- [x] 3.6 390 px width fits without horizontal scroll — 32d84c6
-- [x] 3.7 Network error returns the placeholder with the Alert and disables download — 32d84c6
-- [x] 3.8 Styled not-found page with a working link home — 32d84c6
+- [x] 3.5 No layout jump on generate/regenerate; map fully visible at 1280×720 — 8336eea
+- [x] 3.6 390 px width fits without horizontal scroll — 8336eea
+- [x] 3.7 Network error returns the placeholder with the Alert and disables download — 8336eea
+- [x] 3.8 Styled not-found page with a working link home — 8336eea
 
 ### Phase 4: Visual Gate and Guard
 
