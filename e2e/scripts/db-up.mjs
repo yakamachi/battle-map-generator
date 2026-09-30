@@ -9,4 +9,6 @@ const run = (command, args) => execFileSync(command, args, { cwd: root, stdio: "
 
 run("docker", ["compose", "up", "-d", "--wait"]);
 run("dotnet", ["tool", "restore"]);
+// ef does not restore, and on a fresh CI runner nothing has restored the API yet (as in deploy.yml).
+run("dotnet", ["restore", "api"]);
 run("dotnet", ["ef", "database", "update", "--project", "api", "--connection", LOCAL_DB_CONNECTION_STRING]);
