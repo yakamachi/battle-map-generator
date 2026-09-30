@@ -37,6 +37,16 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
           }
         }
       }
@@ -44,18 +54,34 @@
   },
   "components": {
     "schemas": {
+      "BossSize": {
+        "enum": [
+          "large",
+          "huge",
+          "gargantuan",
+          null
+        ]
+      },
       "CellKind": {
         "enum": [
           "void",
           "floor",
           "corridor",
           "wall",
-          "door"
+          "door",
+          "bossArena"
+        ]
+      },
+      "EncounterType": {
+        "enum": [
+          "skirmish",
+          "boss"
         ]
       },
       "GeneratedMap": {
         "required": [
           "seed",
+          "parameters",
           "width",
           "height",
           "cells",
@@ -66,6 +92,9 @@
           "seed": {
             "type": "integer",
             "format": "uint32"
+          },
+          "parameters": {
+            "$ref": "#/components/schemas/MapParameters"
           },
           "width": {
             "type": "integer",
@@ -101,6 +130,105 @@
               "integer"
             ],
             "format": "uint32"
+          },
+          "roomCount": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "encounter": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EncounterType"
+              }
+            ]
+          },
+          "bossSize": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BossSize"
+              }
+            ]
+          }
+        }
+      },
+      "HttpValidationProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "MapParameters": {
+        "required": [
+          "roomCount",
+          "encounter",
+          "bossSize"
+        ],
+        "type": "object",
+        "properties": {
+          "roomCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "encounter": {
+            "$ref": "#/components/schemas/EncounterType"
+          },
+          "bossSize": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BossSize"
+              }
+            ]
           }
         }
       },
@@ -109,7 +237,8 @@
           "x",
           "y",
           "width",
-          "height"
+          "height",
+          "kind"
         ],
         "type": "object",
         "properties": {
@@ -128,8 +257,17 @@
           "height": {
             "type": "integer",
             "format": "int32"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/RoomKind"
           }
         }
+      },
+      "RoomKind": {
+        "enum": [
+          "room",
+          "bossArena"
+        ]
       }
     }
   },

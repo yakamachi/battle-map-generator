@@ -25,10 +25,15 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /** @enum {unknown} */
-        CellKind: "void" | "floor" | "corridor" | "wall" | "door";
+        BossSize: "large" | "huge" | "gargantuan" | null;
+        /** @enum {unknown} */
+        CellKind: "void" | "floor" | "corridor" | "wall" | "door" | "bossArena";
+        /** @enum {unknown} */
+        EncounterType: "skirmish" | "boss";
         GeneratedMap: {
             /** Format: uint32 */
             seed: number;
+            parameters: components["schemas"]["MapParameters"];
             /** Format: int32 */
             width: number;
             /** Format: int32 */
@@ -39,6 +44,27 @@ export interface components {
         GenerateMapRequest: {
             /** Format: uint32 */
             seed: null | number;
+            /** Format: int32 */
+            roomCount?: null | number;
+            encounter?: null | components["schemas"]["EncounterType"];
+            bossSize?: null | components["schemas"]["BossSize"];
+        };
+        HttpValidationProblemDetails: {
+            type?: null | string;
+            title?: null | string;
+            /** Format: int32 */
+            status?: null | number;
+            detail?: null | string;
+            instance?: null | string;
+            errors?: {
+                [key: string]: string[];
+            };
+        };
+        MapParameters: {
+            /** Format: int32 */
+            roomCount: number;
+            encounter: components["schemas"]["EncounterType"];
+            bossSize: null | components["schemas"]["BossSize"];
         };
         Room: {
             /** Format: int32 */
@@ -49,7 +75,10 @@ export interface components {
             width: number;
             /** Format: int32 */
             height: number;
+            kind: components["schemas"]["RoomKind"];
         };
+        /** @enum {unknown} */
+        RoomKind: "room" | "bossArena";
     };
     responses: never;
     parameters: never;
@@ -79,6 +108,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GeneratedMap"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
                 };
             };
         };

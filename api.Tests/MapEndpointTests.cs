@@ -116,4 +116,115 @@ public sealed class MapEndpointTests
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    [Fact]
+    public async Task Generate_applies_and_echoes_the_parameters()
+    {
+        await using var factory = new ApiFactory(UnreachableConnectionString);
+        var client = factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync(GeneratePath,
+            new { seed = 42, roomCount = 8, encounter = "boss", bossSize = "huge" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var root = json.RootElement;
+        var parameters = root.GetProperty("parameters");
+        Assert.Equal(8, parameters.GetProperty("roomCount").GetInt32());
+        Assert.Equal("boss", parameters.GetProperty("encounter").GetString());
+        Assert.Equal("huge", parameters.GetProperty("bossSize").GetString());
+
+        var (width, height) = MapSize.For(8, BossSize.Huge);
+        Assert.Equal(width, root.GetProperty("width").GetInt32());
+        Assert.Equal(height, root.GetProperty("height").GetInt32());
+
+        var rooms = root.GetProperty("rooms").EnumerateArray().Select(room => room.GetProperty("kind").GetString()).ToList();
+        Assert.Equal(8, rooms.Count);
+        Assert.Single(rooms, kind => kind == "bossArena");
+        Assert.Equal(7, rooms.Count(kind => kind == "room"));
+
+        // The response is exactly the generator's output for that seed and those parameters.
+        var expected = BspGenerator.Generate(42, new MapParameters(8, EncounterType.Boss, BossSize.Huge));
+        var cells = root.GetProperty("cells").EnumerateArray().Select(cell => cell.GetString()).ToList();
+        Assert.Equal(expected.Cells.Select(cell => JsonNamingPolicy.CamelCase.ConvertName(cell.ToString())), cells);
+        Assert.Contains("bossArena", cells);
+    }
+
+    [Fact]
+    public async Task Generate_without_parameters_echoes_the_defaults()
+    {
+        await using var factory = new ApiFactory(UnreachableConnectionString);
+        var client = factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync(GeneratePath, new { seed = 42 });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var parameters = json.RootElement.GetProperty("parameters");
+        Assert.Equal(MapSize.DefaultRoomCount, parameters.GetProperty("roomCount").GetInt32());
+        Assert.Equal("skirmish", parameters.GetProperty("encounter").GetString());
+        Assert.Equal(JsonValueKind.Null, parameters.GetProperty("bossSize").ValueKind);
+        Assert.Equal(MapSize.DefaultRoomCount, json.RootElement.GetProperty("rooms").GetArrayLength());
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(13)]
+    public async Task A_room_count_outside_the_limits_returns_400_naming_the_field(int roomCount)
+    {
+        await using var factory = new ApiFactory(UnreachableConnectionString);
+        var client = factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync(GeneratePath, new { seed = 42, roomCount });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.True(json.RootElement.GetProperty("errors").TryGetProperty("roomCount", out _));
+    }
+
+    [Fact]
+    public async Task A_boss_fight_without_a_boss_size_returns_400_naming_the_field()
+    {
+        await using var factory = new ApiFactory(UnreachableConnectionString);
+        var client = factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync(GeneratePath, new { seed = 42, encounter = "boss" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.True(json.RootElement.GetProperty("errors").TryGetProperty("bossSize", out _));
+    }
+
+    [Theory]
+    [InlineData("""{ "seed": 42, "encounter": "ambush" }""")]
+    [InlineData("""{ "seed": 42, "encounter": "boss", "bossSize": "colossal" }""")]
+    [InlineData("""{ "seed": 42, "encounter": 7 }""")]
+    public async Task An_unknown_enum_value_returns_400(string body)
+    {
+        await using var factory = new ApiFactory(UnreachableConnectionString);
+        var client = factory.CreateClient();
+
+        var response = await client.PostAsync(GeneratePath, new StringContent(body, null, "application/json"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_boss_size_sent_with_a_skirmish_is_ignored_and_echoed_as_null()
+    {
+        await using var factory = new ApiFactory(UnreachableConnectionString);
+        var client = factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync(GeneratePath,
+            new { seed = 42, encounter = "skirmish", bossSize = "gargantuan" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var root = json.RootElement;
+        Assert.Equal("skirmish", root.GetProperty("parameters").GetProperty("encounter").GetString());
+        Assert.Equal(JsonValueKind.Null, root.GetProperty("parameters").GetProperty("bossSize").ValueKind);
+        Assert.Equal(MapSize.DefaultWidth, root.GetProperty("width").GetInt32());
+        Assert.Equal(MapSize.DefaultHeight, root.GetProperty("height").GetInt32());
+        Assert.DoesNotContain("bossArena", root.GetProperty("cells").EnumerateArray().Select(cell => cell.GetString()));
+    }
 }

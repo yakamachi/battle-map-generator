@@ -8,7 +8,7 @@ public static class MapEndpoints
 {
     public const string GenerateRateLimitPolicy = "generate";
 
-    // Public until S-04 adds login; the rate limit and the fixed default size bound its cost.
+    // Public until S-04 adds login; the rate limit and the room-count limits bound its cost.
     // Generation is pure computation: it must never resolve AppDbContext or touch the database.
     public static IEndpointRouteBuilder MapMapEndpoints(this IEndpointRouteBuilder app)
     {
@@ -18,10 +18,39 @@ public static class MapEndpoints
         return app;
     }
 
-    private static Ok<GeneratedMap> Generate(GenerateMapRequest? request)
+    // Invalid parameters are the client's error: a 400 naming the field, never a generator exception.
+    private static Results<Ok<GeneratedMap>, ValidationProblem> Generate(GenerateMapRequest? request)
     {
-        var seed = request?.Seed ?? NewSeed();
-        return TypedResults.Ok(BspGenerator.Generate(seed, MapSize.DefaultWidth, MapSize.DefaultHeight));
+        var roomCount = request?.RoomCount ?? MapSize.DefaultRoomCount;
+        var encounter = request?.Encounter ?? EncounterType.Skirmish;
+        var bossSize = request?.BossSize;
+
+        var errors = new Dictionary<string, string[]>();
+        if (roomCount < MapSize.MinRoomCount || roomCount > MapSize.MaxRoomCount)
+        {
+            errors["roomCount"] = [$"Room count must be between {MapSize.MinRoomCount} and {MapSize.MaxRoomCount}."];
+        }
+        // The enum converter also reads numbers, so a number outside the enum gets this far.
+        if (!Enum.IsDefined(encounter))
+        {
+            errors["encounter"] = ["Encounter must be 'skirmish' or 'boss'."];
+        }
+        if (bossSize is { } size && !Enum.IsDefined(size))
+        {
+            errors["bossSize"] = ["Boss size must be 'large', 'huge' or 'gargantuan'."];
+        }
+        else if (encounter == EncounterType.Boss && bossSize is null)
+        {
+            errors["bossSize"] = ["A boss fight needs a boss size: 'large', 'huge' or 'gargantuan'."];
+        }
+        if (errors.Count > 0)
+        {
+            return TypedResults.ValidationProblem(errors);
+        }
+
+        // A boss size sent with a skirmish is ignored.
+        var parameters = new MapParameters(roomCount, encounter, encounter == EncounterType.Boss ? bossSize : null);
+        return TypedResults.Ok(BspGenerator.Generate(request?.Seed ?? NewSeed(), parameters));
     }
 
     // A fresh seed only picks which map to generate, so it comes from the OS generator
