@@ -10,4 +10,7 @@
 - End-to-end tests are in the root `../e2e/` package (`npm --prefix ../e2e run build:app && npm --prefix ../e2e test`); see `../e2e/CLAUDE.md`.
 - `npm run api:types` regenerates `app/api/schema.d.ts` from `../api/BattleMapGenerator.Api.json` (build the API first); CI fails if either file drifts.
 - `npm run atlas` rebuilds `app/map/tileset/` from `tileset-src/scribble/`; CI fails if the committed atlas differs from a fresh build.
+- `npm run ui:scan` checks views and `ui/` primitives for hardcoded design values and `app/app.css` for a `.dark` selector or `@custom-variant`; CI fails on any hit. Fix the code with a token or a primitive, don't weaken the pattern.
+- `npm run visual` runs the screenshot gate (`playwright.visual.config.ts`, `npm run build` first) against committed baselines made in Docker; on this host it will differ (fonts, anti-aliasing), so check with `npm run visual:docker`, which runs it in `mcr.microsoft.com/playwright:v1.63.0-noble`, the image CI uses.
+- `npm run visual:update` rewrites the baselines in that same Docker image (`node_modules` in the `bmg-visual-node-modules` volume, files owned by you). Never update baselines just to make CI green: explain the visual delta in the PR.
 - No lint tooling is configured (no ESLint/Prettier/Biome). Don't assume `npm run lint` exists.

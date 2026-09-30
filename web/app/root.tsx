@@ -10,6 +10,7 @@ import {
 
 import type { Route } from "./+types/root";
 import { buttonVariants } from "~/components/ui/button";
+import { cn } from "cn";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
@@ -67,7 +68,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
     <main className="container mx-auto flex flex-col items-start gap-4 p-4 pt-16">
       <h1 className="text-2xl font-semibold tracking-tight text-foreground">{message}</h1>
       <p className="text-muted-foreground">{details}</p>
-      <Link to="/" className={buttonVariants({ variant: "outline" })}>
+      <Link to="/" className={cn(buttonVariants({ variant: "outline" }))}>
         Back to the generator
       </Link>
       {stack && (
