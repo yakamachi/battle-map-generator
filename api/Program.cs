@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.RateLimiting;
+using BattleMapGenerator.Api.Auth;
 using BattleMapGenerator.Api.Data;
 using BattleMapGenerator.Api.Health;
 using BattleMapGenerator.Api.Maps;
@@ -19,10 +21,12 @@ builder.Services.AddOpenApi();
 // Cell kinds travel as camelCase strings ("floor", "door"), which also makes them a string enum in OpenAPI.
 builder.Services.ConfigureHttpJsonOptions(options => MapJson.Configure(options.SerializerOptions));
 
-// Generation is public, so a stuck client could burn the F1 plan's daily CPU quota.
-// Each client IP gets 10 generations per minute, with no queue. TestServer leaves the remote
-// address null, and a null partition key throws, hence the "unknown" bucket.
-// Behind App Service the client IP comes from X-Forwarded-For (ASPNETCORE_FORWARDEDHEADERS_ENABLED).
+// A stuck client could burn the F1 plan's daily CPU quota. Generation requires a session, so each
+// account gets 10 generations per minute wherever it connects from, with no queue, and accounts
+// behind one IP do not share a budget. Authorization runs first, so the "anonymous" bucket is
+// unreachable; it is there because a null partition key throws.
+// The per-IP auth policy uses the "unknown" bucket for the same reason: TestServer leaves the remote
+// address null. Behind App Service the client IP comes from X-Forwarded-For (ASPNETCORE_FORWARDEDHEADERS_ENABLED).
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -33,6 +37,15 @@ builder.Services.AddRateLimiter(options =>
         return ValueTask.CompletedTask;
     };
     options.AddPolicy(MapEndpoints.GenerateRateLimitPolicy, httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 10,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        }));
+    // Register and login are public and hash a password: 10 calls per minute per client IP across both.
+    options.AddPolicy(AuthEndpoints.AuthRateLimitPolicy, httpContext => RateLimitPartition.GetFixedWindowLimiter(
         httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions
         {
@@ -59,9 +72,52 @@ builder.Services.AddDbContext<AppDbContext>((services, options) =>
     }
 });
 
-// Identity services only; login endpoints come with S-04.
-builder.Services.AddIdentityCore<IdentityUser>()
-    .AddEntityFrameworkStores<AppDbContext>();
+// Email and password accounts. The email is the user name, so it must be unique.
+// Length is the only password rule; lockout slows guessing one account's password.
+builder.Services.AddIdentityCore<IdentityUser>(options =>
+    {
+        options.User.RequireUniqueEmail = true;
+        options.Password.RequiredLength = 8;
+        options.Password.RequireDigit = false;
+        options.Password.RequireLowercase = false;
+        options.Password.RequireUppercase = false;
+        options.Password.RequireNonAlphanumeric = false;
+        options.Lockout.MaxFailedAccessAttempts = 5;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+    })
+    .AddEntityFrameworkStores<AppDbContext>()
+    .AddSignInManager();
+
+// All Identity cookie schemes, not only the application one: SignOutAsync also signs out
+// the external and two-factor schemes.
+builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
+    .AddIdentityCookies();
+
+// The session cookie is protected by the key ring in the database, so it survives a restart.
+// Secure follows the request scheme: App Service terminates TLS, local development is plain HTTP.
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.ExpireTimeSpan = TimeSpan.FromDays(14);
+    options.SlidingExpiration = true;
+
+    // There is no server-side login page to send anyone to. The framework answers API endpoints
+    // with 401/403 but still adds a Location header pointing at /Account/Login; send the bare status.
+    options.Events.OnRedirectToLogin = context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        return Task.CompletedTask;
+    };
+    options.Events.OnRedirectToAccessDenied = context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        return Task.CompletedTask;
+    };
+});
+
+builder.Services.AddAuthorization();
 
 // Keys live in the database so restarts and idle unloads keep the same key ring.
 // A fixed application name keeps purpose isolation independent of the content root path.
@@ -88,10 +144,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseRateLimiter();
 
 // The SPA from web/build/client is copied into wwwroot at build time.
 // index.html is never cached so a deploy is picked up on refresh; hashed assets are immutable.
+// Served before authentication: a file needs no session, and reading a cookie loads the key ring
+// from the database.
 app.UseDefaultFiles();
 app.UseStaticFiles(new StaticFileOptions
 {
@@ -108,6 +165,16 @@ app.UseStaticFiles(new StaticFileOptions
         }
     }
 });
+
+// Reading a session cookie decrypts it with the key ring in the database, and a forged cookie makes
+// the ring reload on every read. The gate strips the cookie where no session is needed and limits
+// the requests that carry one per client IP before authentication reads it (see SessionCookieGate).
+app.UseSessionCookieGate();
+app.UseAuthentication();
+// Authentication and authorization run before the limiter: it must be able to see the user, and a
+// request refused with 401 must not spend a permit.
+app.UseAuthorization();
+app.UseRateLimiter();
 
 // Liveness runs no checks: 200 while the process serves requests.
 app.MapHealthChecks("/api/health/live", new HealthCheckOptions { Predicate = _ => false });
@@ -129,6 +196,7 @@ app.MapHealthChecks("/api/health/ready", new HealthCheckOptions { Predicate = ch
     });
 
 app.MapMapEndpoints();
+app.MapAuthEndpoints();
 
 // Unknown API routes are 404s, never the SPA shell.
 app.MapFallback("/api/{**rest}", () => Results.NotFound());

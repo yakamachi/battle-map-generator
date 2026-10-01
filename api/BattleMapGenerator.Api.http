@@ -13,7 +13,8 @@ X-Health-Key: {{health_ready_key}}
 
 ###
 
-# Public and rate-limited (10 per minute per client IP). Omit the body or the seed for a random map.
+# Needs a session: run the register or login request below first, or this answers 401.
+# Rate-limited to 10 per minute per account. Omit the body or the seed for a random map.
 POST {{HostAddress}}/api/maps/generate
 Content-Type: application/json
 Accept: application/json
@@ -21,5 +22,44 @@ Accept: application/json
 {
   "seed": 42
 }
+
+###
+
+# Auth needs the local database (docker compose up -d, then dotnet ef database update --project api).
+# Register and login share 10 calls per minute per client IP. Both answer with the session cookie,
+# which the client keeps for the requests below.
+@email = dm@example.com
+@password = local-dev-password
+
+POST {{HostAddress}}/api/auth/register
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+###
+
+POST {{HostAddress}}/api/auth/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+###
+
+# 200 with the account's email while logged in, 401 otherwise.
+GET {{HostAddress}}/api/auth/me
+Accept: application/json
+
+###
+
+# 204, also when no one is logged in.
+POST {{HostAddress}}/api/auth/logout
 
 ###

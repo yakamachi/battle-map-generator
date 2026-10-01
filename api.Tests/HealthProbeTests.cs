@@ -7,10 +7,6 @@ namespace BattleMapGenerator.Api.Tests;
 [Collection(SqlServerCollection.Name)]
 public sealed class HealthProbeTests(SqlServerFixture sql)
 {
-    // Nothing listens on port 1, so the connection is refused at once. The short Connect Timeout
-    // keeps the suite fast even if the refusal turns into a timeout on some network setups.
-    private const string UnreachableConnectionString =
-        "Server=127.0.0.1,1;Database=battlemap;User Id=sa;Password=unused;Connect Timeout=2;Encrypt=False";
 
     [Fact]
     public async Task Live_and_ready_return_200_against_the_database()
@@ -23,7 +19,8 @@ public sealed class HealthProbeTests(SqlServerFixture sql)
     }
 
     // The key ring loads lazily: app startup and liveness never touch the database, so a cold start
-    // does not wake a paused Azure SQL database. Only ready (and, later, auth) reads the key ring.
+    // does not wake a paused Azure SQL database. Only ready and requests that read or write a
+    // session cookie load the key ring.
     // A database of its own keeps other tests' keys out of the count.
     [Fact]
     public async Task Startup_and_live_do_not_touch_the_database_but_ready_creates_the_key()
@@ -43,7 +40,7 @@ public sealed class HealthProbeTests(SqlServerFixture sql)
     public async Task Startup_and_live_succeed_quickly_with_an_unreachable_database()
     {
         var stopwatch = Stopwatch.StartNew();
-        await using var factory = new ApiFactory(UnreachableConnectionString);
+        await using var factory = new ApiFactory(ApiFactory.UnreachableConnectionString);
         var client = factory.CreateClient();
 
         var response = await client.GetAsync("/api/health/live");
@@ -55,7 +52,7 @@ public sealed class HealthProbeTests(SqlServerFixture sql)
     [Fact]
     public async Task Ready_returns_503_with_an_unreachable_database()
     {
-        await using var factory = new ApiFactory(UnreachableConnectionString);
+        await using var factory = new ApiFactory(ApiFactory.UnreachableConnectionString);
         var client = factory.CreateReadyClient();
 
         Assert.Equal(HttpStatusCode.ServiceUnavailable, (await client.GetAsync("/api/health/ready")).StatusCode);

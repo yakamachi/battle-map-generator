@@ -5,15 +5,16 @@ import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "~/components/ui/native-select";
 import { MapPreview, type MapPreviewState } from "~/components/map-preview";
-import type { GenerateError, GeneratedMap } from "~/api/client";
 import {
   DEFAULT_ROOM_COUNT,
   MAX_ROOM_COUNT,
   MIN_ROOM_COUNT,
-  generateMapWith,
+  generateMap,
   type BossSize,
   type EncounterType,
-} from "~/api/maps";
+  type GenerateError,
+  type GeneratedMap,
+} from "~/api/client";
 import { downloadCanvas } from "~/map/download";
 import { loadAtlas, renderMap } from "~/map/render";
 
@@ -123,7 +124,7 @@ export default function Home() {
     setStatus({ kind: "loading" });
     setRenderedMap(null);
     setDownloadError(null);
-    const result = await generateMapWith({
+    const result = await generateMap({
       roomCount,
       encounter,
       bossSize: encounter === "boss" ? bossSize : undefined,

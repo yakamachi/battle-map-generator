@@ -7,23 +7,21 @@ using BattleMapGenerator.Api.Tests.Infrastructure;
 
 namespace BattleMapGenerator.Api.Tests;
 
-// Generation never needs the database, so these tests run without the SQL Server container: every
-// factory points at a database that cannot be reached, and a request that touched it would fail.
-// The rate limiter counts per app instance, so each test builds its own factory, and only the 429
-// test makes more than 10 generate calls.
-public sealed class MapEndpointTests
+// Generation requires a session, so tests that generate log in first on the shared SQL Server
+// database (the session cookie is read through the key ring stored there). Generation itself never
+// touches the database, and an anonymous request is refused without it: the tests that assert the
+// database is never touched point at one that cannot be reached. The rate limiter counts per app instance, so each test builds its
+// own factory, and only the 429 test makes more than 10 generate calls for one account.
+[Collection(SqlServerCollection.Name)]
+public sealed class MapEndpointTests(SqlServerFixture sql)
 {
     private const string GeneratePath = "/api/maps/generate";
-
-    // Nothing listens on port 1, so a connection attempt is refused at once (see HealthProbeTests).
-    private const string UnreachableConnectionString =
-        "Server=127.0.0.1,1;Database=battlemap;User Id=sa;Password=unused;Connect Timeout=2;Encrypt=False";
 
     [Fact]
     public async Task Generate_returns_the_default_size_grid_with_string_cell_kinds_for_the_given_seed()
     {
-        await using var factory = new ApiFactory(UnreachableConnectionString);
-        var client = factory.CreateClient();
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
 
         var response = await client.PostAsJsonAsync(GeneratePath, new { seed = 42 });
 
@@ -55,8 +53,8 @@ public sealed class MapEndpointTests
     [Fact]
     public async Task Generate_with_an_empty_body_or_no_seed_draws_a_seed()
     {
-        await using var factory = new ApiFactory(UnreachableConnectionString);
-        var client = factory.CreateClient();
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
 
         var withoutBody = await client.PostAsync(GeneratePath, new StringContent("", null, "application/json"));
         var withoutSeed = await client.PostAsJsonAsync(GeneratePath, new { });
@@ -69,11 +67,12 @@ public sealed class MapEndpointTests
         Assert.NotEqual(first.RootElement.GetProperty("seed").GetUInt32(), second.RootElement.GetProperty("seed").GetUInt32());
     }
 
+    // The limit is per account: a second account behind the same client IP keeps its own budget.
     [Fact]
     public async Task The_eleventh_generate_within_a_minute_returns_429_with_retry_after()
     {
-        await using var factory = new ApiFactory(UnreachableConnectionString);
-        var client = factory.CreateClient();
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
 
         for (var i = 1; i <= 10; i++)
         {
@@ -86,20 +85,54 @@ public sealed class MapEndpointTests
         Assert.Equal(HttpStatusCode.TooManyRequests, rejected.StatusCode);
         Assert.True(rejected.Headers.RetryAfter?.Delta is { } delay && delay > TimeSpan.Zero && delay <= TimeSpan.FromMinutes(1),
             $"Retry-After was '{rejected.Headers.RetryAfter}'.");
+
+        var secondAccount = await factory.CreateLoggedInClientAsync();
+        var other = await secondAccount.PostAsJsonAsync(GeneratePath, new { seed = 12 });
+        Assert.Equal(HttpStatusCode.OK, other.StatusCode);
     }
 
-    // The database lesson: startup and generation succeed, quickly, while the database is unreachable.
+    // A caller that skips the UI gets a bare 401: no redirect, no SPA shell, no session cookie.
+    // Authorization runs before the limiter, so eleven refused calls spend no permit: the account
+    // that logs in afterwards still has all 10 in the same app instance.
     [Fact]
-    public async Task Generate_succeeds_quickly_with_an_unreachable_database()
+    public async Task Anonymous_generate_returns_401_and_spends_no_permits()
+    {
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var anonymous = factory.CreateClient();
+
+        for (var i = 1; i <= 11; i++)
+        {
+            var response = i % 2 == 0
+                ? await anonymous.PostAsync(GeneratePath, new StringContent("", null, "application/json"))
+                : await anonymous.PostAsJsonAsync(GeneratePath, new { seed = i });
+
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+            Assert.Null(response.Headers.Location);
+            Assert.False(response.Headers.Contains("Set-Cookie"));
+            Assert.DoesNotContain(ApiFactory.SpaShellMarker, await response.Content.ReadAsStringAsync());
+        }
+
+        var client = await factory.CreateLoggedInClientAsync();
+        for (var i = 1; i <= 10; i++)
+        {
+            var allowed = await client.PostAsJsonAsync(GeneratePath, new { seed = i });
+            Assert.Equal(HttpStatusCode.OK, allowed.StatusCode);
+        }
+    }
+
+    // The database lesson: startup and an anonymous generate are answered, quickly, while the
+    // database is unreachable. A request without a session cookie never loads the key ring.
+    [Fact]
+    public async Task Startup_and_anonymous_generate_answer_401_quickly_with_an_unreachable_database()
     {
         var stopwatch = Stopwatch.StartNew();
-        await using var factory = new ApiFactory(UnreachableConnectionString);
+        await using var factory = new ApiFactory(ApiFactory.UnreachableConnectionString);
         var client = factory.CreateClient();
 
         var response = await client.PostAsJsonAsync(GeneratePath, new { seed = 1 });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(5), $"Startup and generate took {stopwatch.Elapsed}.");
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(5), $"Startup and anonymous generate took {stopwatch.Elapsed}.");
     }
 
     // ApiFactory serves a stub index.html, so without the /api guard these paths would get 200.
@@ -109,7 +142,7 @@ public sealed class MapEndpointTests
     [InlineData("POST", "/api/maps/generate/extra")]
     public async Task Unknown_maps_paths_return_404(string method, string path)
     {
-        await using var factory = new ApiFactory(UnreachableConnectionString);
+        await using var factory = new ApiFactory(ApiFactory.UnreachableConnectionString);
         var client = factory.CreateClient();
 
         var response = await client.SendAsync(new HttpRequestMessage(new HttpMethod(method), path));
@@ -120,8 +153,8 @@ public sealed class MapEndpointTests
     [Fact]
     public async Task Generate_applies_and_echoes_the_parameters()
     {
-        await using var factory = new ApiFactory(UnreachableConnectionString);
-        var client = factory.CreateClient();
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
 
         var response = await client.PostAsJsonAsync(GeneratePath,
             new { seed = 42, roomCount = 8, encounter = "boss", bossSize = "huge" });
@@ -153,8 +186,8 @@ public sealed class MapEndpointTests
     [Fact]
     public async Task Generate_without_parameters_echoes_the_defaults()
     {
-        await using var factory = new ApiFactory(UnreachableConnectionString);
-        var client = factory.CreateClient();
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
 
         var response = await client.PostAsJsonAsync(GeneratePath, new { seed = 42 });
 
@@ -172,8 +205,8 @@ public sealed class MapEndpointTests
     [InlineData(13)]
     public async Task A_room_count_outside_the_limits_returns_400_naming_the_field(int roomCount)
     {
-        await using var factory = new ApiFactory(UnreachableConnectionString);
-        var client = factory.CreateClient();
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
 
         var response = await client.PostAsJsonAsync(GeneratePath, new { seed = 42, roomCount });
 
@@ -185,8 +218,8 @@ public sealed class MapEndpointTests
     [Fact]
     public async Task A_boss_fight_without_a_boss_size_returns_400_naming_the_field()
     {
-        await using var factory = new ApiFactory(UnreachableConnectionString);
-        var client = factory.CreateClient();
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
 
         var response = await client.PostAsJsonAsync(GeneratePath, new { seed = 42, encounter = "boss" });
 
@@ -201,8 +234,8 @@ public sealed class MapEndpointTests
     [InlineData("""{ "seed": 42, "encounter": 7 }""")]
     public async Task An_unknown_enum_value_returns_400(string body)
     {
-        await using var factory = new ApiFactory(UnreachableConnectionString);
-        var client = factory.CreateClient();
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
 
         var response = await client.PostAsync(GeneratePath, new StringContent(body, null, "application/json"));
 
@@ -212,8 +245,8 @@ public sealed class MapEndpointTests
     [Fact]
     public async Task A_boss_size_sent_with_a_skirmish_is_ignored_and_echoed_as_null()
     {
-        await using var factory = new ApiFactory(UnreachableConnectionString);
-        var client = factory.CreateClient();
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
 
         var response = await client.PostAsJsonAsync(GeneratePath,
             new { seed = 42, encounter = "skirmish", bossSize = "gargantuan" });
@@ -236,8 +269,8 @@ public sealed class MapEndpointTests
     [InlineData("""{ "seed": 42, "encounter": "skirmish", "bossSize": 9 }""")]
     public async Task An_enum_sent_as_a_number_returns_400(string body)
     {
-        await using var factory = new ApiFactory(UnreachableConnectionString);
-        var client = factory.CreateClient();
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
 
         var response = await client.PostAsync(GeneratePath, new StringContent(body, null, "application/json"));
 
@@ -251,8 +284,8 @@ public sealed class MapEndpointTests
     [InlineData("""{ "seed": null }""")]
     public async Task An_empty_body_or_a_body_without_parameters_gives_the_default_map(string body)
     {
-        await using var factory = new ApiFactory(UnreachableConnectionString);
-        var client = factory.CreateClient();
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
 
         var response = await client.PostAsync(GeneratePath, new StringContent(body, null, "application/json"));
 
@@ -279,8 +312,8 @@ public sealed class MapEndpointTests
     [InlineData("""[1, 2]""", "request")]
     public async Task A_value_the_body_cannot_hold_returns_a_validation_problem_naming_the_field(string body, string field)
     {
-        await using var factory = new ApiFactory(UnreachableConnectionString);
-        var client = factory.CreateClient();
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
 
         var response = await client.PostAsync(GeneratePath, new StringContent(body, null, "application/json"));
 
@@ -296,8 +329,8 @@ public sealed class MapEndpointTests
     [Fact]
     public async Task A_comma_list_boss_size_that_is_no_single_size_returns_400()
     {
-        await using var factory = new ApiFactory(UnreachableConnectionString);
-        var client = factory.CreateClient();
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
 
         var response = await client.PostAsync(GeneratePath,
             new StringContent("""{ "encounter": "boss", "bossSize": "huge, gargantuan" }""", null, "application/json"));
@@ -310,8 +343,8 @@ public sealed class MapEndpointTests
     [Fact]
     public async Task A_room_count_out_of_range_says_so_in_words()
     {
-        await using var factory = new ApiFactory(UnreachableConnectionString);
-        var client = factory.CreateClient();
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
 
         var response = await client.PostAsJsonAsync(GeneratePath, new { roomCount = 13 });
 
@@ -324,8 +357,8 @@ public sealed class MapEndpointTests
     [Fact]
     public async Task A_body_that_is_not_json_is_not_accepted()
     {
-        await using var factory = new ApiFactory(UnreachableConnectionString);
-        var client = factory.CreateClient();
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
 
         var response = await client.PostAsync(GeneratePath, new StringContent("roomCount=8", null, "text/plain"));
 

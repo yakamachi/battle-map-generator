@@ -2,8 +2,12 @@
   "name": "battle-map-generator-e2e",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
   "scripts": {
     "build:app": "node scripts/build-app.mjs",
+    "db:up": "node scripts/db-up.mjs",
     "test": "playwright test",
     "typecheck": "tsc"
   },
