@@ -54,6 +54,10 @@ const test = base.extend<{ hermeticFonts: void }>({
 
 const GENERATE = "**/api/maps/generate";
 const SEED_42 = readFileSync(resolve(import.meta.dirname, "../../fixtures/grids/seed-42.json"), "utf8");
+const SEED_42_BOSS_HUGE = readFileSync(
+  resolve(import.meta.dirname, "../../fixtures/grids/seed-42-boss-huge.json"),
+  "utf8",
+);
 // Atlas load and a 4200×2800 draw on a cold CI runner can outlast the 5 s default.
 const RENDER_TIMEOUT_MS = 20_000;
 
@@ -112,7 +116,8 @@ test.describe("pointer and keyboard", () => {
 
   test("idle-focus", async ({ page }) => {
     await openHome(page);
-    await page.keyboard.press("Tab");
+    // Rooms and Encounter come first in the tab order.
+    for (let i = 0; i < 3; i++) await page.keyboard.press("Tab");
     await expect(page.getByRole("button", { name: "Generate", exact: true })).toBeFocused();
     await shot(page, "idle-focus");
   });
@@ -170,6 +175,30 @@ test("error-rate-limited", async ({ page }) => {
     "Too many maps in a short time. Please wait a minute and try again.",
   );
   await shot(page, "error-rate-limited");
+});
+
+test("boss-form", async ({ page }) => {
+  await openHome(page);
+  await expect(page.getByLabel("Boss size")).toHaveCount(0);
+  await page.getByLabel("Encounter").selectOption("Boss fight");
+  await expect(page.getByLabel("Boss size")).toHaveValue("large");
+  await shot(page, "boss-form");
+});
+
+test("ready-boss", async ({ page }) => {
+  let body: unknown;
+  await page.route(GENERATE, (route) => {
+    body = route.request().postDataJSON();
+    return fulfilMap(route, SEED_42_BOSS_HUGE);
+  });
+  await openHome(page);
+  await page.getByLabel("Encounter").selectOption("Boss fight");
+  await page.getByLabel("Boss size").selectOption("Huge");
+  await clickGenerate(page);
+  await waitForReady(page);
+  await expect(page.getByText("Seed: 42")).toBeVisible();
+  expect(body).toEqual({ seed: null, roomCount: 6, encounter: "boss", bossSize: "huge" });
+  await shot(page, "ready-boss");
 });
 
 test("not-found", async ({ page }) => {

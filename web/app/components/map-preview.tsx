@@ -50,8 +50,8 @@ export function MapPreview({
       />
       {!drawn && !loading && (
         <p className="absolute inset-0 flex items-center justify-center p-4 text-center text-sm text-muted-foreground">
-          Click Generate to create a {width}×{height} battle map, then download it as a PNG ({TILE_SIZE}{" "}
-          px per square)
+          Click Generate to create a battle map, then download it as a PNG ({TILE_SIZE} px per
+          square)
         </p>
       )}
       {loading && (

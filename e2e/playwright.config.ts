@@ -6,7 +6,7 @@ const BASE_URL = "http://localhost:5108";
 // (run `npm run build:app` first). Both browsers are required by the PRD.
 //
 // The generate endpoint allows 10 calls per minute per IP, and both projects hit the same
-// server: keep the whole run well under that (today two calls per browser). A reused local
+// server: keep the whole run well under that (today three calls per browser, six per run). A reused local
 // server keeps its counts between runs, so rapid reruns can meet a 429.
 export default defineConfig({
   testDir: "tests",
