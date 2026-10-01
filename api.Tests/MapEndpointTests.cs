@@ -149,4 +149,220 @@ public sealed class MapEndpointTests(SqlServerFixture sql)
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    [Fact]
+    public async Task Generate_applies_and_echoes_the_parameters()
+    {
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
+
+        var response = await client.PostAsJsonAsync(GeneratePath,
+            new { seed = 42, roomCount = 8, encounter = "boss", bossSize = "huge" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var root = json.RootElement;
+        var parameters = root.GetProperty("parameters");
+        Assert.Equal(8, parameters.GetProperty("roomCount").GetInt32());
+        Assert.Equal("boss", parameters.GetProperty("encounter").GetString());
+        Assert.Equal("huge", parameters.GetProperty("bossSize").GetString());
+
+        var (width, height) = MapSize.For(8, BossSize.Huge);
+        Assert.Equal(width, root.GetProperty("width").GetInt32());
+        Assert.Equal(height, root.GetProperty("height").GetInt32());
+
+        var rooms = root.GetProperty("rooms").EnumerateArray().Select(room => room.GetProperty("kind").GetString()).ToList();
+        Assert.Equal(8, rooms.Count);
+        Assert.Single(rooms, kind => kind == "bossArena");
+        Assert.Equal(7, rooms.Count(kind => kind == "room"));
+
+        // The response is exactly the generator's output for that seed and those parameters.
+        var expected = BspGenerator.Generate(42, new MapParameters(8, EncounterType.Boss, BossSize.Huge));
+        var cells = root.GetProperty("cells").EnumerateArray().Select(cell => cell.GetString()).ToList();
+        Assert.Equal(expected.Cells.Select(cell => JsonNamingPolicy.CamelCase.ConvertName(cell.ToString())), cells);
+        Assert.Contains("bossArena", cells);
+    }
+
+    [Fact]
+    public async Task Generate_without_parameters_echoes_the_defaults()
+    {
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
+
+        var response = await client.PostAsJsonAsync(GeneratePath, new { seed = 42 });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var parameters = json.RootElement.GetProperty("parameters");
+        Assert.Equal(MapSize.DefaultRoomCount, parameters.GetProperty("roomCount").GetInt32());
+        Assert.Equal("skirmish", parameters.GetProperty("encounter").GetString());
+        Assert.Equal(JsonValueKind.Null, parameters.GetProperty("bossSize").ValueKind);
+        Assert.Equal(MapSize.DefaultRoomCount, json.RootElement.GetProperty("rooms").GetArrayLength());
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(13)]
+    public async Task A_room_count_outside_the_limits_returns_400_naming_the_field(int roomCount)
+    {
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
+
+        var response = await client.PostAsJsonAsync(GeneratePath, new { seed = 42, roomCount });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.True(json.RootElement.GetProperty("errors").TryGetProperty("roomCount", out _));
+    }
+
+    [Fact]
+    public async Task A_boss_fight_without_a_boss_size_returns_400_naming_the_field()
+    {
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
+
+        var response = await client.PostAsJsonAsync(GeneratePath, new { seed = 42, encounter = "boss" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.True(json.RootElement.GetProperty("errors").TryGetProperty("bossSize", out _));
+    }
+
+    [Theory]
+    [InlineData("""{ "seed": 42, "encounter": "ambush" }""")]
+    [InlineData("""{ "seed": 42, "encounter": "boss", "bossSize": "colossal" }""")]
+    [InlineData("""{ "seed": 42, "encounter": 7 }""")]
+    public async Task An_unknown_enum_value_returns_400(string body)
+    {
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
+
+        var response = await client.PostAsync(GeneratePath, new StringContent(body, null, "application/json"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_boss_size_sent_with_a_skirmish_is_ignored_and_echoed_as_null()
+    {
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
+
+        var response = await client.PostAsJsonAsync(GeneratePath,
+            new { seed = 42, encounter = "skirmish", bossSize = "gargantuan" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var root = json.RootElement;
+        Assert.Equal("skirmish", root.GetProperty("parameters").GetProperty("encounter").GetString());
+        Assert.Equal(JsonValueKind.Null, root.GetProperty("parameters").GetProperty("bossSize").ValueKind);
+        Assert.Equal(MapSize.DefaultWidth, root.GetProperty("width").GetInt32());
+        Assert.Equal(MapSize.DefaultHeight, root.GetProperty("height").GetInt32());
+        Assert.DoesNotContain("bossArena", root.GetProperty("cells").EnumerateArray().Select(cell => cell.GetString()));
+    }
+
+    // The contract lists the enums as strings: a number and a number in a string are rejected.
+    [Theory]
+    [InlineData("""{ "seed": 42, "encounter": 1, "bossSize": "large" }""")]
+    [InlineData("""{ "seed": 42, "encounter": "1", "bossSize": "large" }""")]
+    [InlineData("""{ "seed": 42, "encounter": "boss", "bossSize": 2 }""")]
+    [InlineData("""{ "seed": 42, "encounter": "skirmish", "bossSize": 9 }""")]
+    public async Task An_enum_sent_as_a_number_returns_400(string body)
+    {
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
+
+        var response = await client.PostAsync(GeneratePath, new StringContent(body, null, "application/json"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    // What the web client sends before it knows about parameters: no body, or a body without them.
+    [Theory]
+    [InlineData("")]
+    [InlineData("{}")]
+    [InlineData("""{ "seed": null }""")]
+    public async Task An_empty_body_or_a_body_without_parameters_gives_the_default_map(string body)
+    {
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
+
+        var response = await client.PostAsync(GeneratePath, new StringContent(body, null, "application/json"));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var root = json.RootElement;
+        Assert.Equal(MapSize.DefaultWidth, root.GetProperty("width").GetInt32());
+        Assert.Equal(MapSize.DefaultHeight, root.GetProperty("height").GetInt32());
+        Assert.Equal(MapSize.DefaultRoomCount, root.GetProperty("rooms").GetArrayLength());
+        var parameters = root.GetProperty("parameters");
+        Assert.Equal(MapSize.DefaultRoomCount, parameters.GetProperty("roomCount").GetInt32());
+        Assert.Equal("skirmish", parameters.GetProperty("encounter").GetString());
+        Assert.Equal(JsonValueKind.Null, parameters.GetProperty("bossSize").ValueKind);
+    }
+
+    // A value JSON binding rejects still gets a validation problem naming the field.
+    [Theory]
+    [InlineData("""{ "encounter": "ambush" }""", "encounter")]
+    [InlineData("""{ "encounter": 1 }""", "encounter")]
+    [InlineData("""{ "encounter": "boss", "bossSize": "colossal" }""", "bossSize")]
+    [InlineData("""{ "roomCount": "8" }""", "roomCount")]
+    [InlineData("""{ "seed": -1 }""", "seed")]
+    [InlineData("""{ "roomCount": 8""", "request")]
+    [InlineData("""[1, 2]""", "request")]
+    public async Task A_value_the_body_cannot_hold_returns_a_validation_problem_naming_the_field(string body, string field)
+    {
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
+
+        var response = await client.PostAsync(GeneratePath, new StringContent(body, null, "application/json"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var errors = json.RootElement.GetProperty("errors");
+        Assert.True(errors.TryGetProperty(field, out var messages), $"errors: {errors}");
+        Assert.NotEqual("", messages[0].GetString());
+    }
+
+    // The converter reads a comma list as combined flags; an undefined combination is a 400, not a 500.
+    [Fact]
+    public async Task A_comma_list_boss_size_that_is_no_single_size_returns_400()
+    {
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
+
+        var response = await client.PostAsync(GeneratePath,
+            new StringContent("""{ "encounter": "boss", "bossSize": "huge, gargantuan" }""", null, "application/json"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.True(json.RootElement.GetProperty("errors").TryGetProperty("bossSize", out _));
+    }
+
+    [Fact]
+    public async Task A_room_count_out_of_range_says_so_in_words()
+    {
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
+
+        var response = await client.PostAsJsonAsync(GeneratePath, new { roomCount = 13 });
+
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(GenerateMapRequest.RoomCountMessage,
+            json.RootElement.GetProperty("errors").GetProperty("roomCount")[0].GetString());
+    }
+
+    // The body is read by the endpoint, but the endpoint still only takes JSON.
+    [Fact]
+    public async Task A_body_that_is_not_json_is_not_accepted()
+    {
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
+
+        var response = await client.PostAsync(GeneratePath, new StringContent("roomCount=8", null, "text/plain"));
+
+        Assert.NotEqual(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotEqual(HttpStatusCode.InternalServerError, response.StatusCode);
+    }
 }

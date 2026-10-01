@@ -1,7 +1,8 @@
 namespace BattleMapGenerator.Api.Maps;
 
-// Binary space partitioning: the map is split recursively into leaves, each leaf gets one room,
-// and sibling subtrees are joined by a 1-cell corridor found with a turn-averse shortest path.
+// Binary space partitioning: the map is split into exactly as many leaves as rooms were asked for,
+// each leaf gets one room, and sibling subtrees are joined by a 1-cell corridor found with a
+// turn-averse shortest path. On a boss fight one leaf is reserved for the arena before the rest is split.
 //
 // Layout rules that make the guarantees hold by construction:
 // - A room's wall ring (the cells 8-adjacent to its floor) stays at least one cell inside its leaf,
@@ -15,15 +16,11 @@ public static class BspGenerator
 {
     private const int MinLeaf = 7;
     private const int MinRoom = 3;
-
-    // Distance from a leaf's edge to its room's floor: one free lane plus the wall ring.
-    private const int RoomMargin = 2;
-
-    // Leaves up to this size may stop splitting early, so layouts vary between seeds.
-    private const int OptionalSplitSize = 16;
+    private const int RoomMargin = MapSize.RoomMargin;
 
     // Path costs: corridors reuse existing corridors, prefer straight runs, and avoid running
-    // alongside another corridor (which would read as a 2-wide corridor).
+    // alongside another corridor (which would read as a 2-wide corridor). One-cell-wide corridors
+    // hold through these costs, not by construction: the tests check it, so recheck after a change here.
     private const int NewCellCost = 2;
     private const int ExistingCorridorCost = 1;
     private const int TurnCost = 3;
@@ -31,7 +28,22 @@ public static class BspGenerator
 
     private static readonly (int Dx, int Dy)[] Directions = [(1, 0), (0, 1), (-1, 0), (0, -1)];
 
-    public static GeneratedMap Generate(uint seed, int width, int height)
+    // The map's size follows from the parameters (see MapSize.For).
+    public static GeneratedMap Generate(uint seed, MapParameters parameters)
+    {
+        var isBoss = parameters.Encounter == EncounterType.Boss;
+        if (isBoss && parameters.BossSize is null)
+        {
+            throw new ArgumentException("A boss fight needs a boss size.", nameof(parameters));
+        }
+
+        var bossSize = isBoss ? parameters.BossSize : null;
+        var (width, height) = MapSize.For(parameters.RoomCount, bossSize);
+        return Generate(seed, width, height, parameters.RoomCount, bossSize);
+    }
+
+    public static GeneratedMap Generate(uint seed, int width, int height,
+        int roomCount = MapSize.DefaultRoomCount, BossSize? bossSize = null)
     {
         if (width < MapSize.MinWidth || width > MapSize.MaxWidth)
         {
@@ -43,76 +55,229 @@ public static class BspGenerator
             throw new ArgumentOutOfRangeException(nameof(height), height,
                 $"Height must be between {MapSize.MinHeight} and {MapSize.MaxHeight}.");
         }
+        if (roomCount < MapSize.MinRoomCount || roomCount > MapSize.MaxRoomCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(roomCount), roomCount,
+                $"Room count must be between {MapSize.MinRoomCount} and {MapSize.MaxRoomCount}.");
+        }
 
         var rng = new Prng(seed);
         var layout = new Layout(width, height);
-        var root = Split(new Rect(0, 0, width, height), rng, isRoot: true);
-        PlaceRooms(root, rng, layout);
+        var root = new Node(new Rect(0, 0, width, height));
+        var leaves = new List<Node> { root };
+
+        // The arena is placed first, so every other room can be kept smaller than it.
+        var maxRoomArea = int.MaxValue;
+        if (bossSize is { } boss)
+        {
+            var side = MapSize.MinArenaSide(boss);
+            var arena = ReserveArena(root, side, roomCount, rng, leaves);
+            SplitInto(leaves, roomCount - 1, roomCount, rng);
+            PlaceRoom(arena, rng, layout, side, int.MaxValue, RoomKind.BossArena);
+            var arenaRoom = layout.Rooms[arena.RoomIndex];
+            maxRoomArea = arenaRoom.Width * arenaRoom.Height - 1;
+        }
+        else
+        {
+            SplitInto(leaves, roomCount, roomCount, rng);
+        }
+
+        PlaceRooms(root, rng, layout, maxRoomArea);
         Connect(root, layout);
         layout.BuildWalls();
 
-        return new GeneratedMap(seed, width, height, layout.Cells, [.. layout.Rooms]);
+        var parameters = new MapParameters(roomCount,
+            bossSize is null ? EncounterType.Skirmish : EncounterType.Boss, bossSize);
+        return new GeneratedMap(seed, parameters, width, height, layout.Cells, [.. layout.Rooms]);
     }
 
-    private static Node Split(Rect area, Prng rng, bool isRoot)
+    // Cuts a full-height strip just wide enough for the arena off the left or right side of the map.
+    // When the strip is high enough and more than two rooms were asked for, the strip is cut again
+    // and its other part goes back to the leaves to split. Returns the arena's leaf; leaves ends up
+    // holding every other leaf.
+    private static Node ReserveArena(Node root, int side, int roomCount, Prng rng, List<Node> leaves)
     {
-        var canSplitVertically = area.Width >= 2 * MinLeaf;
-        var canSplitHorizontally = area.Height >= 2 * MinLeaf;
-        if (!canSplitVertically && !canSplitHorizontally)
+        var area = root.Area;
+        var arenaLeaf = side + 2 * RoomMargin;
+        if (area.Width < arenaLeaf + MinLeaf || area.Height < arenaLeaf)
         {
-            return new Node(area);
-        }
-        // The root always splits: a lone room would have no corridor and so no door.
-        if (!isRoot && area.Width <= OptionalSplitSize && area.Height <= OptionalSplitSize && rng.NextInt(0, 4) == 0)
-        {
-            return new Node(area);
+            throw new ArgumentOutOfRangeException("width",
+                $"A {area.Width}x{area.Height} map cannot hold a boss arena with a {side}x{side} floor next to another room.");
         }
 
-        bool vertical;
-        if (canSplitVertically && canSplitHorizontally)
+        var rest = new Node(area with { Width = area.Width - arenaLeaf });
+        var strip = new Node(area with { X = area.X + area.Width - arenaLeaf, Width = arenaLeaf });
+        if (rng.NextInt(0, 2) == 0)
         {
-            // Cut across the longer side so leaves stay roughly square.
-            vertical = 4 * area.Width > 5 * area.Height
-                || (4 * area.Height <= 5 * area.Width && rng.NextInt(0, 2) == 0);
+            strip = new Node(area with { Width = arenaLeaf });
+            rest = new Node(area with { X = area.X + arenaLeaf, Width = area.Width - arenaLeaf });
+            root.SetChildren(strip, rest);
         }
         else
         {
-            vertical = canSplitVertically;
+            root.SetChildren(rest, strip);
         }
 
-        if (vertical)
+        leaves.Clear();
+        leaves.Add(rest);
+        if (roomCount < 3 || area.Height < arenaLeaf + MinLeaf)
         {
-            var at = rng.NextInt(MinLeaf, area.Width - MinLeaf + 1);
-            return new Node(area,
-                Split(area with { Width = at }, rng, isRoot: false),
-                Split(area with { X = area.X + at, Width = area.Width - at }, rng, isRoot: false));
+            return strip;
+        }
+
+        // The arena's leaf stays close to square, so the arena does not turn into a hall.
+        var maxHeight = Math.Min(area.Height - MinLeaf, arenaLeaf + side / 2);
+        var height = rng.NextInt(arenaLeaf, maxHeight + 1);
+        Node arena;
+        if (rng.NextInt(0, 2) == 0)
+        {
+            arena = new Node(strip.Area with { Height = height });
+            var spare = new Node(strip.Area with { Y = strip.Area.Y + height, Height = area.Height - height });
+            strip.SetChildren(arena, spare);
+            leaves.Add(spare);
         }
         else
         {
-            var at = rng.NextInt(MinLeaf, area.Height - MinLeaf + 1);
-            return new Node(area,
-                Split(area with { Height = at }, rng, isRoot: false),
-                Split(area with { Y = area.Y + at, Height = area.Height - at }, rng, isRoot: false));
+            var spare = new Node(strip.Area with { Height = area.Height - height });
+            arena = new Node(strip.Area with { Y = strip.Area.Y + area.Height - height, Height = height });
+            strip.SetChildren(spare, arena);
+            leaves.Add(spare);
+        }
+        return arena;
+    }
+
+    // Splits the largest leaf again and again until there are exactly target leaves.
+    //
+    // A leaf's capacity is how many MinLeaf-sized leaves it can still be cut into. A cut may lose
+    // capacity only while the total stays at or above the target, and a cut at a multiple of MinLeaf
+    // never loses any, so the target is always reached when the starting capacity allows it.
+    private static void SplitInto(List<Node> leaves, int target, int roomCount, Prng rng)
+    {
+        var capacity = 0;
+        foreach (var leaf in leaves)
+        {
+            capacity += Capacity(leaf.Area.Width, leaf.Area.Height);
+        }
+        if (capacity < target || leaves.Count > target)
+        {
+            throw new ArgumentOutOfRangeException("width", $"The map is too small to hold {roomCount} rooms.");
+        }
+
+        var cuts = new List<int>();
+        while (leaves.Count < target)
+        {
+            // Largest area first; equal areas are broken by position (top first, then left), which
+            // is unique because leaves never overlap. The list's own order never decides.
+            var pick = -1;
+            for (var i = 0; i < leaves.Count; i++)
+            {
+                var candidate = leaves[i].Area;
+                if (candidate.Width < 2 * MinLeaf && candidate.Height < 2 * MinLeaf)
+                {
+                    continue;
+                }
+                if (pick < 0 || ComesBefore(candidate, leaves[pick].Area))
+                {
+                    pick = i;
+                }
+            }
+
+            var node = leaves[pick];
+            var area = node.Area;
+            var canSplitVertically = area.Width >= 2 * MinLeaf;
+            var canSplitHorizontally = area.Height >= 2 * MinLeaf;
+            bool vertical;
+            if (canSplitVertically && canSplitHorizontally)
+            {
+                // Cut across the longer side so leaves stay roughly square.
+                vertical = 4 * area.Width > 5 * area.Height
+                    || (4 * area.Height <= 5 * area.Width && rng.NextInt(0, 2) == 0);
+            }
+            else
+            {
+                vertical = canSplitVertically;
+            }
+
+            var length = vertical ? area.Width : area.Height;
+            var across = vertical ? area.Height : area.Width;
+            cuts.Clear();
+            for (var candidate = MinLeaf; candidate <= length - MinLeaf; candidate++)
+            {
+                if (capacity - LostCapacity(length, across, candidate) >= target)
+                {
+                    cuts.Add(candidate);
+                }
+            }
+
+            var at = cuts[rng.NextInt(0, cuts.Count)];
+            capacity -= LostCapacity(length, across, at);
+            var first = new Node(vertical ? area with { Width = at } : area with { Height = at });
+            var second = new Node(vertical
+                ? area with { X = area.X + at, Width = area.Width - at }
+                : area with { Y = area.Y + at, Height = area.Height - at });
+            node.SetChildren(first, second);
+            leaves[pick] = first;
+            leaves.Add(second);
         }
     }
 
-    private static void PlaceRooms(Node node, Prng rng, Layout layout)
+    private static bool ComesBefore(Rect a, Rect b)
+    {
+        var areaA = a.Width * a.Height;
+        var areaB = b.Width * b.Height;
+        if (areaA != areaB)
+        {
+            return areaA > areaB;
+        }
+        return a.Y != b.Y ? a.Y < b.Y : a.X < b.X;
+    }
+
+    private static int Capacity(int width, int height) => (width / MinLeaf) * (height / MinLeaf);
+
+    private static int LostCapacity(int length, int across, int at) =>
+        (length / MinLeaf - at / MinLeaf - (length - at) / MinLeaf) * (across / MinLeaf);
+
+    private static void PlaceRooms(Node node, Prng rng, Layout layout, int maxArea)
     {
         if (node.Left is not null && node.Right is not null)
         {
-            PlaceRooms(node.Left, rng, layout);
-            PlaceRooms(node.Right, rng, layout);
+            PlaceRooms(node.Left, rng, layout, maxArea);
+            PlaceRooms(node.Right, rng, layout, maxArea);
             return;
         }
 
+        // The arena's leaf already has its room.
+        if (node.RoomIndex < 0)
+        {
+            PlaceRoom(node, rng, layout, MinRoom, maxArea, RoomKind.Room);
+        }
+    }
+
+    private static void PlaceRoom(Node node, Prng rng, Layout layout, int minSide, int maxArea, RoomKind kind)
+    {
         var leaf = node.Area;
         var availableWidth = leaf.Width - 2 * RoomMargin;
         var availableHeight = leaf.Height - 2 * RoomMargin;
-        var width = rng.NextInt(Math.Max(MinRoom, availableWidth / 2), availableWidth + 1);
-        var height = rng.NextInt(Math.Max(MinRoom, availableHeight / 2), availableHeight + 1);
+        var width = rng.NextInt(Math.Max(minSide, availableWidth / 2), availableWidth + 1);
+        var height = rng.NextInt(Math.Max(minSide, availableHeight / 2), availableHeight + 1);
+
+        // On a boss fight every other room stays smaller than the arena: trim the longer side
+        // (the width when both are equal) until it is.
+        while (width * height > maxArea)
+        {
+            if (width >= height)
+            {
+                width--;
+            }
+            else
+            {
+                height--;
+            }
+        }
+
         var x = leaf.X + RoomMargin + rng.NextInt(0, availableWidth - width + 1);
         var y = leaf.Y + RoomMargin + rng.NextInt(0, availableHeight - height + 1);
-        node.RoomIndex = layout.AddRoom(new Room(x, y, width, height));
+        node.RoomIndex = layout.AddRoom(new Room(x, y, width, height, kind));
     }
 
     // Joins the two subtrees of every node through their closest pair of rooms. Every leaf is a
@@ -127,6 +292,7 @@ public static class BspGenerator
         var left = Connect(node.Left, layout);
         var right = Connect(node.Right, layout);
 
+        // Equally close pairs keep the first one in tree order (left before right, outer loop first).
         var bestA = left[0];
         var bestB = right[0];
         var bestDistance = int.MaxValue;
@@ -305,12 +471,18 @@ public static class BspGenerator
 
     private readonly record struct Rect(int X, int Y, int Width, int Height);
 
-    private sealed class Node(Rect area, Node? left = null, Node? right = null)
+    private sealed class Node(Rect area)
     {
         public Rect Area { get; } = area;
-        public Node? Left { get; } = left;
-        public Node? Right { get; } = right;
+        public Node? Left { get; private set; }
+        public Node? Right { get; private set; }
         public int RoomIndex { get; set; } = -1;
+
+        public void SetChildren(Node left, Node right)
+        {
+            Left = left;
+            Right = right;
+        }
     }
 
     private sealed class Layout
@@ -348,7 +520,7 @@ public static class BspGenerator
                     if (inside)
                     {
                         FloorOwner[cell] = index;
-                        Cells[cell] = CellKind.Floor;
+                        Cells[cell] = room.Kind == RoomKind.BossArena ? CellKind.BossArena : CellKind.Floor;
                     }
                     else
                     {

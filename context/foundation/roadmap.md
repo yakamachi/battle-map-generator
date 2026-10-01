@@ -44,7 +44,7 @@ DM przed sesją D&D potrzebuje czytelnej mapy bitewnej wyrównanej do siatki, a 
 | F-01 | account-store-foundation | (foundation) baza kont działa w chmurze, a sesje przetrwają restart i uśpienie aplikacji | —             | FR-001, NFR (dane konta niewidoczne dla innych kont), Access Control | done |
 | S-01 | first-map-download       | DM generuje mapę, widzi podgląd wyrównany do siatki i pobiera zgodny z nim PNG        | —             | US-01, FR-003, FR-004, FR-006, NFR (czas generacji, Chrome i Firefox), Guardrail wyrównania do siatki | done        |
 | S-02 | regenerate-with-new-seed | DM generuje mapę ponownie i dostaje inny układ przy tych samych parametrach           | S-01          | US-01, FR-005                 | ready    |
-| S-03 | encounter-parameters     | DM wybiera liczbę pokoi (2–12) i typ starcia; walka z bossem dodaje arenę skalowaną rozmiarem bossa | S-01 | US-01, FR-002, Business Logic | ready    |
+| S-03 | encounter-parameters     | DM wybiera liczbę pokoi (2–12) i typ starcia; walka z bossem dodaje arenę skalowaną rozmiarem bossa | S-01 | US-01, FR-002, Business Logic | done |
 | S-04 | dm-email-login           | DM zakłada konto i loguje się e-mailem i hasłem; bez zalogowania nie wygeneruje mapy, a generowania na konto są limitowane | F-01, S-01 | US-01, FR-001, NFR (dane konta niewidoczne dla innych kont), Access Control | in-progress |
 
 ## Streams
@@ -122,7 +122,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Unknowns:**
   - Czy 12 pokoi z areną dla bossa Gigantycznego zawsze mieści się w obecnym limicie rozmiaru mapy, czy limit trzeba podnieść (koszt CPU na planie F1, rozmiar PNG przy 140 px na kratkę)? — Owner: team (`/10x-plan`). Block: no.
 - **Risk:** Zmienia kontrakt siatki (nowe pojęcie areny bossa) i zmienia mapę dla każdego seeda, więc API, klient i wspólne siatki testowe zmieniają się w jednym commicie.
-- **Status:** ready
+- **Status:** done
 
 ### S-04: DM loguje się e-mailem i hasłem
 

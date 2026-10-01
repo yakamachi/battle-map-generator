@@ -15,14 +15,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "oneOf": [
-                  {
-                    "type": "null"
-                  },
-                  {
-                    "$ref": "#/components/schemas/GenerateMapRequest"
-                  }
-                ]
+                "$ref": "#/components/schemas/GenerateMapRequest"
               }
             }
           }
@@ -34,6 +27,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/GeneratedMap"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
                 }
               }
             }
@@ -185,18 +188,34 @@
           }
         }
       },
+      "BossSize": {
+        "enum": [
+          "large",
+          "huge",
+          "gargantuan",
+          null
+        ]
+      },
       "CellKind": {
         "enum": [
           "void",
           "floor",
           "corridor",
           "wall",
-          "door"
+          "door",
+          "bossArena"
+        ]
+      },
+      "EncounterType": {
+        "enum": [
+          "skirmish",
+          "boss"
         ]
       },
       "GeneratedMap": {
         "required": [
           "seed",
+          "parameters",
           "width",
           "height",
           "cells",
@@ -207,6 +226,9 @@
           "seed": {
             "type": "integer",
             "format": "uint32"
+          },
+          "parameters": {
+            "$ref": "#/components/schemas/MapParameters"
           },
           "width": {
             "type": "integer",
@@ -242,6 +264,35 @@
               "integer"
             ],
             "format": "uint32"
+          },
+          "roomCount": {
+            "maximum": 12,
+            "minimum": 2,
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "encounter": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EncounterType"
+              }
+            ]
+          },
+          "bossSize": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BossSize"
+              }
+            ]
           }
         }
       },
@@ -290,12 +341,40 @@
           }
         }
       },
+      "MapParameters": {
+        "required": [
+          "roomCount",
+          "encounter",
+          "bossSize"
+        ],
+        "type": "object",
+        "properties": {
+          "roomCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "encounter": {
+            "$ref": "#/components/schemas/EncounterType"
+          },
+          "bossSize": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BossSize"
+              }
+            ]
+          }
+        }
+      },
       "Room": {
         "required": [
           "x",
           "y",
           "width",
-          "height"
+          "height",
+          "kind"
         ],
         "type": "object",
         "properties": {
@@ -314,8 +393,17 @@
           "height": {
             "type": "integer",
             "format": "int32"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/RoomKind"
           }
         }
+      },
+      "RoomKind": {
+        "enum": [
+          "room",
+          "bossArena"
+        ]
       }
     }
   },

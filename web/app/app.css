@@ -80,12 +80,18 @@
 /*
  * The map preview frame fits both the container width and the viewport height left under the
  * account header (routes/protected.tsx: the email and Log out row, 3.5rem) and the home view's
- * own rows (main padding, heading, button row and gaps: 8.5rem; 12rem total), so the whole map is
- * visible without scrolling. The frame sets --map-aspect (width / height in squares) and a
- * matching aspect-ratio inline; the height follows from the width.
+ * own rows, so the whole map is visible without scrolling. From sm up that is main padding,
+ * heading, form row, button row and gaps: 11.5rem (15rem with the account header). Narrower, the
+ * form wraps onto a second row (Boss size), which adds another row and gap: 14.5rem (18rem with
+ * the account header). The frame sets --map-aspect (width / height in squares) and a matching
+ * aspect-ratio inline; the height follows from the width.
  */
 @utility map-preview-fit {
-  width: min(100%, max(12rem, calc((100dvh - 12rem) * var(--map-aspect, 1.5))));
+  width: min(100%, max(12rem, calc((100dvh - 18rem) * var(--map-aspect, 1.5))));
+
+  @variant sm {
+    width: min(100%, max(12rem, calc((100dvh - 15rem) * var(--map-aspect, 1.5))));
+  }
 }
 
 @layer base {

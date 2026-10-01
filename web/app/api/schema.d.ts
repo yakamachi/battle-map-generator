@@ -96,10 +96,15 @@ export interface components {
             password: string;
         };
         /** @enum {unknown} */
-        CellKind: "void" | "floor" | "corridor" | "wall" | "door";
+        BossSize: "large" | "huge" | "gargantuan" | null;
+        /** @enum {unknown} */
+        CellKind: "void" | "floor" | "corridor" | "wall" | "door" | "bossArena";
+        /** @enum {unknown} */
+        EncounterType: "skirmish" | "boss";
         GeneratedMap: {
             /** Format: uint32 */
             seed: number;
+            parameters: components["schemas"]["MapParameters"];
             /** Format: int32 */
             width: number;
             /** Format: int32 */
@@ -110,6 +115,10 @@ export interface components {
         GenerateMapRequest: {
             /** Format: uint32 */
             seed: null | number;
+            /** Format: int32 */
+            roomCount?: null | number;
+            encounter?: null | components["schemas"]["EncounterType"];
+            bossSize?: null | components["schemas"]["BossSize"];
         };
         HttpValidationProblemDetails: {
             type?: null | string;
@@ -122,6 +131,12 @@ export interface components {
                 [key: string]: string[];
             };
         };
+        MapParameters: {
+            /** Format: int32 */
+            roomCount: number;
+            encounter: components["schemas"]["EncounterType"];
+            bossSize: null | components["schemas"]["BossSize"];
+        };
         Room: {
             /** Format: int32 */
             x: number;
@@ -131,7 +146,10 @@ export interface components {
             width: number;
             /** Format: int32 */
             height: number;
+            kind: components["schemas"]["RoomKind"];
         };
+        /** @enum {unknown} */
+        RoomKind: "room" | "bossArena";
     };
     responses: never;
     parameters: never;
@@ -150,7 +168,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": null | components["schemas"]["GenerateMapRequest"];
+                "application/json": components["schemas"]["GenerateMapRequest"];
             };
         };
         responses: {
@@ -161,6 +179,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GeneratedMap"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
                 };
             };
         };

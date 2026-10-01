@@ -8,9 +8,10 @@ const KINDS: Record<string, CellKind> = {
   ".": "floor",
   ",": "corridor",
   D: "door",
+  B: "bossArena",
 };
 
-// Hand-drawn grids: '#' wall, ' ' void, '.' floor, ',' corridor, 'D' door.
+// Hand-drawn grids: '#' wall, ' ' void, '.' floor, ',' corridor, 'D' door, 'B' boss arena.
 function grid(rows: string[], seed = 7): MapGrid {
   const width = rows[0].length;
   const cells = rows.flatMap((row) => {
@@ -178,6 +179,45 @@ describe("drawOps", () => {
         .map((op) => op.piece);
     expect(pieces(1)).toEqual(pieces(1));
     expect(pieces(1)).not.toEqual(pieces(2));
-    expect(new Set(pieces(1))).toEqual(new Set(["tiles", "tiles_cracked", "tiles_decorative"]));
+    expect(new Set(pieces(1))).toEqual(new Set(["tiles", "tiles_cracked"]));
+  });
+
+  test("every boss arena cell draws the decorative piece", () => {
+    const map = grid(["#####", "#BBB#", "#BBB#", "#####"]);
+    const floors = drawOps(map).filter((op) => op.piece.startsWith("tiles"));
+    expect(floors).toHaveLength(6);
+    for (const op of floors) expect(op.piece).toBe("tiles_decorative");
+  });
+
+  test("walls, corners and doors around an arena match those around a plain room", () => {
+    // Doors on three sides, so every door-bar rotation that looks for room floor is exercised.
+    const room = [
+      " #,#      ",
+      "##D#######",
+      "##....####",
+      ",D.....D,,",
+      "##....####",
+      "##########",
+    ];
+    const arena = room.map((row) => row.replaceAll(".", "B"));
+    const notFloor = (ops: DrawOp[]) => ops.filter((op) => !op.piece.startsWith("tiles"));
+    const roomOps = notFloor(drawOps(grid(room)));
+    expect(opsAt(roomOps, 2, 1)).toContain("door_closed@180");
+    expect(opsAt(roomOps, 1, 3)).toContain("door_closed@90");
+    expect(opsAt(roomOps, 7, 3)).toContain("door_closed@270");
+    expect(opsAt(roomOps, 5, 3)).toContain("inner_round@90");
+    expect(notFloor(drawOps(grid(arena)))).toEqual(roomOps);
+  });
+
+  test("no plain floor cell gets the decorative piece", () => {
+    const rows = Array.from({ length: 40 }, () => ".".repeat(40));
+    const maps = [...Object.values(fixtures), ...[1, 2, 3].map((seed) => grid(rows, seed))];
+    for (const map of maps) {
+      for (const op of drawOps(map)) {
+        if (map.cells[op.cellY * map.width + op.cellX] === "floor") {
+          expect(op.piece).not.toBe("tiles_decorative");
+        }
+      }
+    }
   });
 });

@@ -9,10 +9,11 @@ const BASE_URL = "http://localhost:5108";
 // browser projects start with its saved session.
 //
 // The generate endpoint allows 10 calls per minute per account, and both projects use the one
-// e2e account: keep the whole run well under that (today 4 generations, two per browser).
-// Register and login share 10 calls per minute per IP, and a full run uses at most 6. A reused
-// local server keeps its counts between runs, so rapid reruns can meet a 429. Locally a server already
-// on 5108 is reused as it is: stop any API there that was not started against the compose database.
+// e2e account: keep the whole run well under that (today 6 generations: 4 in map.spec.ts,
+// 2 in parameters.spec.ts). Register and login share 10 calls per minute per IP, and a full run
+// uses at most 6. A reused local server keeps its counts between runs, so rapid reruns can meet
+// a 429. Locally a server already on 5108 is reused as it is: stop any API there that was not
+// started against the compose database.
 export default defineConfig({
   testDir: "tests",
   forbidOnly: !!process.env.CI,
