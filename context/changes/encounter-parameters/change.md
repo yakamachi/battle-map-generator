@@ -1,9 +1,9 @@
 ---
 change_id: encounter-parameters
 title: Encounter parameters: room count and boss arena
-status: impl_reviewed
+status: implemented
 created: 2026-09-30
-updated: 2026-09-30
+updated: 2026-10-01
 archived_at: null
 ---
 

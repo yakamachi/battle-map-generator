@@ -431,12 +431,12 @@ The parameters flow is tested against the real host in both browsers, and the ag
 
 #### Automated
 
-- [x] 4.1 End-to-end tests pass in Chromium and Firefox
-- [x] 4.2 End-to-end type-check passes: `npm run typecheck` in `e2e/`
-- [x] 4.3 `e2e/tests/map.spec.ts` is identical to main
-- [x] 4.4 Full API and web suites still pass
+- [x] 4.1 End-to-end tests pass in Chromium and Firefox — a714512
+- [x] 4.2 End-to-end type-check passes: `npm run typecheck` in `e2e/` — a714512
+- [x] 4.3 `e2e/tests/map.spec.ts` is identical to main — a714512
+- [x] 4.4 Full API and web suites still pass — a714512
 
 #### Manual
 
-- [ ] 4.5 After the pull request's CI run, all required checks are green
-- [ ] 4.6 The three docs read correctly against the code
+- [x] 4.5 After the pull request's CI run, all required checks are green — PR #12, all 6 checks pass
+- [x] 4.6 The three docs read correctly against the code — a714512
