@@ -18,6 +18,8 @@ export async function clientLoader() {
   return null;
 }
 
+type Status = { kind: "idle" } | { kind: "submitting" } | { kind: "error"; message: string };
+
 function errorMessage(error: LoginError): string {
   switch (error.kind) {
     case "invalid-credentials":
@@ -38,23 +40,21 @@ export default function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const expired = searchParams.get("expired") === "1";
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<Status>({ kind: "idle" });
+  const submitting = status.kind === "submitting";
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const email = String(form.get("email") ?? "");
     const password = String(form.get("password") ?? "");
-    setSubmitting(true);
-    setError(null);
+    setStatus({ kind: "submitting" });
     const result = await login(email, password);
     if (result.ok) {
       navigate("/");
       return;
     }
-    setSubmitting(false);
-    setError(errorMessage(result.error));
+    setStatus({ kind: "error", message: errorMessage(result.error) });
   }
 
   return (
@@ -63,7 +63,7 @@ export default function Login() {
       {expired && (
         <Alert>Your session ended, or the server was waking up. Please log in again.</Alert>
       )}
-      {error && <Alert variant="destructive">{error}</Alert>}
+      {status.kind === "error" && <Alert variant="destructive">{status.message}</Alert>}
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="email">Email</Label>

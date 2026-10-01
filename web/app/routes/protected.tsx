@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { Outlet, redirect, useNavigate } from "react-router";
 import type { Route } from "./+types/protected";
+import { Alert } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { getSession, logout } from "~/api/auth";
 
@@ -15,9 +17,17 @@ export async function clientLoader() {
 
 export default function ProtectedLayout({ loaderData }: Route.ComponentProps) {
   const navigate = useNavigate();
+  const [logoutError, setLogoutError] = useState<string | null>(null);
 
   async function onLogout() {
-    await logout();
+    setLogoutError(null);
+    const result = await logout();
+    // A failed logout leaves the session cookie in place: navigating anyway would just bounce the
+    // user straight back here once login.tsx's clientLoader sees they're still signed in.
+    if (!result.ok) {
+      setLogoutError("Could not log out. Check your connection and try again.");
+      return;
+    }
     navigate("/login");
   }
 
@@ -32,6 +42,11 @@ export default function ProtectedLayout({ loaderData }: Route.ComponentProps) {
           </Button>
         </div>
       </header>
+      {logoutError && (
+        <div className="container mx-auto px-4 pt-4">
+          <Alert variant="destructive">{logoutError}</Alert>
+        </div>
+      )}
       <Outlet />
     </>
   );

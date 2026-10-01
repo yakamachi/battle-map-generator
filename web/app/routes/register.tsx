@@ -18,10 +18,14 @@ export async function clientLoader() {
   return null;
 }
 
+type Status = { kind: "idle" } | { kind: "submitting" } | { kind: "error"; message: string };
+
 function errorMessage(error: RegisterError): string {
   switch (error.kind) {
     case "validation":
-      return Object.values(error.errors).flat().join(" ");
+      return (
+        Object.values(error.errors).flat().join(" ") || "Please check your details and try again."
+      );
     case "rate-limited":
       return "Too many attempts. Please wait a minute and try again.";
     case "network":
@@ -36,29 +40,27 @@ function errorMessage(error: RegisterError): string {
 
 export default function Register() {
   const navigate = useNavigate();
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<Status>({ kind: "idle" });
+  const submitting = status.kind === "submitting";
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const email = String(form.get("email") ?? "");
     const password = String(form.get("password") ?? "");
-    setSubmitting(true);
-    setError(null);
+    setStatus({ kind: "submitting" });
     const result = await register(email, password);
     if (result.ok) {
       navigate("/");
       return;
     }
-    setSubmitting(false);
-    setError(errorMessage(result.error));
+    setStatus({ kind: "error", message: errorMessage(result.error) });
   }
 
   return (
     <main className="container mx-auto flex max-w-sm flex-col gap-4 p-4">
       <h1 className="text-2xl font-semibold tracking-tight text-foreground">Create an account</h1>
-      {error && <Alert variant="destructive">{error}</Alert>}
+      {status.kind === "error" && <Alert variant="destructive">{status.message}</Alert>}
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="email">Email</Label>
