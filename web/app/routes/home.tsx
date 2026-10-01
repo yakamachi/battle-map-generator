@@ -53,7 +53,10 @@ function errorMessage(error: GenerateError): string {
     case "network":
       return "Could not reach the server. Check your connection and try again.";
     case "http":
-      return `The server could not generate a map (error ${error.status}). Please try again.`;
+      // A 400 means the API rejected the settings, so trying again would not help.
+      return error.status === 400
+        ? "These map settings are not supported. Change them and generate again."
+        : `The server could not generate a map (error ${error.status}). Please try again.`;
   }
 }
 
@@ -151,8 +154,9 @@ export default function Home() {
       <h1 className="text-2xl font-semibold tracking-tight text-foreground">
         Battle Map Generator
       </h1>
+      {/* Each field is a group, so its Label dims with the select while a map is generating. */}
       <div className="flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-2">
+        <div className="group flex items-center gap-2" data-disabled={busy}>
           <Label htmlFor="room-count">Rooms</Label>
           <NativeSelect
             id="room-count"
@@ -167,7 +171,7 @@ export default function Home() {
             ))}
           </NativeSelect>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="group flex items-center gap-2" data-disabled={busy}>
           <Label htmlFor="encounter">Encounter</Label>
           <NativeSelect
             id="encounter"
@@ -183,7 +187,7 @@ export default function Home() {
           </NativeSelect>
         </div>
         {encounter === "boss" && (
-          <div className="flex items-center gap-2">
+          <div className="group flex items-center gap-2" data-disabled={busy}>
             <Label htmlFor="boss-size">Boss size</Label>
             <NativeSelect
               id="boss-size"

@@ -15,14 +15,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "oneOf": [
-                  {
-                    "type": "null"
-                  },
-                  {
-                    "$ref": "#/components/schemas/GenerateMapRequest"
-                  }
-                ]
+                "$ref": "#/components/schemas/GenerateMapRequest"
               }
             }
           }

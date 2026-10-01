@@ -7,7 +7,8 @@ Read the root `../AGENTS.md` first. This package tests the whole app the way it 
 - Playwright in **Chromium and Firefox**; both are required by the PRD.
 - Run against the real .NET host in the Production environment with no database (`playwright.config.ts` starts it on port 5108). Never mock the API here; mocked, SPA-only tests belong in `../web/`.
 - Locate elements the way a user finds them (role and accessible name, visible text), so a restyle in `web/` doesn't break the tests, and a broken flow does.
-- The generate endpoint allows 10 calls per minute per IP, and both browser projects hit the same server: keep a full run well under that (today 4 calls).
+- The generate endpoint allows 10 calls per minute per IP, and both browser projects hit the same server: keep a full run well under that (today 6 calls: 4 in `map.spec.ts`, 2 in `parameters.spec.ts`).
+- `map.spec.ts` covers the default flow and must keep passing with default parameters; flows with other parameters go in their own spec file (`parameters.spec.ts`: 8 rooms and a Huge boss).
 - Changing a locator here because the UI changed on purpose is fine; loosening an assertion to make a run green is not.
 
 ## Commands

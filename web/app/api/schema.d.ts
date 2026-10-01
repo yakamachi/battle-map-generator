@@ -97,7 +97,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": null | components["schemas"]["GenerateMapRequest"];
+                "application/json": components["schemas"]["GenerateMapRequest"];
             };
         };
         responses: {

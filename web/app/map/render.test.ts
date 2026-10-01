@@ -89,5 +89,16 @@ describe("renderMap", () => {
     renderMap(ctx, largest, atlas);
     expect(ctx.canvas.width).toBe(7560);
     expect(ctx.canvas.height).toBe(4200);
+    // The canvas really holds pixels: the far corner is opaque paper, not an unallocated blank.
+    expect([...ctx.getImageData(7559, 4199, 1, 1).data]).toEqual([255, 255, 255, 255]);
+  });
+
+  test("refuses a canvas the browser could not allocate", () => {
+    const ctx = document.createElement("canvas").getContext("2d");
+    if (!ctx) throw new Error("no 2d context");
+    // What an unallocated canvas reads back: transparent black.
+    ctx.getImageData = (x, y, w, h) => new ImageData(w, h);
+    const map: MapGrid = { seed: 1, width: 2, height: 2, cells: Array(4).fill("void") };
+    expect(() => renderMap(ctx, map, atlas)).toThrow(/in this browser/);
   });
 });

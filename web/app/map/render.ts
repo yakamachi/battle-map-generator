@@ -42,6 +42,11 @@ export function renderMap(ctx: CanvasRenderingContext2D, map: MapGrid, atlas: Im
   ctx.imageSmoothingEnabled = false;
   ctx.fillStyle = PAPER;
   ctx.fillRect(0, 0, width, height);
+  // A browser that cannot allocate this canvas (WebKit caps the area at 16,777,216 px, below
+  // MAX_CANVAS_AREA) leaves it blank without an error; the paper then reads back transparent.
+  if (ctx.getImageData(0, 0, 1, 1).data[3] === 0) {
+    throw new Error(`Map is too large to render in this browser: ${width}x${height} px`);
+  }
 
   for (const op of drawOps(map)) {
     const source = atlasPosition(op.piece, op.rotation);

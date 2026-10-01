@@ -408,33 +408,33 @@ The parameters flow is tested against the real host in both browsers, and the ag
 
 #### Manual
 
-- [x] 2.6 In a rendered boss map the arena is clearly distinguishable from the other rooms at preview size
+- [x] 2.6 In a rendered boss map the arena is clearly distinguishable from the other rooms at preview size — fb86cb1
 
 ### Phase 3: Parameters form
 
 #### Automated
 
-- [x] 3.1 Type-check and build pass: `npm run typecheck && npm run build` in `web/`
-- [x] 3.2 UI scan passes: `npm run ui:scan` in `web/`
-- [x] 3.3 Web tests pass, including the area guard: `npm test` in `web/`
-- [x] 3.4 Visual gate passes with the new baselines: `npm run visual:docker` in `web/`
-- [x] 3.5 Existing end-to-end test passes unchanged
-- [x] 3.6 Boundary files are identical to main
+- [x] 3.1 Type-check and build pass: `npm run typecheck && npm run build` in `web/` — fb86cb1
+- [x] 3.2 UI scan passes: `npm run ui:scan` in `web/` — fb86cb1
+- [x] 3.3 Web tests pass, including the area guard: `npm test` in `web/` — fb86cb1
+- [x] 3.4 Visual gate passes with the new baselines: `npm run visual:docker` in `web/` — fb86cb1
+- [x] 3.5 Existing end-to-end test passes unchanged — fb86cb1
+- [x] 3.6 Boundary files are identical to main — fb86cb1
 
 #### Manual
 
-- [x] 3.7 On desktop and at 390 px wide, the form, buttons and the whole preview fit without the map scrolling, in light and dark themes
-- [x] 3.8 Keyboard only: every control is reachable, shows visible focus, and Boss size appears and disappears with the encounter type
-- [x] 3.9 A 12-room Gargantuan boss map renders and downloads in Chrome and Firefox
+- [x] 3.7 On desktop and at 390 px wide, the form, buttons and the whole preview fit without the map scrolling, in light and dark themes — fb86cb1
+- [x] 3.8 Keyboard only: every control is reachable, shows visible focus, and Boss size appears and disappears with the encounter type — fb86cb1
+- [x] 3.9 A 12-room Gargantuan boss map renders and downloads in Chrome and Firefox — fb86cb1
 
 ### Phase 4: End to end and docs
 
 #### Automated
 
-- [ ] 4.1 End-to-end tests pass in Chromium and Firefox
-- [ ] 4.2 End-to-end type-check passes: `npm run typecheck` in `e2e/`
-- [ ] 4.3 `e2e/tests/map.spec.ts` is identical to main
-- [ ] 4.4 Full API and web suites still pass
+- [x] 4.1 End-to-end tests pass in Chromium and Firefox
+- [x] 4.2 End-to-end type-check passes: `npm run typecheck` in `e2e/`
+- [x] 4.3 `e2e/tests/map.spec.ts` is identical to main
+- [x] 4.4 Full API and web suites still pass
 
 #### Manual
 

@@ -34,7 +34,7 @@ The home view has Rooms, Encounter and Boss size controls. Generate returns a ma
 **In scope:**
 - Request parameters, validation (400) and parameters echoed in the response
 - Generator: exact room count, size table, arena placement
-- `bossArena` rendering, one boss fixture, re-pinned default fixtures
+- `bossArena` rendering, a boss fixture and a 3-room fixture, re-pinned default fixtures
 - Form in `home.tsx`, label and native select primitives, preview height budget, canvas area guard
 - New e2e spec, updated agent docs
 
@@ -62,8 +62,9 @@ Contract outward. The C# records gain the parameters, a `bossArena` cell kind an
 
 ## Open Risks & Assumptions
 
-- Not yet verified: whether a defaulted record parameter is non-required in the build-time OpenAPI document. It is the first check in Phase 1, with a fallback shape.
-- The size table is derived from leaf arithmetic, not from a run of the new algorithm. Phase 1's seed tests confirm it; a failing row is adjusted there (6 → 30×20 is fixed).
+- Resolved in Phase 1: the new request fields come out optional in the OpenAPI document, and `client.ts` still type-checks untouched.
+- Resolved in Phase 1: every size-table row held its rooms for all 44 parameter combinations over 200 seeds each; no row changed.
+- Changed after planning: the request rules are data annotations on `GenerateMapRequest`, and the endpoint reads the body itself so every invalid value gets a 400 naming the field. Validation runs by hand until `AddValidation()` can go into `Program.cs` after S-04.
 - Both branches regenerate the contract files and screenshots; the second to merge must rebase and regenerate, and fold S-04's `generateMap` changes into `maps.ts`.
 - Every seed's map changes, which the project rules allow.
 
