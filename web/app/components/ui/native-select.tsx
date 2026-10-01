@@ -36,6 +36,8 @@ function NativeSelect({ className, ...props }: React.ComponentProps<"select">) {
   );
 }
 
+// The option list is drawn by the browser, which tokens cannot reliably style; the CSS system
+// colours Canvas and CanvasText make it follow the OS light or dark theme instead.
 function NativeSelectOption({ className, ...props }: React.ComponentProps<"option">) {
   return (
     <option
