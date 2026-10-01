@@ -20,6 +20,12 @@ React Router with TypeScript in SPA mode (`ssr: false`; the starter defaults to 
 - Mind browser canvas size limits when adding larger maps or higher export scales.
 - Printing across multiple pages at 1 inch per square is post-MVP (see the PRD's non-goals); do not build it into the MVP.
 
+## Access
+
+- Protected pages render inside the `routes/protected.tsx` layout (wired in `app/routes.ts`): its `clientLoader` calls `getSession()` and redirects to `/login` when there is no account. `routes/login.tsx` and `routes/register.tsx` sit outside that layout and redirect to `/` once a session already exists. A route with a `clientLoader` in SPA mode relies on the root `HydrateFallback` (`app/root.tsx`) for the gap before the first render; React Router permits `HydrateFallback` only on the root route in SPA mode, so a route-local one is not an option.
+- Auth calls (`getSession`, `register`, `login`, `logout`) live in `app/api/auth.ts`, which shares the `openapi-fetch` client exported from `app/api/client.ts`; map generation calls stay in `client.ts`.
+- The layout's header (account email, Log out) is a row above every protected page's own `<main>`: a row added there counts against `map-preview-fit` in `app/app.css`, same as a row added inside `home.tsx`.
+
 ## UI
 
 - Tokens live in `app/app.css`: semantic values in `:root` plus the `prefers-color-scheme: dark` media block, published to Tailwind through `@theme inline`. The original values and contrast ratios are in `../context/archive/2026-09-29-home-view-ui-contract/tokens.md` (read-only). A new or changed colour, radius or size goes into `app/app.css`, never into a view, and the change that makes it rechecks contrast in both themes and records it in its own change folder.
@@ -27,7 +33,7 @@ React Router with TypeScript in SPA mode (`ssr: false`; the starter defaults to 
 - Views (`app/routes/`, `app/root.tsx`, components outside `ui/`): no literal colours (hex, `rgb()`, `hsl()`, `oklch()`), no palette classes (`bg-gray-900`, `text-white`), no `dark:` classes and no arbitrary values (`p-[13px]`). Use token classes (`bg-card`, `text-muted-foreground`) and primitives. Primitives in `ui/`: no literal colours or palette classes, but shadcn's token-based `dark:` refinements are fine. `npm run ui:scan` enforces both, and CI runs it.
 - Dark mode follows the OS (`prefers-color-scheme`); there is no `.dark` class. Never add `@custom-variant dark` or a `.dark` block (`ui:scan` fails on both in `app/app.css`).
 - After `shadcn add`, review the `app/app.css` diff: remove any `.dark` block or `@custom-variant` the CLI wrote, and add any new variable it needs (for example `--popover`) by hand in both `:root` and the dark media block, with its contrast checked in both themes, recorded in the change that adds it.
-- The screenshot gate lives in `visual/` (`home.visual.spec.ts`, baselines in `visual/__screenshots__/`), runs in CI in the Playwright image and mocks the API. Update baselines only through `npm run visual:update`, and explain the visual change in the pull request.
+- The screenshot gate lives in `visual/` (`home.visual.spec.ts`, `auth.visual.spec.ts`, baselines in `visual/__screenshots__/`), runs in CI in the Playwright image and mocks the API; both specs share `visual/fixtures.ts` for hermetic fonts and a mocked `/api/auth/me` (a fixed account by default, `test.use({ account: null })` for a logged-out visitor). Update baselines only through `npm run visual:update`, and explain the visual change in the pull request.
 
 ## Tests
 

@@ -14,7 +14,8 @@ export type GenerateResult =
   | { ok: false; error: GenerateError };
 
 // Relative /api URLs: the API serves this SPA in production and Vite proxies /api in dev.
-const client = createClient<paths>({ baseUrl: "" });
+// Exported so app/api/auth.ts shares the same client and base URL.
+export const client = createClient<paths>({ baseUrl: "" });
 
 export async function generateMap(seed?: number): Promise<GenerateResult> {
   let result;
@@ -30,5 +31,11 @@ export async function generateMap(seed?: number): Promise<GenerateResult> {
   if (data) return { ok: true, map: data };
   // 429 comes from the rate limiter and is not part of the OpenAPI document.
   if (response.status === 429) return { ok: false, error: { kind: "rate-limited" } };
+  if (response.status === 401) {
+    // The session ended mid-use, or this 401 came from a database that was still resuming
+    // (phase 3 review F3); login.tsx reads expired=1 and explains both possibilities.
+    window.location.assign("/login?expired=1");
+    return { ok: false, error: { kind: "http", status: 401 } };
+  }
   return { ok: false, error: { kind: "http", status: response.status } };
 }

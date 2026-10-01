@@ -490,19 +490,19 @@ Add the login and register pages, put the home view behind a layout route that c
 
 #### Automated
 
-- [ ] 4.1 Web type-checks and builds
-- [ ] 4.2 No hardcoded UI values
-- [ ] 4.3 Web rendering tests still pass
-- [ ] 4.4 The visual gate passes with the regenerated and new baselines
-- [ ] 4.5 e2e passes in both browsers, including auth.spec.ts
-- [ ] 4.6 home.tsx and map.spec.ts have no diff against main
-- [ ] 4.7 API tests and the contract check still pass
+- [x] 4.1 Web type-checks and builds
+- [x] 4.2 No hardcoded UI values
+- [x] 4.3 Web rendering tests still pass
+- [x] 4.4 The visual gate passes with the regenerated and new baselines
+- [x] 4.5 e2e passes in both browsers, including auth.spec.ts
+- [x] 4.6 home.tsx and map.spec.ts have no diff against main
+- [x] 4.7 API tests and the contract check still pass
 
 #### Manual
 
-- [ ] 4.8 Locally in Chrome and Firefox: register, generate, download, log out, log in again, in both themes and at phone width
-- [ ] 4.9 Locally: deleting the session cookie and clicking Generate lands on /login
-- [ ] 4.10 The regenerated home baselines differ only by the header and the preview's size
+- [x] 4.8 Locally in Chrome and Firefox: register, generate, download, log out, log in again, in both themes and at phone width
+- [x] 4.9 Locally: deleting the session cookie and clicking Generate lands on /login
+- [x] 4.10 The regenerated home baselines differ only by the header and the preview's size
 - [ ] 4.11 On the deployed app: register and log in work and the cookie carries Secure and HttpOnly
 - [ ] 4.12 On the deployed app: the session survives az webapp restart
 - [ ] 4.13 On the deployed app: generate without a session prints 401

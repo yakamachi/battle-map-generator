@@ -48,6 +48,15 @@ export default function App() {
   return <Outlet />;
 }
 
+// SPA mode runs every matched route's clientLoader before the first render (routes/protected.tsx
+// checks the session; routes/login.tsx and routes/register.tsx check it too, to redirect a
+// logged-in visitor away). HydrateFallback is only permitted on the root route in SPA mode, so
+// this is the one place that can render an empty page with the page background while any of them
+// is in flight, instead of a flash of unstyled content.
+export function HydrateFallback() {
+  return <main className="min-h-dvh bg-background" />;
+}
+
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   let message = "Oops!";
   let details = "An unexpected error occurred.";
