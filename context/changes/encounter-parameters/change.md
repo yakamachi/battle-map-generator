@@ -19,6 +19,8 @@ Parallel-work boundaries (from the owner, 2026-09-30):
 - Default parameters must keep `e2e/tests/map.spec.ts` passing unchanged; new e2e cases go in a new spec file.
 - Never merge `BattleMapGenerator.Api.json` or `schema.d.ts` by hand; generate them again.
 
+Merged to `main` via PR #12, squash commit `23fe5a2`, 2026-10-01. Deploy workflow build + deploy succeeded; smoke test (liveness and readiness) healthy.
+
 Follow-ups for the merge after S-04 lands (from the phase reviews):
 
 - Merge `web/app/api/maps.ts` into `client.ts`'s `generateMap`, folding in S-04's changes there. The room-count limits (2/12/6) are repeated by hand in `maps.ts`; keep them next to the merged function (phase 3 review, F2).
