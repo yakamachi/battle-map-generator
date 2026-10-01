@@ -166,9 +166,13 @@ app.UseStaticFiles(new StaticFileOptions
     }
 });
 
-// Authentication and authorization run before the limiter: it must be able to see the user,
-// and a request refused with 401 must not spend a permit.
+// Reading a session cookie decrypts it with the key ring in the database, and a forged cookie makes
+// the ring reload on every read. The gate strips the cookie where no session is needed and limits
+// the requests that carry one per client IP before authentication reads it (see SessionCookieGate).
+app.UseSessionCookieGate();
 app.UseAuthentication();
+// Authentication and authorization run before the limiter: it must be able to see the user, and a
+// request refused with 401 must not spend a permit.
 app.UseAuthorization();
 app.UseRateLimiter();
 

@@ -323,7 +323,7 @@ Add the login and register pages, put the home view behind a layout route that c
 **Intent**: Keep auth calls out of the file S-03 edits, and send the DM to the login page when a session ends mid-use.
 
 **Contract**:
-- `client.ts`: export the `openapi-fetch` client so `auth.ts` shares it. In `generateMap`, a 401 response calls `window.location.assign("/login")` and returns the existing `{ ok: false, error: { kind: "http", status: 401 } }`. `GenerateError`, `GenerateResult` and the function signature do not change. These are the only edits; if S-03 has merged first, rebase and reapply them around its changes.
+- `client.ts`: export the `openapi-fetch` client so `auth.ts` shares it. In `generateMap`, a 401 response calls `window.location.assign("/login?expired=1")` (phase 3 review F3: a 401 can also come from a database that was still resuming, so the login page shows "Your session ended, or the server was waking up. Please log in again." when `expired` is set) and returns the existing `{ ok: false, error: { kind: "http", status: 401 } }`. `GenerateError`, `GenerateResult` and the function signature do not change. These are the only edits; if S-03 has merged first, rebase and reapply them around its changes.
 - `auth.ts`: `getSession()` returning the account or `null` on 401 and throwing on anything else; `register(email, password)`, `login(email, password)` and `logout()` returning result unions. Error kinds: `invalid-credentials` (login 401), `validation` with per-field messages (register 400), `rate-limited` (429), `network`, `http` with status.
 
 #### 2. Routes
@@ -476,15 +476,15 @@ Add the login and register pages, put the home view behind a layout route that c
 
 #### Automated
 
-- [x] 3.1 API tests pass
-- [x] 3.2 The contract has no drift after a rebuild
-- [x] 3.3 e2e passes in both browsers, map.spec.ts unchanged
-- [x] 3.4 map.spec.ts has no diff against main
-- [x] 3.5 The Generate handler has no diff against main
+- [x] 3.1 API tests pass — 0dbe607
+- [x] 3.2 The contract has no drift after a rebuild — 0dbe607
+- [x] 3.3 e2e passes in both browsers, map.spec.ts unchanged — 0dbe607
+- [x] 3.4 map.spec.ts has no diff against main — 0dbe607
+- [x] 3.5 The Generate handler has no diff against main — 0dbe607
 
 #### Manual
 
-- [x] 3.6 A local curl to generate without a session prints 401 and no Set-Cookie or Location
+- [x] 3.6 A local curl to generate without a session prints 401 and no Set-Cookie or Location — 0dbe607
 
 ### Phase 4: Login UI
 

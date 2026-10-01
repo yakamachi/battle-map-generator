@@ -9,14 +9,13 @@ namespace BattleMapGenerator.Api.Tests;
 
 // Generation requires a session, so tests that generate log in first on the shared SQL Server
 // database (the session cookie is read through the key ring stored there). Generation itself never
-// touches the database, and an anonymous request is refused without it: those tests point at a
-// database that cannot be reached. The rate limiter counts per app instance, so each test builds its
+// touches the database, and an anonymous request is refused without it: the tests that assert the
+// database is never touched point at one that cannot be reached. The rate limiter counts per app instance, so each test builds its
 // own factory, and only the 429 test makes more than 10 generate calls for one account.
 [Collection(SqlServerCollection.Name)]
 public sealed class MapEndpointTests(SqlServerFixture sql)
 {
     private const string GeneratePath = "/api/maps/generate";
-
 
     [Fact]
     public async Task Generate_returns_the_default_size_grid_with_string_cell_kinds_for_the_given_seed()

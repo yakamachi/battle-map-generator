@@ -2,7 +2,9 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using BattleMapGenerator.Api.Auth;
 using BattleMapGenerator.Api.Tests.Infrastructure;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace BattleMapGenerator.Api.Tests;
 
@@ -317,6 +319,50 @@ public sealed class AuthEndpointTests(SqlServerFixture sql)
         Assert.Equal(1, await SqlServerFixture.CountKeysAsync(connectionString));
     }
 
+    // A forged cookie with an unknown key id reloads the key ring from the database on every read.
+    // Outside the API routes that can need a session it is never read. A database of its own starts
+    // with no key; the first read of a cookie creates one.
+    [Fact]
+    public async Task A_forged_session_cookie_is_not_read_by_liveness_static_files_or_deep_links()
+    {
+        var connectionString = await sql.CreateMigratedDatabaseAsync();
+        await using var factory = new ApiFactory(connectionString);
+        var client = factory.CreateClient(new() { HandleCookies = false });
+
+        foreach (var path in new[] { "/api/health/live", "/index.html", "/maps/some-page" })
+        {
+            var response = await client.SendAsync(WithForgedSessionCookie(HttpMethod.Get, path));
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+        Assert.Equal(0, await SqlServerFixture.CountKeysAsync(connectionString));
+
+        // On an API route the cookie is read, which is what loads the key ring.
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.SendAsync(WithForgedSessionCookie(HttpMethod.Get, MePath))).StatusCode);
+        Assert.Equal(1, await SqlServerFixture.CountKeysAsync(connectionString));
+    }
+
+    // Each forged cookie costs a key-ring read, so requests carrying a session cookie are limited per
+    // client IP before the cookie is read. Requests without one are not counted.
+    [Fact]
+    public async Task Requests_carrying_a_session_cookie_are_limited_per_client_ip()
+    {
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = factory.CreateClient(new() { HandleCookies = false });
+
+        for (var i = 1; i <= SessionCookieGate.RequestsPerMinute; i++)
+        {
+            Assert.Equal(HttpStatusCode.Unauthorized, (await client.SendAsync(WithForgedSessionCookie(HttpMethod.Get, MePath))).StatusCode);
+        }
+
+        var rejected = await client.SendAsync(WithForgedSessionCookie(HttpMethod.Get, MePath));
+        Assert.Equal(HttpStatusCode.TooManyRequests, rejected.StatusCode);
+        Assert.True(rejected.Headers.RetryAfter?.Delta is { } delay && delay > TimeSpan.Zero && delay <= TimeSpan.FromMinutes(1),
+            $"Retry-After was '{rejected.Headers.RetryAfter}'.");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync(MePath)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(WithForgedSessionCookie(HttpMethod.Get, "/api/health/live"))).StatusCode);
+    }
+
     [Fact]
     public async Task Register_with_an_email_over_256_characters_returns_400_keyed_by_email()
     {
@@ -411,6 +457,16 @@ public sealed class AuthEndpointTests(SqlServerFixture sql)
 
     private static string SessionCookie(HttpResponseMessage response) =>
         Assert.Single(response.Headers.GetValues("Set-Cookie"), value => value.StartsWith(".AspNetCore.Identity.Application=", StringComparison.Ordinal));
+
+    // Shaped like a Data Protection payload (magic header, then a key id no key ring holds), so the
+    // cookie handler has to look the key up instead of rejecting the value outright.
+    private static HttpRequestMessage WithForgedSessionCookie(HttpMethod method, string path)
+    {
+        byte[] payload = [0x09, 0xF0, 0xC9, 0xF0, .. Guid.NewGuid().ToByteArray(), .. Guid.NewGuid().ToByteArray()];
+        var request = new HttpRequestMessage(method, path);
+        request.Headers.Add("Cookie", $"{SessionCookieGate.CookieName}={WebEncoders.Base64UrlEncode(payload)}");
+        return request;
+    }
 
     private static IEnumerable<string> HeaderNames(HttpResponseMessage response) =>
         response.Headers.Concat(response.Content.Headers).Select(header => header.Key).Order();
