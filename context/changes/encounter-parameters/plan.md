@@ -382,61 +382,61 @@ The parameters flow is tested against the real host in both browsers, and the ag
 
 #### Automated
 
-- [x] 1.1 New request properties are absent from `required` in `api/BattleMapGenerator.Api.json` — 8b348ba
-- [x] 1.2 API tests pass: `dotnet test api.Tests` — 8b348ba
-- [x] 1.3 No contract drift after `dotnet build api` and `npm run api:types` — 8b348ba
-- [x] 1.4 Web type-check and build pass with `client.ts` untouched — 8b348ba
-- [x] 1.5 Web rendering tests pass: `npm test` in `web/` — 8b348ba
-- [x] 1.6 Visual gate passes: `npm run visual:docker` in `web/` — 8b348ba
-- [x] 1.7 Existing end-to-end test passes unchanged — 8b348ba
-- [x] 1.8 Boundary files are identical to main — 8b348ba
+- [x] 1.1 New request properties are absent from `required` in `api/BattleMapGenerator.Api.json` — 23fe5a2
+- [x] 1.2 API tests pass: `dotnet test api.Tests` — 23fe5a2
+- [x] 1.3 No contract drift after `dotnet build api` and `npm run api:types` — 23fe5a2
+- [x] 1.4 Web type-check and build pass with `client.ts` untouched — 23fe5a2
+- [x] 1.5 Web rendering tests pass: `npm test` in `web/` — 23fe5a2
+- [x] 1.6 Visual gate passes: `npm run visual:docker` in `web/` — 23fe5a2
+- [x] 1.7 Existing end-to-end test passes unchanged — 23fe5a2
+- [x] 1.8 Boundary files are identical to main — 23fe5a2
 
 #### Manual
 
-- [x] 1.9 The three regenerated default fixtures, viewed in the running app, look like sensible 6-room maps — 8b348ba
-- [x] 1.10 A boss request sent by hand (12 rooms, Gargantuan) returns a 54×30 map in well under a second — 8b348ba
+- [x] 1.9 The three regenerated default fixtures, viewed in the running app, look like sensible 6-room maps — 23fe5a2
+- [x] 1.10 A boss request sent by hand (12 rooms, Gargantuan) returns a 54×30 map in well under a second — 23fe5a2
 
 ### Phase 2: Arena in the picture
 
 #### Automated
 
-- [x] 2.1 API tests pass, including the boss fixture: `dotnet test api.Tests` — 11b46d2
-- [x] 2.2 Web mapping and rendering tests pass in both browsers: `npm test` in `web/` — 11b46d2
-- [x] 2.3 Web type-check passes: `npm run typecheck` in `web/` — 11b46d2
-- [x] 2.4 Visual gate passes: `npm run visual:docker` in `web/` — 11b46d2
-- [x] 2.5 Atlas is unchanged — 11b46d2
+- [x] 2.1 API tests pass, including the boss fixture: `dotnet test api.Tests` — 23fe5a2
+- [x] 2.2 Web mapping and rendering tests pass in both browsers: `npm test` in `web/` — 23fe5a2
+- [x] 2.3 Web type-check passes: `npm run typecheck` in `web/` — 23fe5a2
+- [x] 2.4 Visual gate passes: `npm run visual:docker` in `web/` — 23fe5a2
+- [x] 2.5 Atlas is unchanged — 23fe5a2
 
 #### Manual
 
-- [x] 2.6 In a rendered boss map the arena is clearly distinguishable from the other rooms at preview size — fb86cb1
+- [x] 2.6 In a rendered boss map the arena is clearly distinguishable from the other rooms at preview size — 23fe5a2
 
 ### Phase 3: Parameters form
 
 #### Automated
 
-- [x] 3.1 Type-check and build pass: `npm run typecheck && npm run build` in `web/` — fb86cb1
-- [x] 3.2 UI scan passes: `npm run ui:scan` in `web/` — fb86cb1
-- [x] 3.3 Web tests pass, including the area guard: `npm test` in `web/` — fb86cb1
-- [x] 3.4 Visual gate passes with the new baselines: `npm run visual:docker` in `web/` — fb86cb1
-- [x] 3.5 Existing end-to-end test passes unchanged — fb86cb1
-- [x] 3.6 Boundary files are identical to main — fb86cb1
+- [x] 3.1 Type-check and build pass: `npm run typecheck && npm run build` in `web/` — 23fe5a2
+- [x] 3.2 UI scan passes: `npm run ui:scan` in `web/` — 23fe5a2
+- [x] 3.3 Web tests pass, including the area guard: `npm test` in `web/` — 23fe5a2
+- [x] 3.4 Visual gate passes with the new baselines: `npm run visual:docker` in `web/` — 23fe5a2
+- [x] 3.5 Existing end-to-end test passes unchanged — 23fe5a2
+- [x] 3.6 Boundary files are identical to main — 23fe5a2
 
 #### Manual
 
-- [x] 3.7 On desktop and at 390 px wide, the form, buttons and the whole preview fit without the map scrolling, in light and dark themes — fb86cb1
-- [x] 3.8 Keyboard only: every control is reachable, shows visible focus, and Boss size appears and disappears with the encounter type — fb86cb1
-- [x] 3.9 A 12-room Gargantuan boss map renders and downloads in Chrome and Firefox — fb86cb1
+- [x] 3.7 On desktop and at 390 px wide, the form, buttons and the whole preview fit without the map scrolling, in light and dark themes — 23fe5a2
+- [x] 3.8 Keyboard only: every control is reachable, shows visible focus, and Boss size appears and disappears with the encounter type — 23fe5a2
+- [x] 3.9 A 12-room Gargantuan boss map renders and downloads in Chrome and Firefox — 23fe5a2
 
 ### Phase 4: End to end and docs
 
 #### Automated
 
-- [x] 4.1 End-to-end tests pass in Chromium and Firefox — a714512
-- [x] 4.2 End-to-end type-check passes: `npm run typecheck` in `e2e/` — a714512
-- [x] 4.3 `e2e/tests/map.spec.ts` is identical to main — a714512
-- [x] 4.4 Full API and web suites still pass — a714512
+- [x] 4.1 End-to-end tests pass in Chromium and Firefox — 23fe5a2
+- [x] 4.2 End-to-end type-check passes: `npm run typecheck` in `e2e/` — 23fe5a2
+- [x] 4.3 `e2e/tests/map.spec.ts` is identical to main — 23fe5a2
+- [x] 4.4 Full API and web suites still pass — 23fe5a2
 
 #### Manual
 
 - [x] 4.5 After the pull request's CI run, all required checks are green — PR #12, all 6 checks pass
-- [x] 4.6 The three docs read correctly against the code — a714512
+- [x] 4.6 The three docs read correctly against the code — 23fe5a2
