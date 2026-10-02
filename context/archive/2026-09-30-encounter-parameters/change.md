@@ -1,10 +1,10 @@
 ---
 change_id: encounter-parameters
 title: Encounter parameters: room count and boss arena
-status: implemented
+status: archived
 created: 2026-09-30
-updated: 2026-10-01
-archived_at: null
+updated: 2026-10-02
+archived_at: 2026-10-02T12:16:50Z
 ---
 
 ## Notes
@@ -20,6 +20,8 @@ Parallel-work boundaries (from the owner, 2026-09-30):
 - Never merge `BattleMapGenerator.Api.json` or `schema.d.ts` by hand; generate them again.
 
 Merged to `main` via PR #12, squash commit `23fe5a2`, 2026-10-01. Deploy workflow build + deploy succeeded; smoke test (liveness and readiness) healthy.
+
+Post-S-04 re-verification (2026-10-02, dm-email-login closeout): the full impl review (`reviews/impl-review.md`) was written 2026-10-01 before S-04 merged. Re-ran every success criterion fresh against the current `main` (both S-03 and S-04 landed): `dotnet test api.Tests` 157/157, `dotnet build api` + `npm run api:types` no contract drift, `npm run typecheck`/`build`/`ui:scan`/`test` in `web/` all clean, `npm run visual:docker` 40 passed / 2 skipped, `npm run atlas` unchanged, `npm run build:app && npm test` in `e2e/` 9/9 in Chromium and Firefox (including `parameters.spec.ts`'s boss-map generation case). Confirmed the Generate handler in `api/Maps/MapEndpoints.cs` has no diff against this change's own tip beyond the `.RequireAuthorization()` line S-04 added; `home.tsx`'s only post-merge diff is the mechanical `maps.ts` → `client.ts` import rename already noted in dm-email-login's change.md. No regressions found.
 
 Follow-ups for the merge after S-04 lands (from the phase reviews):
 
