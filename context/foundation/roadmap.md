@@ -3,7 +3,7 @@ project: "Battle Map Generator dla D&D (DM Toolkit)"
 version: 1
 status: draft                    # draft | active | locked
 created: 2026-09-22
-updated: 2026-09-30
+updated: 2026-10-02
 prd_version: 2
 main_goal: learn
 top_blocker: time
@@ -180,3 +180,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 - **F-01: (foundation) baza kont działa w chmurze w tym samym regionie co aplikacja, połączenie przeżywa wybudzanie bazy, a klucze sesji są trwałe — restart lub uśpienie aplikacji nie wylogowuje użytkownika.** — Archived 2026-09-25 → `context/archive/2026-09-23-account-store-foundation/`. Lesson: —.
 - **S-01: DM klika „generuj” i widzi mapę z pokojami i korytarzami wyrównaną do siatki (na jednym domyślnym rozmiarze i typie starcia), a potem pobiera PNG w stałej rozdzielczości 140 px na kratkę, zgodny z podglądem, w Chrome i Firefox.** — Archived 2026-09-29 → `context/archive/2026-09-25-first-map-download/`. Lesson: —.
+- **S-03: DM wybiera liczbę pokoi (2–12, domyślnie 6) i typ starcia (potyczka / walka z bossem); mapa ma dokładnie tyle pokoi, a przy walce z bossem jeden z nich jest oznaczoną areną o podłodze co najmniej 8×8 / 10×10 / 12×12 dla bossa Dużego / Ogromnego / Gigantycznego.** — Archived 2026-10-02 → `context/archive/2026-09-30-encounter-parameters/`. Lesson: —.
