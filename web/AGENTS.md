@@ -29,8 +29,6 @@ React Router with TypeScript in SPA mode (`ssr: false`; the starter defaults to 
 
 ## UI
 
-- The generate request with encounter parameters is `app/api/maps.ts` (`generateMapWith`). It lives apart from `app/api/client.ts` only while S-04 changes that file; merge them once S-04 has landed.
-
 - Tokens live in `app/app.css`: semantic values in `:root` plus the `prefers-color-scheme: dark` media block, published to Tailwind through `@theme inline`. The original values and contrast ratios are in `../context/archive/2026-09-29-home-view-ui-contract/tokens.md` (read-only). A new or changed colour, radius or size goes into `app/app.css`, never into a view, and the change that makes it rechecks contrast in both themes and records it in its own change folder.
 - Components live in `app/components/ui`. Check there before creating one. Add a missing one with `npx shadcn@latest add <name>` (then drop the `radix-ui` import if the component only needs it for `asChild`), or copy it by hand the same way `button.tsx`, `alert.tsx`, `label.tsx` and `native-select.tsx` were (the last two avoid shadcn's `radix-ui` and `lucide-react` imports).
 - Views (`app/routes/`, `app/root.tsx`, components outside `ui/`): no literal colours (hex, `rgb()`, `hsl()`, `oklch()`), no palette classes (`bg-gray-900`, `text-white`), no `dark:` classes and no arbitrary values (`p-[13px]`). Use token classes (`bg-card`, `text-muted-foreground`) and primitives. Primitives in `ui/`: no literal colours or palette classes, but shadcn's token-based `dark:` refinements are fine. `npm run ui:scan` enforces both, and CI runs it.

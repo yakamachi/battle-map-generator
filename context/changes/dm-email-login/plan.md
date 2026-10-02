@@ -446,63 +446,63 @@ Add the login and register pages, put the home view behind a layout route that c
 
 #### Automated
 
-- [x] 1.1 API tests pass — 3d13765
-- [x] 1.2 The API builds without configuration and rewrites the OpenAPI document — 3d13765
-- [x] 1.3 Client types regenerate and the contract has no drift — 3d13765
-- [x] 1.4 The migrations bundle still builds without a connection string — 3d13765
-- [x] 1.5 No new migration is pending — 3d13765
-- [x] 1.6 Web still type-checks against the new schema — 3d13765
+- [x] 1.1 API tests pass — d6adc22
+- [x] 1.2 The API builds without configuration and rewrites the OpenAPI document — d6adc22
+- [x] 1.3 Client types regenerate and the contract has no drift — d6adc22
+- [x] 1.4 The migrations bundle still builds without a connection string — d6adc22
+- [x] 1.5 No new migration is pending — d6adc22
+- [x] 1.6 Web still type-checks against the new schema — d6adc22
 
 #### Manual
 
-- [x] 1.7 The requests in the .http file register an account, return it from me, and return 401 from me after logout — 3d13765
+- [x] 1.7 The requests in the .http file register an account, return it from me, and return 401 from me after logout — d6adc22
 
 ### Phase 2: e2e database and saved session
 
 #### Automated
 
-- [x] 2.1 The database comes up healthy and migrated — 27ca344
-- [x] 2.2 e2e specs type-check — 27ca344
-- [x] 2.3 e2e passes in both browsers with the setup project — 27ca344
-- [x] 2.4 A second run straight after also passes — 27ca344
-- [x] 2.5 The saved session file is ignored — 27ca344
-- [x] 2.6 ci.yml parses — 27ca344
+- [x] 2.1 The database comes up healthy and migrated — d6adc22
+- [x] 2.2 e2e specs type-check — d6adc22
+- [x] 2.3 e2e passes in both browsers with the setup project — d6adc22
+- [x] 2.4 A second run straight after also passes — d6adc22
+- [x] 2.5 The saved session file is ignored — d6adc22
+- [x] 2.6 ci.yml parses — d6adc22
 
 #### Manual
 
-- [x] 2.7 The e2e job run on the branch is green and its log shows the setup project passing — 5ca3041
+- [x] 2.7 The e2e job run on the branch is green and its log shows the setup project passing — d6adc22
 
 ### Phase 3: Guard generation, limit per account
 
 #### Automated
 
-- [x] 3.1 API tests pass — 0dbe607
-- [x] 3.2 The contract has no drift after a rebuild — 0dbe607
-- [x] 3.3 e2e passes in both browsers, map.spec.ts unchanged — 0dbe607
-- [x] 3.4 map.spec.ts has no diff against main — 0dbe607
-- [x] 3.5 The Generate handler has no diff against main — 0dbe607
+- [x] 3.1 API tests pass — d6adc22
+- [x] 3.2 The contract has no drift after a rebuild — d6adc22
+- [x] 3.3 e2e passes in both browsers, map.spec.ts unchanged — d6adc22
+- [x] 3.4 map.spec.ts has no diff against main — d6adc22
+- [x] 3.5 The Generate handler has no diff against main — d6adc22
 
 #### Manual
 
-- [x] 3.6 A local curl to generate without a session prints 401 and no Set-Cookie or Location — 0dbe607
+- [x] 3.6 A local curl to generate without a session prints 401 and no Set-Cookie or Location — d6adc22
 
 ### Phase 4: Login UI
 
 #### Automated
 
-- [x] 4.1 Web type-checks and builds — 04c4819
-- [x] 4.2 No hardcoded UI values — 04c4819
-- [x] 4.3 Web rendering tests still pass — 04c4819
-- [x] 4.4 The visual gate passes with the regenerated and new baselines — 04c4819
-- [x] 4.5 e2e passes in both browsers, including auth.spec.ts — 04c4819
-- [x] 4.6 home.tsx and map.spec.ts have no diff against main — 04c4819
-- [x] 4.7 API tests and the contract check still pass — 04c4819
+- [x] 4.1 Web type-checks and builds — d6adc22
+- [x] 4.2 No hardcoded UI values — d6adc22
+- [x] 4.3 Web rendering tests still pass — d6adc22
+- [x] 4.4 The visual gate passes with the regenerated and new baselines — d6adc22
+- [x] 4.5 e2e passes in both browsers, including auth.spec.ts — d6adc22
+- [x] 4.6 home.tsx and map.spec.ts have no diff against main — d6adc22
+- [x] 4.7 API tests and the contract check still pass — d6adc22
 
 #### Manual
 
-- [x] 4.8 Locally in Chrome and Firefox: register, generate, download, log out, log in again, in both themes and at phone width — 04c4819
-- [x] 4.9 Locally: deleting the session cookie and clicking Generate lands on /login — 04c4819
-- [x] 4.10 The regenerated home baselines differ only by the header and the preview's size — 04c4819
-- [ ] 4.11 On the deployed app: register and log in work and the cookie carries Secure and HttpOnly
-- [ ] 4.12 On the deployed app: the session survives az webapp restart
-- [ ] 4.13 On the deployed app: generate without a session prints 401
+- [x] 4.8 Locally in Chrome and Firefox: register, generate, download, log out, log in again, in both themes and at phone width — d6adc22
+- [x] 4.9 Locally: deleting the session cookie and clicking Generate lands on /login — d6adc22
+- [x] 4.10 The regenerated home baselines differ only by the header and the preview's size — d6adc22
+- [x] 4.11 On the deployed app: register and log in work and the cookie carries Secure and HttpOnly — verified against production 2026-10-02 (curl; a first register attempt hit a 500 from the Azure SQL free-tier database resuming from auto-pause, a retry 2 minutes later returned 200 with `Secure; HttpOnly; SameSite=Lax`)
+- [x] 4.12 On the deployed app: the session survives az webapp restart — verified against production 2026-10-02 (`az webapp restart`; the saved cookie kept authenticating after the restart, once the Azure SQL database resumed from auto-pause)
+- [x] 4.13 On the deployed app: generate without a session prints 401 — verified against production 2026-10-02 (curl; 401, no Set-Cookie or Location)

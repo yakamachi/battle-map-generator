@@ -45,7 +45,7 @@ DM przed sesją D&D potrzebuje czytelnej mapy bitewnej wyrównanej do siatki, a 
 | S-01 | first-map-download       | DM generuje mapę, widzi podgląd wyrównany do siatki i pobiera zgodny z nim PNG        | —             | US-01, FR-003, FR-004, FR-006, NFR (czas generacji, Chrome i Firefox), Guardrail wyrównania do siatki | done        |
 | S-02 | regenerate-with-new-seed | DM generuje mapę ponownie i dostaje inny układ przy tych samych parametrach           | S-01          | US-01, FR-005                 | ready    |
 | S-03 | encounter-parameters     | DM wybiera liczbę pokoi (2–12) i typ starcia; walka z bossem dodaje arenę skalowaną rozmiarem bossa | S-01 | US-01, FR-002, Business Logic | done |
-| S-04 | dm-email-login           | DM zakłada konto i loguje się e-mailem i hasłem; bez zalogowania nie wygeneruje mapy, a generowania na konto są limitowane | F-01, S-01 | US-01, FR-001, NFR (dane konta niewidoczne dla innych kont), Access Control | in-progress |
+| S-04 | dm-email-login           | DM zakłada konto i loguje się e-mailem i hasłem; bez zalogowania nie wygeneruje mapy, a generowania na konto są limitowane | F-01, S-01 | US-01, FR-001, NFR (dane konta niewidoczne dla innych kont), Access Control | done |
 
 ## Streams
 
@@ -58,13 +58,13 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 
 ## Baseline
 
-What's already in place in the codebase as of `2026-09-22` (auto-researched + user-confirmed), odświeżone 2026-09-30 po F-01 i S-01.
+What's already in place in the codebase as of `2026-09-22` (auto-researched + user-confirmed), odświeżone 2026-10-02 po F-01, S-01, S-03 i S-04.
 Foundations below assume these are present and do NOT re-scaffold them.
 
 - **Frontend:** present — widok główny generuje mapę, renderuje podgląd z kafelków i pobiera PNG (S-01), z kontraktem UI (tokeny, komponenty, stany podglądu); testy renderowania na wspólnych siatkach.
-- **Backend / API:** present — generowanie mapy BSP z własnym PRNG na stałym rozmiarze 30×20 (`api/Maps/`), publiczne i ograniczone limitem zapytań do czasu S-04; testy jednostkowe algorytmu.
+- **Backend / API:** present — generowanie mapy BSP z własnym PRNG, rozmiar mapy zależny od liczby pokoi i areny bossa (S-03, `api/Maps/`), wymaga sesji (401 bez niej) i ograniczone limitem zapytań na konto (S-04); testy jednostkowe algorytmu.
 - **Data:** present — baza kont w chmurze z migracją początkową (F-01).
-- **Auth:** partial — usługi tożsamości i trwałe klucze sesji zarejestrowane (F-01, `api/Program.cs:62`), brak endpointów rejestracji/logowania i ochrony generowania.
+- **Auth:** present — rejestracja i logowanie e-mailem/hasłem, sesja w ciasteczku chronionym kluczami z bazy, generowanie wymaga sesji i jest limitowane na konto (S-04, `api/Auth/`, `api/Program.cs`).
 - **Deploy / infra:** present — `.github/workflows/deploy.yml` (build → OIDC → App Service F1 → smoke test `/api/health`), pierwsze wdrożenie 2026-09-22; testy (API, web, e2e w Chrome i Firefox) bramkują merge w `ci.yml`.
 - **Observability:** partial — domyślne logowanie + logi kontenera App Service (`az webapp log tail`); brak śledzenia błędów, wystarczające dla MVP.
 
@@ -135,7 +135,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Unknowns:**
   - Jaki limit generowań na konto (ile i w jakim oknie czasu), żeby otwarta rejestracja nie wyczerpała limitów CPU planu F1? — Owner: user. Block: no (`/10x-plan` proponuje wartość domyślną).
 - **Risk:** Otwarta rejestracja wystawia generowanie każdemu, kto założy konto — limit generowań na konto zastępuje ochronę, którą dziś daje brak kont; `/10x-plan` może wydzielić limit w osobną zmianę, jeśli slice okaże się za szeroki.
-- **Status:** in-progress
+- **Status:** done
 
 ## Backlog Handoff
 
@@ -150,7 +150,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 ## Open Roadmap Questions
 
 1. **Kryterium drugorzędne sukcesu** — „Nie ustalono osobnego kryterium drugorzędnego dla MVP.” Do rozstrzygnięcia: pozostawienie braku dodatkowego kryterium albo jego określenie; biblioteka pozostaje poza MVP. — Owner: autor. Block: nic (nie wpływa na kolejność).
-2. **Publiczne generowanie na produkcji przed logowaniem** — Każde wdrożenie S-01–S-03 przed S-04 wystawia generowanie bez logowania na planie F1, którego limity CPU i transferu zatrzymują całą aplikację do północy UTC. Czy wystarczy limit zapytań i limit rozmiaru mapy (risk register `infrastructure.md`), czy generowanie ma być do czasu S-04 niedostępne na produkcji? — Owner: autor. Block: nic (domyślnie: limit zapytań w S-01).
+2. ~~**Publiczne generowanie na produkcji przed logowaniem**~~ — Rozwiązane 2026-10-02 (S-04 wdrożone): `/api/maps/generate` wymaga sesji (401 bez niej) i jest limitowane na konto, więc generowanie nie jest już publiczne na produkcji.
 
 (PRD Open Questions #1 — konflikt wymagań kompatybilności z filtrem PRD — rozwiązane 2026-09-16; #3 tworzenie kont i #4 parametry starcia — rozwiązane 2026-09-30 w PRD v2 (otwarta rejestracja; liczba pokoi i arena bossa), pominięte.)
 

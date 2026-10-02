@@ -291,6 +291,44 @@ public sealed class AuthEndpointTests(SqlServerFixture sql)
         Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(5), $"Startup, me and logout took {stopwatch.Elapsed}.");
     }
 
+    // Unlike me/logout, register and login do need the database (the key ring and the account row),
+    // so EnableRetryOnFailure's own backoff bounds how long a DM waits during an Azure SQL auto-pause
+    // resume (impl review F2) rather than the request hanging indefinitely. TestServer rethrows an
+    // unhandled exception to the caller instead of turning it into a 500 the way Kestrel does, so this
+    // only pins the bounded time, not a status code.
+    [Fact]
+    public async Task Register_and_login_fail_within_a_bounded_time_with_an_unreachable_database()
+    {
+        await using var factory = new ApiFactory(ApiFactory.UnreachableConnectionString);
+        var client = factory.CreateClient();
+
+        var registerElapsed = await ElapsedOnFailureAsync(() => client.PostAsJsonAsync(RegisterPath, Credentials(NewEmail())));
+        var loginElapsed = await ElapsedOnFailureAsync(() => client.PostAsJsonAsync(LoginPath, Credentials(NewEmail())));
+
+        Assert.True(registerElapsed < TimeSpan.FromSeconds(30),
+            $"Register took {registerElapsed} against an unreachable database.");
+        Assert.True(loginElapsed < TimeSpan.FromSeconds(30),
+            $"Login took {loginElapsed} against an unreachable database.");
+    }
+
+    // A database failure during register/login surfaces as a thrown exception under TestServer
+    // (no exception-handling middleware is registered) rather than as a response; either way, what
+    // matters here is that it fails instead of hanging.
+    private static async Task<TimeSpan> ElapsedOnFailureAsync(Func<Task<HttpResponseMessage>> call)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        try
+        {
+            var response = await call();
+            Assert.True((int)response.StatusCode >= 500, $"Expected a server error, got {response.StatusCode}.");
+        }
+        catch (Exception exception) when (exception is not Xunit.Sdk.XunitException)
+        {
+            // Any exception reaching here means the request failed, which is what we're pinning.
+        }
+        return stopwatch.Elapsed;
+    }
+
     // Static files are served before authentication, so a session cookie on them never loads the key
     // ring. A database of its own starts with no key; the first read of a cookie creates one.
     [Fact]

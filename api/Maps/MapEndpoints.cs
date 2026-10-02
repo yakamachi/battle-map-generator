@@ -23,7 +23,9 @@ public static class MapEndpoints
             .Accepts<GenerateMapRequest>(isOptional: true, "application/json")
             .WithName("GenerateMap")
             .RequireAuthorization()
-            .RequireRateLimiting(GenerateRateLimitPolicy);
+            .RequireRateLimiting(GenerateRateLimitPolicy)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status429TooManyRequests);
         return app;
     }
 
@@ -86,8 +88,11 @@ public static class MapEndpoints
         return new Dictionary<string, string[]> { [field] = [message] };
     }
 
-    // Runs the request's data annotations by hand. The framework does this itself once
-    // AddValidation() is registered in Program.cs; switch to that when S-04 has landed.
+    // Runs the request's data annotations by hand, on purpose: .NET 10's AddValidation() only
+    // validates a request bound as a real endpoint parameter, needs the project-wide
+    // EnableRequestDelegateGenerator opt-in to do that at all, and even then keys its errors by the
+    // C# property name ("RoomCount") rather than this app's camelCase JSON convention, with no
+    // supported fix (context/foundation/lessons.md, "Triage a .NET native swap..."; checked 2026-10-02).
     // Errors are keyed by the JSON field name ("roomCount"), as the client wrote it.
     private static Dictionary<string, string[]> Validate(object request)
     {
