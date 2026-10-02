@@ -1,10 +1,10 @@
 ---
 change_id: dm-email-login
 title: DM email and password login guarding map generation, with a per-account limit
-status: implemented
+status: archived
 created: 2026-09-30
 updated: 2026-10-02
-archived_at: null
+archived_at: 2026-10-02T12:18:41Z
 ---
 
 ## Notes
