@@ -5,6 +5,7 @@ namespace BattleMapGenerator.Api.Tests;
 public sealed class MapGeneratorTests
 {
     private const int SeedCount = 200;
+    private const int SweepSeedCount = 1000;
 
     // Every room count for a skirmish and for each boss size.
     public static TheoryData<int, BossSize?> ParameterCombinations
@@ -37,7 +38,7 @@ public sealed class MapGeneratorTests
         var parameters = Parameters(roomCount, bossSize);
         var (width, height) = MapSize.For(roomCount, bossSize);
 
-        for (uint seed = 1; seed <= SeedCount; seed++)
+        for (uint seed = 1; seed <= SweepSeedCount; seed++)
         {
             var map = BspGenerator.Generate(seed, parameters);
             var grid = new Grid(map);
