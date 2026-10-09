@@ -365,4 +365,58 @@ public sealed class MapEndpointTests(SqlServerFixture sql)
         Assert.NotEqual(HttpStatusCode.OK, response.StatusCode);
         Assert.NotEqual(HttpStatusCode.InternalServerError, response.StatusCode);
     }
+
+    // Risk #2 (determinism) at the HTTP layer: the same explicit seed and parameters must give the
+    // DM the same map body every time they ask.
+    [Fact]
+    public async Task Generate_with_the_same_explicit_seed_returns_identical_cells_rooms_and_parameters()
+    {
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
+        var body = new { seed = 777, roomCount = 8, encounter = "boss", bossSize = "huge" };
+
+        var first = await client.PostAsJsonAsync(GeneratePath, body);
+        var second = await client.PostAsJsonAsync(GeneratePath, body);
+
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
+        using var firstJson = JsonDocument.Parse(await first.Content.ReadAsStringAsync());
+        using var secondJson = JsonDocument.Parse(await second.Content.ReadAsStringAsync());
+
+        foreach (var property in new[] { "cells", "rooms", "parameters" })
+        {
+            Assert.True(
+                JsonElement.DeepEquals(firstJson.RootElement.GetProperty(property), secondJson.RootElement.GetProperty(property)),
+                $"'{property}' differed between two requests with the same seed and parameters.");
+        }
+    }
+
+    // Risk #2 (determinism): a DM who likes a server-drawn map must be able to reproduce it by
+    // sending the seed the server echoed back.
+    [Fact]
+    public async Task Generate_without_a_seed_reproduces_the_same_map_when_the_echoed_seed_is_resent()
+    {
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
+
+        var first = await client.PostAsJsonAsync(GeneratePath, new { });
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        using var firstJson = JsonDocument.Parse(await first.Content.ReadAsStringAsync());
+        var seedProperty = firstJson.RootElement.GetProperty("seed");
+
+        // The echoed seed is a plain JSON number in uint range, so it can be resent as-is.
+        Assert.Equal(JsonValueKind.Number, seedProperty.ValueKind);
+        var echoedSeed = seedProperty.GetUInt32();
+
+        var second = await client.PostAsJsonAsync(GeneratePath, new { seed = echoedSeed });
+        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
+        using var secondJson = JsonDocument.Parse(await second.Content.ReadAsStringAsync());
+
+        foreach (var property in new[] { "cells", "rooms" })
+        {
+            Assert.True(
+                JsonElement.DeepEquals(firstJson.RootElement.GetProperty(property), secondJson.RootElement.GetProperty(property)),
+                $"'{property}' differed when the echoed seed was resent.");
+        }
+    }
 }
