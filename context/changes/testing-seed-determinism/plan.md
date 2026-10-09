@@ -239,25 +239,25 @@ None. No data, API contract or fixture changes.
 
 #### Automated
 
-- [x] 1.1 Harness test compiles and is inert without `DETERMINISM_EMIT_PATH`: `dotnet test api.Tests --filter "FullyQualifiedName~MapDeterminismTests"`
-- [x] 1.2 Child run writes one entry per matrix combination: harness key-count assertion
-- [x] 1.3 API builds with no new warnings: `dotnet build api`
+- [x] 1.1 Harness test compiles and is inert without `DETERMINISM_EMIT_PATH`: `dotnet test api.Tests --filter "FullyQualifiedName~MapDeterminismTests"` — 90ced18
+- [x] 1.2 Child run writes one entry per matrix combination: harness key-count assertion — 90ced18
+- [x] 1.3 API builds with no new warnings: `dotnet build api` — 90ced18
 
 #### Manual
 
-- [x] 1.4 Child-run wall-clock time recorded in the change notes
+- [x] 1.4 Child-run wall-clock time recorded in the change notes — 90ced18
 
 ### Phase 2: API unit cross-run determinism
 
 #### Automated
 
-- [x] 2.1 Cross-run fact passes for seeds 1–200, skirmish and Huge at 6 rooms: `dotnet test api.Tests --filter "FullyQualifiedName~MapDeterminismTests"`
-- [x] 2.2 Same-process determinism still passes: `dotnet test api.Tests --filter "FullyQualifiedName~MapGeneratorTests"`
-- [x] 2.3 Shifted seed list fails the fact (local check, reverted)
+- [x] 2.1 Cross-run fact passes for seeds 1–200, skirmish and Huge at 6 rooms: `dotnet test api.Tests --filter "FullyQualifiedName~MapDeterminismTests"` — 90ced18
+- [x] 2.2 Same-process determinism still passes: `dotnet test api.Tests --filter "FullyQualifiedName~MapGeneratorTests"` — 90ced18
+- [x] 2.3 Shifted seed list fails the fact (local check, reverted) — 90ced18
 
 #### Manual
 
-- [x] 2.4 Added CI time for the cross-run fact recorded and accepted
+- [x] 2.4 Added CI time for the cross-run fact recorded and accepted — 90ced18
 
 ### Phase 3: API integration endpoint round-trip
 
