@@ -239,57 +239,57 @@ None. No data, API contract or fixture changes.
 
 #### Automated
 
-- [x] 1.1 Harness test compiles and is inert without `DETERMINISM_EMIT_PATH`: `dotnet test api.Tests --filter "FullyQualifiedName~MapDeterminismTests"` — 90ced18
-- [x] 1.2 Child run writes one entry per matrix combination: harness key-count assertion — 90ced18
-- [x] 1.3 API builds with no new warnings: `dotnet build api` — 90ced18
+- [x] 1.1 Harness test compiles and is inert without `DETERMINISM_EMIT_PATH`: `dotnet test api.Tests --filter "FullyQualifiedName~MapDeterminismTests"` — a0cf9f7
+- [x] 1.2 Child run writes one entry per matrix combination: harness key-count assertion — a0cf9f7
+- [x] 1.3 API builds with no new warnings: `dotnet build api` — a0cf9f7
 
 #### Manual
 
-- [x] 1.4 Child-run wall-clock time recorded in the change notes — 90ced18
+- [x] 1.4 Child-run wall-clock time recorded in the change notes — a0cf9f7
 
 ### Phase 2: API unit cross-run determinism
 
 #### Automated
 
-- [x] 2.1 Cross-run fact passes for seeds 1–200, skirmish and Huge at 6 rooms: `dotnet test api.Tests --filter "FullyQualifiedName~MapDeterminismTests"` — 90ced18
-- [x] 2.2 Same-process determinism still passes: `dotnet test api.Tests --filter "FullyQualifiedName~MapGeneratorTests"` — 90ced18
-- [x] 2.3 Shifted seed list fails the fact (local check, reverted) — 90ced18
+- [x] 2.1 Cross-run fact passes for seeds 1–200, skirmish and Huge at 6 rooms: `dotnet test api.Tests --filter "FullyQualifiedName~MapDeterminismTests"` — a0cf9f7
+- [x] 2.2 Same-process determinism still passes: `dotnet test api.Tests --filter "FullyQualifiedName~MapGeneratorTests"` — a0cf9f7
+- [x] 2.3 Shifted seed list fails the fact (local check, reverted) — a0cf9f7
 
 #### Manual
 
-- [x] 2.4 Added CI time for the cross-run fact recorded and accepted — 90ced18
+- [x] 2.4 Added CI time for the cross-run fact recorded and accepted — a0cf9f7
 
 ### Phase 3: API integration endpoint round-trip
 
 #### Automated
 
-- [x] 3.1 Endpoint determinism facts pass: `dotnet test api.Tests --filter "FullyQualifiedName~MapEndpointTests"`
-- [x] 3.2 Rate-limit fact still passes in the same run
-- [x] 3.3 Wrong echoed seed fails the round-trip fact (local check, reverted)
+- [x] 3.1 Endpoint determinism facts pass: `dotnet test api.Tests --filter "FullyQualifiedName~MapEndpointTests"` — 4833f5d
+- [x] 3.2 Rate-limit fact still passes in the same run — 4833f5d
+- [x] 3.3 Wrong echoed seed fails the round-trip fact (local check, reverted) — 4833f5d
 
 #### Manual
 
-- [x] 3.4 Omitted-seed response `seed` checked by hand as a `uint`-range JSON number
+- [x] 3.4 Omitted-seed response `seed` checked by hand as a `uint`-range JSON number — 4833f5d
 
 ### Phase 4: Web unit interleaved determinism
 
 #### Automated
 
-- [x] 4.1 Interleaved drawOps test passes: `cd web && npm test -- tileset`
-- [x] 4.2 Whole web unit suite passes: `cd web && npm test`
-- [x] 4.3 Module-level PRNG fails the interleave test (local check, reverted)
+- [x] 4.1 Interleaved drawOps test passes: `cd web && npm test -- tileset` — bb1d729
+- [x] 4.2 Whole web unit suite passes: `cd web && npm test` — bb1d729
+- [x] 4.3 Module-level PRNG fails the interleave test (local check, reverted) — bb1d729
 
 #### Manual
 
-- [x] 4.4 None (pure test; no visual output)
+- [x] 4.4 None (pure test; no visual output) — bb1d729
 
 ### Phase 5: Cookbook and §3 status
 
 #### Automated
 
-- [x] 5.1 No TBD left in §6.2: `grep -n "TBD" context/foundation/test-plan.md`
-- [x] 5.2 §3 rows use fixed status values only
+- [x] 5.1 No TBD left in §6.2: `grep -n "TBD" context/foundation/test-plan.md` — 7f6c582
+- [x] 5.2 §3 rows use fixed status values only — 7f6c582
 
 #### Manual
 
-- [x] 5.3 New contributor can name the file and command for each layer from §6.2
+- [x] 5.3 New contributor can name the file and command for each layer from §6.2 — 7f6c582
