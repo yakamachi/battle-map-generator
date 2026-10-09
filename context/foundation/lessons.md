@@ -52,6 +52,13 @@
 - **Rule**: When seeded code chooses among equal candidates (priority queues, `OrderBy`/`sort` on equal keys, `Dictionary`/`HashSet`/`Object.keys` iteration, `Math.max` over ties), make the tie-break explicit in our own code (for example a secondary key such as the cell index). Never rely on a library's or runtime's order for equal keys, just as we never rely on `System.Random`/`Math.random`.
 - **Applies to**: plan, implement, impl-review
 
+## Guard-gated harness facts should read as infrastructure, not test coverage
+
+- **Context**: `api.Tests/MapDeterminismTests.cs:33-44` (any guard-variable-gated `[Fact]` used as a child-process entry point).
+- **Problem**: `Emit_matrix_for_child_process` is an assertion-free `[Fact]`, inert by design (guarded by `DETERMINISM_EMIT_PATH`) and always green in a normal run. Intentional, but it adds a no-op entry to test-count metrics with no visible signal that it's inert-by-design rather than untested (testing-seed-determinism Phase 2 impl review, 2026-10-10).
+- **Rule**: Name/comment such facts clearly as harness entry points, not real test coverage, so test-count metrics and future readers aren't misled.
+- **Applies to**: plan, implement, impl-review
+
 ## Triage a ".NET native" swap against what it actually does today, not by its name alone
 
 - **Context**: Any time hand-rolled code could plausibly be replaced by a built-in .NET/ASP.NET Core feature. First applied to `api/Maps/MapEndpoints.cs`'s hand-run `Validator.TryValidateObject` call, a candidate for .NET 10's `AddValidation()` (2026-10-02, dm-email-login/encounter-parameters closeout).

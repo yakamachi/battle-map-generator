@@ -29,7 +29,9 @@ public sealed class MapDeterminismTests
         return options;
     }
 
-    // Inert in normal runs: it writes only when ChildRun starts this test in a separate process.
+    // Harness entry point, not test coverage: inert and always green in a normal run. It writes only
+    // when ChildRun starts this test in a separate process; the content it writes is asserted by
+    // Cross_run_matches_this_process_for_every_matrix_pair, not here.
     [Fact]
     public void Emit_matrix_for_child_process()
     {
