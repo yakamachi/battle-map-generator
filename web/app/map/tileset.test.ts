@@ -182,6 +182,20 @@ describe("drawOps", () => {
     expect(new Set(pieces(1))).toEqual(new Set(["tiles", "tiles_cracked"]));
   });
 
+  // Risk #2 (determinism): a re-render of a map a DM liked must look the same even if other
+  // seeds were rendered in between (no module-level PRNG shared across calls).
+  test.each(Object.entries(fixtures))(
+    "%s: ops for a seed are unaffected by an intervening draw for another seed",
+    (_, map) => {
+      const seedA: MapGrid = { ...map, cells: [...map.cells], seed: 1 };
+      const seedB: MapGrid = { ...map, cells: [...map.cells], seed: 2 };
+      const first = drawOps(seedA);
+      drawOps(seedB);
+      const second = drawOps(seedA);
+      expect(second).toEqual(first);
+    },
+  );
+
   test("every boss arena cell draws the decorative piece", () => {
     const map = grid(["#####", "#BBB#", "#BBB#", "#####"]);
     const floors = drawOps(map).filter((op) => op.piece.startsWith("tiles"));

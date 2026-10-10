@@ -1,5 +1,6 @@
 using System.Text.Json;
 using BattleMapGenerator.Api.Maps;
+using BattleMapGenerator.Api.Tests.Infrastructure;
 
 namespace BattleMapGenerator.Api.Tests;
 
@@ -41,7 +42,7 @@ public sealed class MapFixtureTests
     private static void AssertMatchesFixture(GeneratedMap map, string fileName)
     {
         var actual = JsonSerializer.Serialize(map, FixtureJson) + "\n";
-        var path = Path.Combine(FindRepoRoot(), "fixtures", "grids", fileName);
+        var path = Path.Combine(RepoRoot.Find(), "fixtures", "grids", fileName);
 
         if (Environment.GetEnvironmentVariable("UPDATE_FIXTURES") == "1")
         {
@@ -60,17 +61,5 @@ public sealed class MapFixtureTests
         var options = new JsonSerializerOptions(JsonSerializerDefaults.Web) { WriteIndented = true };
         MapJson.Configure(options);
         return options;
-    }
-
-    private static string FindRepoRoot()
-    {
-        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
-        {
-            if (File.Exists(Path.Combine(directory.FullName, "global.json")))
-            {
-                return directory.FullName;
-            }
-        }
-        throw new InvalidOperationException($"No global.json above {AppContext.BaseDirectory}.");
     }
 }

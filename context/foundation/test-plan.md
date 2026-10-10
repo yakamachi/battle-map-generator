@@ -80,8 +80,8 @@ orchestrator updates Status as artifacts appear on disk.
 
 | # | Phase name | Goal (one line) | Risks covered | Test types | Status | Change folder |
 |---|---|---|---|---|---|---|
-| 1 | Invariant and boss-arena sweep | Prove every valid parameter combination yields a valid grid and a correctly sized boss arena | #1, #6 | unit (parametrized sweep) | change opened | context/changes/testing-invariant-boss-sweep/ |
-| 2 | Seed determinism | Prove the same seed and parameters reproduce the same grid and render variant, across requests and re-renders | #2 | unit, integration, web render test | not started | — |
+| 1 | Invariant and boss-arena sweep | Prove every valid parameter combination yields a valid grid and a correctly sized boss arena | #1, #6 | unit (parametrized sweep) | complete | context/changes/testing-invariant-boss-sweep/ |
+| 2 | Seed determinism | Prove the same seed and parameters reproduce the same grid and render variant, across requests and re-renders | #2 | unit, integration, web render test | complete | context/changes/testing-seed-determinism/ |
 | 3 | Abuse-resistant quota | Turn "the per-account limit protects the plan" into a measured, tested ceiling | #3 | integration under scripted multi-account load | not started | — |
 | 4 | Generation cost budget | Measure CPU, wall time and response size on the target host, then gate on a budget | #4 | integration timing test; one-off F1 measurement | not started | — |
 | 5 | Cold-start resilience | Automated guard for the first request after idle | #5 | integration (retry-then-succeed); probe as gate candidate | not started | — |
@@ -124,7 +124,7 @@ phase lands; before that, the gate is `planned`.
 | visual diff (deterministic) | CI on PR | required (wired; `ci.yml` job `visual`) | rendering regressions on the 3 pinned screens |
 | e2e on critical flows | CI on PR | required (wired; `ci.yml` job `e2e`) | broken critical flows, Chromium + Firefox |
 | invariant sweep | local + CI | required after §3 Phase 1 | invalid grids for untested combinations; boss arena size |
-| determinism | local + CI | required after §3 Phase 2 | same seed producing a different map or variant |
+| determinism | local + CI | required (wired; `ci.yml` jobs `api`, `web-tests`) | same seed producing a different map or variant |
 | rate-limit ceiling | local + CI | required after §3 Phase 3 | quota exhaustion via account cycling |
 | generation cost budget | CI | required after §3 Phase 4 (threshold set from the F1 measurement) | CPU or response-size growth beyond the plan's budget |
 | cold-start guard | local + CI | required after §3 Phase 5 | silent auth or generate failure after idle |
@@ -150,7 +150,13 @@ the relevant rollout phase ships; before that, the sub-section reads
 
 ### 6.2 Adding a determinism test
 
-TBD — see §3 Phase 2 (repeat generation, endpoint round-trip, web re-render).
+- **Location**: cross-run harness and fact in `api.Tests/MapDeterminismTests.cs` (+ `api.Tests/Infrastructure/ChildRun.cs`, `RepoRoot.cs`); endpoint round-trip facts in `api.Tests/MapEndpointTests.cs`; web interleave test in `web/app/map/tileset.test.ts`.
+- **Naming**: `Cross_run_*` for the cross-process check; `Generate_*` for endpoint-level determinism facts (matches the file's existing convention); `"%s: ops ..."` for the web `test.each` over the shared fixtures.
+- **Reference test**: `Cross_run_matches_this_process_for_every_matrix_pair` (API unit, cross-process); `Generate_with_the_same_explicit_seed_returns_identical_cells_rooms_and_parameters` and `Generate_without_a_seed_reproduces_the_same_map_when_the_echoed_seed_is_resent` (API integration); `"%s: ops for a seed are unaffected by an intervening draw for another seed"` (web unit).
+- **Run**: `dotnet test api.Tests --filter "FullyQualifiedName~MapDeterminismTests"`; `dotnet test api.Tests --filter "FullyQualifiedName~MapEndpointTests"`; `cd web && npm test -- tileset`.
+- **Cross-run mechanism**: `ChildRun.EmitMatrixAsync()` launches a second `dotnet test api.Tests -c Release --no-build` process (configuration must track `ci.yml`'s `-c Release`; a 60s timeout kills a wedged child) and compares its output to this process's via `JsonElement.DeepEquals`. Same-process repetition (`MapGeneratorTests`) cannot see runtime-order drift; only the child-process check can.
+- **Adding a new determinism check**: extend the matrix in `MapDeterminismTests.Matrix()` for API coverage, add an endpoint fact following the existing two, or extend the web interleave test's fixture loop. Never compare a result with itself after a single call — the whole point is a second process, request or call in between.
+- **Not here**: a Playwright visual re-render check is out of scope for this layer (see the change's "What We're NOT Doing"); the pure `drawOps` interleave test covers the property at millisecond cost instead.
 
 ### 6.3 Adding a rate-limit ceiling test
 
