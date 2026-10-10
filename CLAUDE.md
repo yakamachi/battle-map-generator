@@ -4,54 +4,61 @@
 
 <!-- BEGIN @przeprogramowani/10x-cli -->
 
-## 10xDevs AI Toolkit - Module 2, Lesson 4
+## 10xDevs AI Toolkit - Module 3, Lesson 3 (10xDevs 4.0 Hooks)
 
-Prepare for a harder implementation stream with the **research-backed planning chain**:
+Treat a hook as a **quality gate the harness runs for the agent**, not a script you hope the agent notices. Hooks run outside the model, so they survive context compaction and forgotten instructions — but only a hook whose signal actually reaches the agent closes the loop:
 
 ```
-internal research (/10x-research) + external research (exa.ai, Context7) -> /10x-plan -> /10x-implement -> success
+test-plan.md "Quality Gates" -> pick the moment per gate -> /10x-configure-hook -> prove with sample JSON -> watch the agent fix a deliberate error
 ```
-
-The lesson focus is distinguishing internal from external research and using evidence to back planning decisions.
 
 ### Task Router - Where to start
 
 | Skill | Use it when |
 | --- | --- |
-| **Internal research (lesson focus)** | |
-| `/10x-research <change-id>` | You need evidence from the existing codebase — patterns, conventions, integration points, or existing implementations. Runs parallel sub-agents over the repo and writes structured findings to `research.md`. |
-| **External research (lesson focus)** | |
-| exa.ai | You need AI-native web search for library comparisons, best practices, or ecosystem context that the codebase cannot answer. |
-| Context7 (`resolve-library-id` → `get-library-docs`) | You need live, current documentation for a specific library or framework. Resolves a library ID first, then fetches relevant doc pages. |
-| **Framing spare wheel** | |
-| `/10x-frame <change-id>` | The plan won't converge, the plan doesn't deliver expected results, or persistent drift keeps breaking the implementation. Use as an escape hatch on a separate problem (demonstrated on Space Explorers example), not as pre-research ritual. |
-| **Planning and execution** | |
-| `/10x-plan <change-id>` / `/10x-implement <change-id> phase <n>` | Use the same planning and execution chain from Lesson 2, now with upstream research evidence feeding the plan. |
+| `/10x-configure-hook` | Turning the gates from `context/foundation/test-plan.md` into agent hooks, fixing hooks that fire but the agent never reacts to, or auditing an existing hook config. It detects the harness from the repo and carries dated per-harness references. |
+| `/10x-test-plan --status` | Read the current gates and rollout state. Changing which gates exist belongs to Lesson 1, not here. |
+| `/10x-new` -> `/10x-research` -> `/10x-plan` -> `/10x-implement` | A hook surfaced a failure the agent cannot fix with a trivial correction (wrong business logic, flaky integration). Open a change instead of looping the hook. |
 
-### Research discipline
+### Hook lifecycle
 
-- Internal research (`/10x-research`) answers "what does our codebase already do?" — patterns, schemas, conventions, integration points.
-- External research (exa.ai, Context7) answers "what should we do?" — library capabilities, API docs, ecosystem best practices.
-- Combine both as evidence-backed input to `/10x-plan`. A plan without research evidence on a non-trivial stream is a guess.
-- Agent-friendly docs (`llms.txt`, markdown-for-agents, `/md` endpoints) are a quality signal for library selection — libraries that publish agent-readable docs integrate faster.
+1. **Trigger** — an event in the harness: a tool finished editing a file, the agent is about to end its turn.
+2. **Matcher** — narrows which tool calls or files the hook reacts to. Not every harness honours matchers the same way.
+3. **Handler** — usually a shell command or script that reads the event payload as JSON on stdin.
+4. **Signal** — what the hook returns. The exit code, stderr, stdout and JSON fields mean different things in different harnesses, and only one channel per event actually reaches the agent. **The signal channel differs per harness — check the skill's references before writing or reviewing a hook.**
 
-### `/10x-frame` as spare wheel
+A hook that runs but sends its message down the wrong channel is the most common failure: the user sees "hook error", the agent sees nothing and keeps going.
 
-Three triggers for reaching for `/10x-frame`:
-1. The plan won't converge — research keeps opening more questions instead of narrowing to a contract.
-2. The plan doesn't deliver — implementation repeatedly fails to meet success criteria.
-3. Persistent drift — the implementation keeps diverging from the plan in ways that suggest the problem was mis-framed.
+### Moments and layers
 
-Demonstrated on a Space Explorers example, not the SRS path. It is an escape hatch, not a mandatory step.
+The slower the check, the rarer the moment:
 
-### Paths used by this lesson
+| Moment | Typical checks | Reaches the agent? |
+| --- | --- | --- |
+| Per edit | Lint/format of **the edited file only**; related tests if they are fast | Yes, mid-work |
+| End of turn (Stop or its equivalent) | Lint + tests for every file changed this turn, whole-project typecheck | Yes, before the agent hands back |
+| Pre-commit (git) | Lint + tests on staged files; catches edits made without the agent | No — blocks the commit |
+| Pre-push (git) | Heavier suites, e2e that run locally | No — blocks the push |
+| CI | Integration, shared state, infrastructure you do not have locally | No — PR feedback |
 
-- `context/changes/<change-id>/research.md` - internal research output
-- `context/changes/<change-id>/frame.md` - framing output when needed
-- `context/changes/<change-id>/plan.md` - evidence-backed implementation contract
-- `context/foundation/lessons.md` - recurring rules and pitfalls
+Local layers do not replace CI; each one saves a CI round-trip. Start with one per-edit lint hook and one end-of-turn typecheck, then add layers when you see what escapes.
 
-Skills must not write to `context/archive/`. Archived changes are immutable; if a resolved target path starts with `context/archive/`, abort with: "This change is archived. Open a new change with `/10x-new` instead."
+### Contract
+
+- Read the gates from the "Quality Gates" section of `context/foundation/test-plan.md` (by title, not section number). A gate the plan explicitly defers stays deferred unless the user overrides it — quote the deferral when you ask.
+- Per-edit hooks check only the file that was edited. Never run `--fix` or a linter over the whole project on every edit.
+- End-of-turn hooks that can send the agent back must stop after one retry (the harness's "already continued" flag or equivalent), so an unfixable error does not loop.
+- Per-edit hooks only see the harness's edit tools; a file rewritten through a shell command skips them. The end-of-turn hook re-checks every file changed this turn (`git diff`), so it is the net for those edits.
+- Timeouts are usually in **seconds**. Check the unit before copying a number.
+- Prove every hook before trusting it: run the script with a sample payload on a deliberately broken file and on a clean one, then revert the error.
+- Never overwrite existing hook config silently. Audit it, name the defects, merge, and show the diff.
+
+### Lesson boundaries
+
+- Do not change the risk strategy or the gate definitions — that is Lesson 1 (`/10x-test-plan`).
+- Do not write new tests here — hooks only run the tests Lesson 2 produced.
+- Do not write E2E scenarios or browser verification — that is Lesson 4.
+- Do not author CI pipelines or install git-hook managers unasked; recommend pre-commit/pre-push gates, let the user decide.
 
 <!-- END @przeprogramowani/10x-cli -->
 

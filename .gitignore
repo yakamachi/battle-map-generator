@@ -1,5 +1,10 @@
 /.10x-cli.json
-/.claude/
+# The course's skills/prompts/manifest stay local-only; the hook config they produce is
+# committed and shared with the team.
+/.claude/*
+!/.claude/settings.json
+!/.claude/hooks/
+/.claude/settings.local.json
 /projekt-kursowy-mniejszy-niz-myslisz.md
 /context/foundation/README.md
 /context/changes/README.md
