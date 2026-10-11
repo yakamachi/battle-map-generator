@@ -116,10 +116,10 @@ Add the shared reporter, wire it into all 4 catch blocks, and add unit tests pro
 
 #### Automated
 
-- [x] 1.1 New unit tests pass: `npm test`
-- [x] 1.2 Type checking passes: `npm run typecheck`
-- [x] 1.3 Existing test suite still green
+- [x] 1.1 New unit tests pass: `npm test` — d67441a
+- [x] 1.2 Type checking passes: `npm run typecheck` — d67441a
+- [x] 1.3 Existing test suite still green — d67441a
 
 #### Manual
 
-- [x] 1.4 Devtools-offline check confirms `console.error` fires for all 4 flows with unchanged UI messages
+- [x] 1.4 Devtools-offline check confirms `console.error` fires for all 4 flows with unchanged UI messages — d67441a
