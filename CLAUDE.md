@@ -4,39 +4,35 @@
 
 <!-- BEGIN @przeprogramowani/10x-cli -->
 
-## 10xDevs AI Toolkit - Module 3, Lesson 4 (E2E Tests)
+## 10xDevs AI Toolkit - Module 3, Lesson 5 (Debugging)
 
-**For E2E tests, use the two M3L4 skills in this order:**
+Turn a failure into a fix the agent can defend: evidence first, then a failing test, then the fix.
 
-1. **`/10x-e2e-setup`** — one-time setup: Playwright config (`webServer`,
-   auth `setup` project, `storageState`), a green seed test, and `context/foundation/test-stack.md`.
-2. **`/10x-e2e`** — the per-risk loop: risk → explore the running app with
-   `playwright-cli` → generate → review against the five anti-patterns →
-   re-prompt by name → verify with a deliberate break.
+```
+signal (monitoring | log | flaky E2E | stack trace) -> gather evidence -> reproduce -> failing test -> fix -> verify
+```
 
-The skills' `references/` carry the full rules, anti-patterns, seed pattern, and
-prompt-template.
+### Task Router - Where to start
 
-A few hard rules that hold even before you invoke the skill:
+| Skill | Use it when |
+| --- | --- |
+| `/10x-frame` | The report arrives as "bug + proposed fix". Check that the observed symptom and the stated cause actually match before anyone fixes anything. |
+| `/10x-new` -> `/10x-research` -> `/10x-plan` -> `/10x-implement` | The fix is more than a one-liner. Research collects the evidence; the plan starts with the failing regression test. |
+| `/10x-tdd` | Writing the regression test that reproduces the bug before the fix. |
+| `/10x-e2e` | The bug only shows up in the running app. Reproduce it in the browser and keep that test. |
+| `/10x-observability-audit` | Errors are missing, noisy or impossible to diagnose in production. It audits the critical flows for code that hides failures and writes a dated report under `context/audits/observability/`. Use `--verify <report>` to re-check an earlier report after fixes. |
 
-- **Locators:** `getByRole` / `getByLabel` / `getByText` first; `getByTestId`
-  only when accessibility attributes are ambiguous. Never CSS selectors, XPath,
-  or DOM structure.
-- **Never `page.waitForTimeout()`.** Wait for state: `toBeVisible()`,
-  `waitForURL()`, `waitForResponse()`.
-- **Test independence + cleanup.** Each test runs standalone — its own setup,
-  action, assertion, and cleanup; unique ids (timestamp suffix) so parallel runs
-  and re-runs don't collide.
+### Hard rules
 
-Two boundaries to keep straight:
+- **Evidence before a hypothesis.** Use what the error tracker, the logs, a reproduction and the code each show. Never guess a cause from the stack trace alone.
+- **The bug becomes a failing test first.** The fix is done when that test goes from red to green and stays in the suite.
+- **Never hide the evidence.** No empty `catch`, no ignored promise rejections, no failures turned into redirects or `200`s, no dropped error causes. If the fix needs a `catch`, it logs or reports the error with its cause.
+- **Fix the cause, not the test.** Don't edit an assertion to match the new behaviour unless the requirement itself changed.
 
-- **DOM (snapshot) is the default.** Vision (`--caps=vision`) is a supplement for
-  visual-only risks (layout, z-index, animation); for pixel regression prefer
-  deterministic tools (`toHaveScreenshot`, Argos, Lost Pixel). VLM model
-  selection/cost is a debugging topic (Lesson 5), not testing.
-- **A red test is a signal, not a chore.** A changed selector → update the
-  locator in a reviewed diff. A changed business behavior → the test caught a
-  bug; never edit the assertion to match it. Fixing failing tests is Lesson 5.
+### Lesson boundaries
+
+- `/10x-observability-audit` reads code and writes a report. It never changes the audited code. Fixing what it finds goes through the change chain.
+- Choosing a monitoring vendor is `/10x-infra-research`, not this lesson.
 
 <!-- END @przeprogramowani/10x-cli -->
 
