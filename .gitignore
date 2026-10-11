@@ -14,3 +14,6 @@
 .env.*
 !.env.example
 node_modules/
+# Playwright CLI output (may contain credentials) and its local workspace marker
+.playwright-cli/
+/.playwright/
