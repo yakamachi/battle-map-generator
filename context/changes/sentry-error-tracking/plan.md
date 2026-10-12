@@ -282,27 +282,27 @@ Update `reportError()` (the choke point added in `client-error-reporting`, expli
 
 #### Automated
 
-- [x] 2.1 `dotnet build` succeeds from `api/`
-- [x] 2.2 `dotnet test api.Tests` passes with no regressions
+- [x] 2.1 `dotnet build` succeeds from `api/` — 358e810
+- [x] 2.2 `dotnet test api.Tests` passes with no regressions — 358e810
 
 #### Manual
 
-- [x] 2.3 Data Protection failure confirmed reaching Sentry with the right message
-- [x] 2.4 Map-generation failure confirmed reaching Sentry with seed/roomCount/encounter attributes
+- [x] 2.3 Data Protection failure confirmed reaching Sentry with the right message — 358e810
+- [x] 2.4 Map-generation failure confirmed reaching Sentry with seed/roomCount/encounter attributes — 358e810
 
 ### Phase 3: Install and initialize Sentry in web/
 
 #### Automated
 
-- [ ] 3.1 `npm run typecheck` passes
-- [ ] 3.2 `npm test` passes with no regressions
-- [ ] 3.3 `npm run build` succeeds locally with `VITE_SENTRY_DSN` unset
+- [x] 3.1 `npm run typecheck` passes
+- [x] 3.2 `npm test` passes with no regressions
+- [x] 3.3 `npm run build` succeeds locally with `VITE_SENTRY_DSN` unset
 
 #### Manual
 
-- [ ] 3.4 Local `.env.local` DSN; browser error confirmed in Sentry dashboard
-- [ ] 3.5 `VITE_SENTRY_DSN` repository variable created
-- [ ] 3.6 Post-merge deploy build confirmed to pick up the variable
+- [x] 3.4 Local `.env.local` DSN; browser error confirmed in Sentry dashboard
+- [x] 3.5 `VITE_SENTRY_DSN` repository variable created
+- [ ] 3.6 Post-merge deploy build confirmed to pick up the variable (pending next merge to main)
 
 ### Phase 4: Wire web-side audit findings to Sentry (reportError, ErrorBoundary)
 
