@@ -1,7 +1,7 @@
 ---
 change_id: sentry-error-tracking
 title: Install Sentry error tracking in api and web
-status: implementing
+status: implemented
 created: 2026-10-11
 updated: 2026-10-12
 archived_at: null
