@@ -32,6 +32,8 @@ jobs:
 
       - name: Build web
         working-directory: web
+        env:
+          VITE_SENTRY_DSN: ${{ vars.VITE_SENTRY_DSN }}
         run: |
           npm ci
           npm run typecheck

@@ -8,10 +8,18 @@ import {
   ScrollRestoration,
 } from "react-router";
 
+import * as Sentry from "@sentry/react";
+
 import type { Route } from "./+types/root";
 import { buttonVariants } from "~/components/ui/button";
 import { cn } from "cn";
 import "./app.css";
+
+// VITE_SENTRY_DSN comes from a build-time env var (ci.yml leaves it unset — a safe no-op;
+// deploy.yml's "Build web" step sets it from the vars.VITE_SENTRY_DSN repo variable).
+// Error tracking only: no tracing integration added, no Sentry.setUser() call anywhere
+// (decided 2026-10-11) — see context/audits/observability/2026-10-11_login-generate.md.
+Sentry.init({ dsn: import.meta.env.VITE_SENTRY_DSN });
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -68,9 +76,12 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
       error.status === 404
         ? "The requested page could not be found."
         : error.statusText || details;
-  } else if (import.meta.env.DEV && error && error instanceof Error) {
-    details = error.message;
-    stack = error.stack;
+  } else if (error && error instanceof Error) {
+    Sentry.captureException(error);
+    if (import.meta.env.DEV) {
+      details = error.message;
+      stack = error.stack;
+    }
   }
 
   return (

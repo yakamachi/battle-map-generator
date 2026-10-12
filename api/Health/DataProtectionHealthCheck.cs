@@ -5,7 +5,7 @@ namespace BattleMapGenerator.Api.Health;
 
 // Proves the key ring loads from (or is created in) the database and can round-trip a payload.
 // The first call on an empty database writes the default key.
-public sealed class DataProtectionHealthCheck(IDataProtectionProvider provider) : IHealthCheck
+public sealed class DataProtectionHealthCheck(IDataProtectionProvider provider, ILogger<DataProtectionHealthCheck> logger) : IHealthCheck
 {
     private const string Purpose = "battle-map-generator.health-check";
     private const string Payload = "health-check";
@@ -25,6 +25,7 @@ public sealed class DataProtectionHealthCheck(IDataProtectionProvider provider) 
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, "Data Protection round-trip failed");
             return Task.FromResult(HealthCheckResult.Unhealthy("Data Protection round trip failed.", ex));
         }
     }

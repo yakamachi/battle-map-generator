@@ -4,61 +4,35 @@
 
 <!-- BEGIN @przeprogramowani/10x-cli -->
 
-## 10xDevs AI Toolkit - Module 3, Lesson 3 (10xDevs 4.0 Hooks)
+## 10xDevs AI Toolkit - Module 3, Lesson 5 (Debugging)
 
-Treat a hook as a **quality gate the harness runs for the agent**, not a script you hope the agent notices. Hooks run outside the model, so they survive context compaction and forgotten instructions — but only a hook whose signal actually reaches the agent closes the loop:
+Turn a failure into a fix the agent can defend: evidence first, then a failing test, then the fix.
 
 ```
-test-plan.md "Quality Gates" -> pick the moment per gate -> /10x-configure-hook -> prove with sample JSON -> watch the agent fix a deliberate error
+signal (monitoring | log | flaky E2E | stack trace) -> gather evidence -> reproduce -> failing test -> fix -> verify
 ```
 
 ### Task Router - Where to start
 
 | Skill | Use it when |
 | --- | --- |
-| `/10x-configure-hook` | Turning the gates from `context/foundation/test-plan.md` into agent hooks, fixing hooks that fire but the agent never reacts to, or auditing an existing hook config. It detects the harness from the repo and carries dated per-harness references. |
-| `/10x-test-plan --status` | Read the current gates and rollout state. Changing which gates exist belongs to Lesson 1, not here. |
-| `/10x-new` -> `/10x-research` -> `/10x-plan` -> `/10x-implement` | A hook surfaced a failure the agent cannot fix with a trivial correction (wrong business logic, flaky integration). Open a change instead of looping the hook. |
+| `/10x-frame` | The report arrives as "bug + proposed fix". Check that the observed symptom and the stated cause actually match before anyone fixes anything. |
+| `/10x-new` -> `/10x-research` -> `/10x-plan` -> `/10x-implement` | The fix is more than a one-liner. Research collects the evidence; the plan starts with the failing regression test. |
+| `/10x-tdd` | Writing the regression test that reproduces the bug before the fix. |
+| `/10x-e2e` | The bug only shows up in the running app. Reproduce it in the browser and keep that test. |
+| `/10x-observability-audit` | Errors are missing, noisy or impossible to diagnose in production. It audits the critical flows for code that hides failures and writes a dated report under `context/audits/observability/`. Use `--verify <report>` to re-check an earlier report after fixes. |
 
-### Hook lifecycle
+### Hard rules
 
-1. **Trigger** — an event in the harness: a tool finished editing a file, the agent is about to end its turn.
-2. **Matcher** — narrows which tool calls or files the hook reacts to. Not every harness honours matchers the same way.
-3. **Handler** — usually a shell command or script that reads the event payload as JSON on stdin.
-4. **Signal** — what the hook returns. The exit code, stderr, stdout and JSON fields mean different things in different harnesses, and only one channel per event actually reaches the agent. **The signal channel differs per harness — check the skill's references before writing or reviewing a hook.**
-
-A hook that runs but sends its message down the wrong channel is the most common failure: the user sees "hook error", the agent sees nothing and keeps going.
-
-### Moments and layers
-
-The slower the check, the rarer the moment:
-
-| Moment | Typical checks | Reaches the agent? |
-| --- | --- | --- |
-| Per edit | Lint/format of **the edited file only**; related tests if they are fast | Yes, mid-work |
-| End of turn (Stop or its equivalent) | Lint + tests for every file changed this turn, whole-project typecheck | Yes, before the agent hands back |
-| Pre-commit (git) | Lint + tests on staged files; catches edits made without the agent | No — blocks the commit |
-| Pre-push (git) | Heavier suites, e2e that run locally | No — blocks the push |
-| CI | Integration, shared state, infrastructure you do not have locally | No — PR feedback |
-
-Local layers do not replace CI; each one saves a CI round-trip. Start with one per-edit lint hook and one end-of-turn typecheck, then add layers when you see what escapes.
-
-### Contract
-
-- Read the gates from the "Quality Gates" section of `context/foundation/test-plan.md` (by title, not section number). A gate the plan explicitly defers stays deferred unless the user overrides it — quote the deferral when you ask.
-- Per-edit hooks check only the file that was edited. Never run `--fix` or a linter over the whole project on every edit.
-- End-of-turn hooks that can send the agent back must stop after one retry (the harness's "already continued" flag or equivalent), so an unfixable error does not loop.
-- Per-edit hooks only see the harness's edit tools; a file rewritten through a shell command skips them. The end-of-turn hook re-checks every file changed this turn (`git diff`), so it is the net for those edits.
-- Timeouts are usually in **seconds**. Check the unit before copying a number.
-- Prove every hook before trusting it: run the script with a sample payload on a deliberately broken file and on a clean one, then revert the error.
-- Never overwrite existing hook config silently. Audit it, name the defects, merge, and show the diff.
+- **Evidence before a hypothesis.** Use what the error tracker, the logs, a reproduction and the code each show. Never guess a cause from the stack trace alone.
+- **The bug becomes a failing test first.** The fix is done when that test goes from red to green and stays in the suite.
+- **Never hide the evidence.** No empty `catch`, no ignored promise rejections, no failures turned into redirects or `200`s, no dropped error causes. If the fix needs a `catch`, it logs or reports the error with its cause.
+- **Fix the cause, not the test.** Don't edit an assertion to match the new behaviour unless the requirement itself changed.
 
 ### Lesson boundaries
 
-- Do not change the risk strategy or the gate definitions — that is Lesson 1 (`/10x-test-plan`).
-- Do not write new tests here — hooks only run the tests Lesson 2 produced.
-- Do not write E2E scenarios or browser verification — that is Lesson 4.
-- Do not author CI pipelines or install git-hook managers unasked; recommend pre-commit/pre-push gates, let the user decide.
+- `/10x-observability-audit` reads code and writes a report. It never changes the audited code. Fixing what it finds goes through the change chain.
+- Choosing a monitoring vendor is `/10x-infra-research`, not this lesson.
 
 <!-- END @przeprogramowani/10x-cli -->
 

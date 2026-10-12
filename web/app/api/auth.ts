@@ -1,4 +1,4 @@
-import { client } from "./client";
+import { client, reportError } from "./client";
 import type { components } from "./schema";
 
 export type AccountInfo = components["schemas"]["AccountInfo"];
@@ -37,7 +37,8 @@ export async function register(email: string, password: string): Promise<Registe
   let result;
   try {
     result = await client.POST("/api/auth/register", { body: { email, password } });
-  } catch {
+  } catch (error) {
+    reportError("POST /api/auth/register", error);
     return { ok: false, error: { kind: "network" } };
   }
 
@@ -55,7 +56,8 @@ export async function login(email: string, password: string): Promise<LoginResul
   let result;
   try {
     result = await client.POST("/api/auth/login", { body: { email, password } });
-  } catch {
+  } catch (error) {
+    reportError("POST /api/auth/login", error);
     return { ok: false, error: { kind: "network" } };
   }
 
@@ -71,7 +73,8 @@ export async function logout(): Promise<LogoutResult> {
     const { response } = await client.POST("/api/auth/logout");
     if (response.ok) return { ok: true };
     return { ok: false, error: { kind: "http", status: response.status } };
-  } catch {
+  } catch (error) {
+    reportError("POST /api/auth/logout", error);
     return { ok: false, error: { kind: "network" } };
   }
 }

@@ -33,8 +33,13 @@ public static class MapEndpoints
     // The body is read here rather than bound by the framework, because a value binding rejects (an
     // unknown enum name, a number as an enum, text as a number) would otherwise get a 400 with no body.
     private static async Task<Results<Ok<GeneratedMap>, ValidationProblem>> Generate(
-        HttpRequest http, IOptions<HttpJsonOptions> json, CancellationToken cancellationToken)
+        HttpRequest http, IOptions<HttpJsonOptions> json, ILoggerFactory loggerFactory, CancellationToken cancellationToken)
     {
+        // MapEndpoints is static, so it cannot be used as the generic argument of ILogger<T> (CS0718);
+        // ILoggerFactory.CreateLogger(Type) produces the same category name an injected ILogger<MapEndpoints>
+        // would have had.
+        var logger = loggerFactory.CreateLogger(typeof(MapEndpoints));
+
         GenerateMapRequest? request;
         try
         {
@@ -51,7 +56,18 @@ public static class MapEndpoints
             return TypedResults.ValidationProblem(errors);
         }
 
-        return TypedResults.Ok(BspGenerator.Generate(request.Seed ?? NewSeed(), request.ToParameters()));
+        var seed = request.Seed ?? NewSeed();
+        var parameters = request.ToParameters();
+        try
+        {
+            return TypedResults.Ok(BspGenerator.Generate(seed, parameters));
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Map generation failed for seed {Seed}, roomCount {RoomCount}, encounter {Encounter}",
+                seed, parameters.RoomCount, parameters.Encounter);
+            throw;
+        }
     }
 
     // An empty body is allowed and means "all defaults", as it did when the framework bound it.

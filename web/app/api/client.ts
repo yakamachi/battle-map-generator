@@ -1,4 +1,5 @@
 import createClient from "openapi-fetch";
+import * as Sentry from "@sentry/react";
 import type { components, paths } from "./schema";
 
 export type GeneratedMap = components["schemas"]["GeneratedMap"];
@@ -33,6 +34,15 @@ export type MapRequest = {
 // Exported so app/api/auth.ts shares the same client and base URL.
 export const client = createClient<paths>({ baseUrl: "" });
 
+// Single choke point for a swallowed error: every catch block in this module and auth.ts
+// reports through here before mapping to a UI-safe kind, so wiring a real tracker later only
+// means changing this function's body. label names the HTTP method and route, e.g.
+// "POST /api/maps/generate". Never throws; no return value.
+export function reportError(label: string, error: unknown): void {
+  console.error(`[api] ${label} failed`, error);
+  Sentry.captureException(error, { tags: { call: label } });
+}
+
 export async function generateMap({
   roomCount,
   encounter,
@@ -44,7 +54,8 @@ export async function generateMap({
     result = await client.POST("/api/maps/generate", {
       body: { seed: seed ?? null, roomCount, encounter, bossSize: bossSize ?? null },
     });
-  } catch {
+  } catch (error) {
+    reportError("POST /api/maps/generate", error);
     return { ok: false, error: { kind: "network" } };
   }
 
