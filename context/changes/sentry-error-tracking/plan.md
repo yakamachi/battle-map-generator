@@ -270,25 +270,25 @@ Update `reportError()` (the choke point added in `client-error-reporting`, expli
 
 #### Automated
 
-- [x] 1.1 `dotnet build` succeeds from `api/`
-- [x] 1.2 `dotnet test api.Tests` passes with no regressions
+- [x] 1.1 `dotnet build` succeeds from `api/` — 8e01223
+- [x] 1.2 `dotnet test api.Tests` passes with no regressions — 8e01223
 
 #### Manual
 
-- [x] 1.3 Local DSN via user-secrets; triggered exception confirmed in Sentry dashboard
-- [x] 1.4 Production `Sentry__Dsn` Application Setting created
+- [x] 1.3 Local DSN via user-secrets; triggered exception confirmed in Sentry dashboard — 8e01223
+- [x] 1.4 Production `Sentry__Dsn` Application Setting created — 8e01223
 
 ### Phase 2: Wire API-side audit findings to Sentry (L1, G4)
 
 #### Automated
 
-- [ ] 2.1 `dotnet build` succeeds from `api/`
-- [ ] 2.2 `dotnet test api.Tests` passes with no regressions
+- [x] 2.1 `dotnet build` succeeds from `api/`
+- [x] 2.2 `dotnet test api.Tests` passes with no regressions
 
 #### Manual
 
-- [ ] 2.3 Data Protection failure confirmed reaching Sentry with the right message
-- [ ] 2.4 Map-generation failure confirmed reaching Sentry with seed/roomCount/encounter attributes
+- [x] 2.3 Data Protection failure confirmed reaching Sentry with the right message
+- [x] 2.4 Map-generation failure confirmed reaching Sentry with seed/roomCount/encounter attributes
 
 ### Phase 3: Install and initialize Sentry in web/
 
