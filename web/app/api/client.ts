@@ -1,4 +1,5 @@
 import createClient from "openapi-fetch";
+import * as Sentry from "@sentry/react";
 import type { components, paths } from "./schema";
 
 export type GeneratedMap = components["schemas"]["GeneratedMap"];
@@ -39,6 +40,7 @@ export const client = createClient<paths>({ baseUrl: "" });
 // "POST /api/maps/generate". Never throws; no return value.
 export function reportError(label: string, error: unknown): void {
   console.error(`[api] ${label} failed`, error);
+  Sentry.captureException(error, { tags: { call: label } });
 }
 
 export async function generateMap({
