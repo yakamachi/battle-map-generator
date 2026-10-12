@@ -294,14 +294,14 @@ Update `reportError()` (the choke point added in `client-error-reporting`, expli
 
 #### Automated
 
-- [x] 3.1 `npm run typecheck` passes
-- [x] 3.2 `npm test` passes with no regressions
-- [x] 3.3 `npm run build` succeeds locally with `VITE_SENTRY_DSN` unset
+- [x] 3.1 `npm run typecheck` passes — 7711c8b
+- [x] 3.2 `npm test` passes with no regressions — 7711c8b
+- [x] 3.3 `npm run build` succeeds locally with `VITE_SENTRY_DSN` unset — 7711c8b
 
 #### Manual
 
-- [x] 3.4 Local `.env.local` DSN; browser error confirmed in Sentry dashboard
-- [x] 3.5 `VITE_SENTRY_DSN` repository variable created
+- [x] 3.4 Local `.env.local` DSN; browser error confirmed in Sentry dashboard — 7711c8b
+- [x] 3.5 `VITE_SENTRY_DSN` repository variable created — 7711c8b
 - [ ] 3.6 Post-merge deploy build confirmed to pick up the variable (pending next merge to main)
 
 ### Phase 4: Wire web-side audit findings to Sentry (reportError, ErrorBoundary)
