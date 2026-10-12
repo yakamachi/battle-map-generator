@@ -14,6 +14,18 @@ using Microsoft.Net.Http.Headers;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Dsn comes from configuration ("Sentry:Dsn" — an App Service application setting in
+// production, nothing here in Testing or at build-time OpenAPI generation). Sentry.AspNetCore
+// requires an explicit "" to disable itself — a null Dsn throws instead of no-opping — so the
+// fallback to "" is required, not cosmetic. Error tracking only: no tracing, no PII (decided
+// 2026-10-11) — see context/audits/observability/2026-10-11_login-generate.md.
+builder.WebHost.UseSentry(o =>
+{
+    o.Dsn = builder.Configuration["Sentry:Dsn"] ?? "";
+    o.TracesSampleRate = 0;
+    o.SendDefaultPii = false;
+});
+
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
