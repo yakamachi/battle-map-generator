@@ -308,10 +308,10 @@ Update `reportError()` (the choke point added in `client-error-reporting`, expli
 
 #### Automated
 
-- [x] 4.1 `npm run typecheck` passes
-- [x] 4.2 `npm test` passes, including existing `client.test.ts`/`auth.test.ts`
+- [x] 4.1 `npm run typecheck` passes — dd1374d
+- [x] 4.2 `npm test` passes, including existing `client.test.ts`/`auth.test.ts` — dd1374d
 
 #### Manual
 
-- [x] 4.3 All 4 `reportError` call sites confirmed reaching Sentry tagged with their call label
-- [x] 4.4 Root `ErrorBoundary` throw confirmed reaching Sentry
+- [x] 4.3 All 4 `reportError` call sites confirmed reaching Sentry tagged with their call label — dd1374d
+- [x] 4.4 Root `ErrorBoundary` throw confirmed reaching Sentry — dd1374d
