@@ -8,6 +8,10 @@ public static class AuthEndpoints
 {
     public const string AuthRateLimitPolicy = "auth";
 
+    // Chained onto the per-client-IP auth limiter in Program.cs: one shared bucket across every IP,
+    // so a scripted client cannot escape the per-IP ceiling by spreading registrations across addresses.
+    public const int GlobalAuthLimit = 50;
+
     // The AspNetUsers column width; a longer email would fail the insert instead of validation.
     private const int MaxEmailLength = 256;
 

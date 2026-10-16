@@ -12,6 +12,10 @@ public static class MapEndpoints
 {
     public const string GenerateRateLimitPolicy = "generate";
 
+    // Chained onto the per-account generate limiter in Program.cs: one shared bucket across every
+    // account, so a scripted client cannot escape the per-account ceiling by creating unlimited accounts.
+    public const int GlobalGenerateLimit = 50;
+
     // Generation requires a session (401 without one) and is rate-limited per account; the limit and
     // the room-count/boss-size parameters bound its cost.
     // Generation is pure computation: it must never resolve AppDbContext or touch the database.
