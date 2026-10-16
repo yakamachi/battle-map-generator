@@ -283,12 +283,12 @@ isolation rule — each test still gets its own factory):
 
 #### Automated
 
-- [x] 1.1 dotnet test api.Tests passes with no regressions
-- [x] 1.2 dotnet build succeeds with no unexpected OpenAPI diff
+- [x] 1.1 dotnet test api.Tests passes with no regressions (c5944fc)
+- [x] 1.2 dotnet build succeeds with no unexpected OpenAPI diff (c5944fc)
 
 #### Manual
 
-- [x] 1.3 A single logged-in generate call still returns 200 locally after the change
+- [x] 1.3 A single logged-in generate call still returns 200 locally after the change (c5944fc)
 
 ### Phase 2: Multi-IP test seam + the abuse-resistant quota test
 
