@@ -35,7 +35,7 @@ min, regardless of account or IP count.
 | New threshold | 50/min each (5× the existing per-account/per-IP budget) | Keeps the F1 CPU/bandwidth budget conservative until Phase 4 measures real per-generation cost | Plan (interview) |
 | Legitimate-user impact | Same 429 + `Retry-After` as today, no distinguishing response | Zero new response contract, keeps this change entirely inside `api/` | Plan (interview) |
 | Test depth | Full scripted-attacker shape: simulated multi-IP registration, then aggregate generate | Directly disproves the test-plan's "(accounts) × 10" framing, not just a narrower proxy | Plan (interview) |
-| Mechanism | Chain the existing limiter with a new constant-key global limiter via `PartitionedRateLimiter.CreateChained` | Native .NET primitive, no new dependency; `options.GlobalLimiter` was rejected because it would also throttle health checks | Plan |
+| Mechanism | Chain the existing limiter with one shared global limiter via `RateLimiter.CreateChained` in the partition factory | Native .NET primitive, no new dependency; `options.GlobalLimiter` was rejected because it would also throttle health checks | Plan |
 | `X-Forwarded-For` trust/spoofing (research's open question #2) | Left untouched | A true global cap bounds throughput regardless of how many IPs an attacker can fake, so the question stops mattering for this risk | Plan |
 | Cross-window compounding (research's open question #4) | No `TimeProvider` seam added | Moot once a global cap exists — it reapplies every window regardless of account count | Plan |
 
@@ -63,10 +63,12 @@ Two named rate-limit policies (`generate`, `auth`) already exist in `api/Program
 each a single `FixedWindowRateLimiter` partitioned by account or client IP. This plan
 chains each one with a second `FixedWindowRateLimiter` partitioned on a single
 constant key — effectively one shared bucket per policy, independent of how many
-accounts or IPs exist — using `PartitionedRateLimiter.CreateChained(...)`. The
-per-partition limiter is evaluated first so today's behavior is unchanged whenever
-the global bucket isn't the bottleneck, and `CreateChained` correctly releases an
-already-spent per-partition permit if the global one blocks the request.
+accounts or IPs exist — using `RateLimiter.CreateChained(...)` inside each policy's
+partition factory. The per-partition limiter is evaluated first, so today's behavior
+is unchanged whenever the global bucket isn't the bottleneck. A request blocked only
+by the global ceiling still spends its per-partition permit for that minute, because
+fixed-window limiters don't give permits back mid-window; this is an accepted
+trade-off (see plan.md's implementation note).
 
 ## Phases at a Glance
 

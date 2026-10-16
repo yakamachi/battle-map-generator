@@ -39,22 +39,11 @@ builder.Services.ConfigureHttpJsonOptions(options => MapJson.Configure(options.S
 // unreachable; it is there because a null partition key throws.
 // The per-IP auth policy uses the "unknown" bucket for the same reason: TestServer leaves the remote
 // address null. Behind App Service the client IP comes from X-Forwarded-For (ASPNETCORE_FORWARDEDHEADERS_ENABLED).
-// Each per-account/per-IP limiter is chained with one shared, constant-key global limiter per policy
-// (GlobalGenerateLimit / GlobalAuthLimit per minute), so a scripted client cannot escape its own
-// per-account or per-IP ceiling by creating unlimited accounts: a new account still gets its own
-// 10/min budget, but aggregate throughput across every account or IP is bounded too. RateLimiter.CreateChained
-// requires both limiters in the chain to grant a lease, in order, and calls Dispose on the earlier
-// lease when a later one in the chain fails, so a request already refused by its own per-account/
-// per-IP budget never attempts the global bucket. Verified (dotnet run against the installed SDK, not
-// assumed): because both limiters are FixedWindowRateLimiter, that Dispose call does not actually
-// return the per-account/per-IP permit within the same window (fixed-window limiters have no
-// mid-window give-back) — so a request that passes its own budget but is blocked only by the global
-// ceiling still spends one of its own permits for that minute. Accepted trade-off: it only matters once
-// the shared bucket is already near 50/min, and keeps both limiters the same shape. There is no
-// AddPolicy overload that takes an already-built limiter directly, so the chain is built inside the
-// per-key partition factory instead (same lazy-per-key caching the existing per-account/per-IP
-// limiters already relied on); the global limiter instance itself is created once outside that factory
-// and captured by closure, so every key shares the same bucket.
+// Each per-key limiter is chained with one shared global limiter per policy (GlobalGenerateLimit /
+// GlobalAuthLimit per minute), bounding aggregate throughput however many accounts or IPs exist.
+// AddPolicy takes no pre-built limiter, so the chain is built in the partition factory and the global
+// limiter is captured by closure. The per-key limiter goes first; a request refused only by the global
+// one still spends its per-key permit for the window, since fixed-window leases are not given back.
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;

@@ -99,6 +99,18 @@ global bucket (today's behavior for that case is unchanged), and a request that
 passes its own budget but is blocked only by the global ceiling has its per-account/
 per-IP permit correctly released by `CreateChained` rather than spent for nothing.
 
+> **Implementation note (Phase 1, from impl-review F2):** two statements above proved
+> inaccurate. (1) With `FixedWindowRateLimiter`, `CreateChained` does dispose the
+> earlier lease when the global limiter refuses, but disposing a fixed-window lease
+> does not give the permit back mid-window. A request refused only by the global
+> ceiling still spends one of its own per-account/per-IP permits for that minute.
+> This was accepted as a trade-off: it only matters once the shared bucket is already
+> full. (2) No `AddPolicy` overload takes a pre-built `PartitionedRateLimiter`, so the
+> code uses the non-partitioned `RateLimiter.CreateChained(perKey, global)` inside
+> each policy's partition factory, with one shared global `FixedWindowRateLimiter`
+> per policy captured by closure (`api/Program.cs`). The chain order is as described
+> above.
+
 **Forwarded-header handling for the test seam needs verification before Phase 2's
 test can work.** Production relies on the `ASPNETCORE_FORWARDEDHEADERS_ENABLED` app
 setting (`api/Program.cs:40-41`, `api/AGENTS.md`) to make
@@ -283,12 +295,12 @@ isolation rule — each test still gets its own factory):
 
 #### Automated
 
-- [x] 1.1 dotnet test api.Tests passes with no regressions (c5944fc)
-- [x] 1.2 dotnet build succeeds with no unexpected OpenAPI diff (c5944fc)
+- [x] 1.1 dotnet test api.Tests passes with no regressions — c5944fc
+- [x] 1.2 dotnet build succeeds with no unexpected OpenAPI diff — c5944fc
 
 #### Manual
 
-- [x] 1.3 A single logged-in generate call still returns 200 locally after the change (c5944fc)
+- [x] 1.3 A single logged-in generate call still returns 200 locally after the change — c5944fc
 
 ### Phase 2: Multi-IP test seam + the abuse-resistant quota test
 
