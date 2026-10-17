@@ -3,8 +3,8 @@ project: "Battle Map Generator dla D&D (DM Toolkit)"
 version: 1
 status: draft                    # draft | active | locked
 created: 2026-09-22
-updated: 2026-10-02
-prd_version: 2
+updated: 2026-10-18
+prd_version: 3
 main_goal: learn
 top_blocker: time
 milestone_id: dm-downloads-session-map
@@ -14,7 +14,7 @@ milestone_status: open           # open | done
 
 # Roadmap: Battle Map Generator dla D&D (DM Toolkit)
 
-> Derived from `context/foundation/prd.md` (v2) + auto-researched codebase baseline.
+> Derived from `context/foundation/prd.md` (v2; v3 2026-10-18 adds S-05) + auto-researched codebase baseline.
 > Edit-in-place; archive when superseded.
 > Slices below are listed in dependency order. The "At a glance" table is the index.
 
@@ -22,10 +22,10 @@ milestone_status: open           # open | done
 
 **M-1: DM pobiera gotową mapę na sesję** — Status: open
 
-- **Intent:** Etap 1 PRD działa end-to-end: DM zakłada konto i loguje się, ustawia parametry starcia (liczba pokoi, typ starcia), generuje mapę wyrównaną do siatki, w razie potrzeby generuje ją ponownie i pobiera PNG gotowy do wgrania do Roll20.
-- **Source materials:** `context/foundation/prd.md` (v2; v1 → v2 2026-09-30 po peer feedback: liczba pokoi i arena bossa, otwarta rejestracja)
+- **Intent:** Etap 1 PRD działa end-to-end: DM zakłada konto i loguje się, ustawia parametry starcia (liczba pokoi, typ starcia), generuje mapę wyrównaną do siatki, w razie potrzeby generuje ją ponownie i pobiera PNG gotowy do wgrania do Roll20, a od 2026-10-18 (PRD v3) także zapisuje mapy w swojej bibliotece i do nich wraca (S-05).
+- **Source materials:** `context/foundation/prd.md` (v3; v1 → v2 2026-09-30 po peer feedback: liczba pokoi i arena bossa, otwarta rejestracja; v2 → v3 2026-10-18: biblioteka map US-02 / FR-009 na potrzeby certyfikacji 10xDevs)
 - **Done when:** every F-NN and S-NN below is `done`, a przepływ rejestracja/logowanie → generowanie → regeneracja → pobranie przechodzi w Chrome i Firefox na wdrożonej aplikacji.
-- **Scope anchors:** US-01; FR-001–FR-006; NFR (czas generacji ≤ 5 min, izolacja danych między kontami, Chrome i Firefox); Guardrail wyrównania do siatki.
+- **Scope anchors:** US-01; FR-001–FR-006; od 2026-10-18 także US-02 i FR-009 (S-05); NFR (czas generacji ≤ 5 min, izolacja danych między kontami, Chrome i Firefox); Guardrail wyrównania do siatki.
 
 ## Vision recap
 
@@ -46,6 +46,7 @@ DM przed sesją D&D potrzebuje czytelnej mapy bitewnej wyrównanej do siatki, a 
 | S-02 | regenerate-with-new-seed | DM generuje mapę ponownie i dostaje inny układ przy tych samych parametrach           | S-01          | US-01, FR-005                 | ready    |
 | S-03 | encounter-parameters     | DM wybiera liczbę pokoi (2–12) i typ starcia; walka z bossem dodaje arenę skalowaną rozmiarem bossa | S-01 | US-01, FR-002, Business Logic | done |
 | S-04 | dm-email-login           | DM zakłada konto i loguje się e-mailem i hasłem; bez zalogowania nie wygeneruje mapy, a generowania na konto są limitowane | F-01, S-01 | US-01, FR-001, NFR (dane konta niewidoczne dla innych kont), Access Control | done |
+| S-05 | saved-maps-library       | DM zapisuje mapę z tytułem w swojej bibliotece, a potem ją otwiera, zmienia jej tytuł i ją usuwa | S-01, S-04 | US-02, FR-009, NFR (dane konta niewidoczne dla innych kont), Success Criteria (Secondary) | in-progress |
 
 ## Streams
 
@@ -55,6 +56,7 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 | ------ | ---------------- | ------------------------ | ----------------------------------------------------------------------------------------- |
 | A      | Mapa i generator | `S-01` → `S-02` → `S-03` | Rdzeń produktu i najwięcej nowej technologii do przećwiczenia; S-02 i S-03 są niezależne w grafie, ale oba zmieniają żądanie generowania i formularz — lepiej po kolei niż równolegle. |
 | B      | Dostęp           | `F-01` → `S-04`          | Dołącza do A w S-04 (logowanie osłania generowanie z S-01). **S-03 ∥ S-04 to zalecana para do równoległej realizacji** — różne strumienie, prawie bez wspólnych plików. |
+| C      | Biblioteka map   | `S-04` → `S-05`          | Dodane 2026-10-18 (PRD v3). Łączy A i B: zapisuje mapę z S-01 na koncie z S-04; pierwsza encja domenowa w bazie. |
 
 ## Baseline
 
@@ -107,7 +109,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Prerequisites:** S-01
 - **Parallel with:** F-01, S-03, S-04
 - **Blockers:** —
-- **Unknowns:** —
+- **Unknowns:** Może być w większości gotowe (stan 2026-10-18): „Generuj” na stronie głównej nie wysyła seeda, więc każde kliknięcie daje nowy losowy układ przy tych samych parametrach, a `e2e/tests/map.spec.ts` sprawdza, że drugi pobrany plik różni się od pierwszego. Do ustalenia: etykieta „generuj ponownie” i test, że zmienia się sam seed. Przy planowaniu warto też rozważyć, czy pokazywać DM-owi „Seed: N” — po S-05 zapisana mapa przechowuje siatkę, a w UI nie da się wpisać seeda, więc seed służy już głównie jako identyfikator (nazwa pliku PNG, zgłoszenia błędów).
 - **Risk:** Mały slice, ale sprawdza determinizm: ten sam seed musi dawać tę samą mapę, a nowy — inną; każda regeneracja obciąża limity CPU planu F1.
 - **Status:** ready
 
@@ -137,6 +139,18 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Risk:** Otwarta rejestracja wystawia generowanie każdemu, kto założy konto — limit generowań na konto zastępuje ochronę, którą dziś daje brak kont; `/10x-plan` może wydzielić limit w osobną zmianę, jeśli slice okaże się za szeroki.
 - **Status:** done
 
+### S-05: DM zapisuje mapę w bibliotece i nią zarządza
+
+- **Outcome:** Zalogowany DM zapisuje wygenerowaną mapę pod tytułem (1–80 znaków), widzi w „Moje mapy” listę tylko własnych map od najnowszej, otwiera mapę (ten sam układ, seed i PNG co przy zapisie), zmienia jej tytuł i ją usuwa; mapa innego konta zachowuje się jak nieistniejąca, a konto mieści najwyżej 100 map; przepływ działa w Chrome i Firefox.
+- **Change ID:** saved-maps-library
+- **PRD refs:** US-02, FR-009, NFR (dane konta niewidoczne dla innych kont), Success Criteria (Secondary)
+- **Prerequisites:** S-01, S-04
+- **Parallel with:** S-02
+- **Blockers:** —
+- **Unknowns:** —
+- **Risk:** Pierwsza encja domenowa w bazie i pierwsze dane filtrowane po właścicielu — wyciek cudzej mapy łamie NFR izolacji kont, a każda zapisana mapa zużywa miejsce w darmowej bazie; zapis generuje mapę ponownie na serwerze poza limitami generowania. Dodane 2026-10-18 (PRD v3) na potrzeby certyfikacji 10xDevs (termin 2026-11-04).
+- **Status:** in-progress
+
 ## Backlog Handoff
 
 | Roadmap ID | Change ID                | Suggested issue title                                        | Ready for `/10x-plan` | Notes |
@@ -146,10 +160,11 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-02       | regenerate-with-new-seed | Regeneracja mapy z nowym seedem                              | yes                   | Run `/10x-plan regenerate-with-new-seed`; nie równolegle z S-03 (wspólny formularz i żądanie) |
 | S-03       | encounter-parameters     | Parametry starcia: liczba pokoi i arena bossa                 | yes                   | Run `/10x-plan encounter-parameters`; zalecana para równoległa z S-04 |
 | S-04       | dm-email-login           | Rejestracja i logowanie e-mail/hasło, ochrona i limit generowania | yes              | Run `/10x-plan dm-email-login`; zalecana para równoległa z S-03 |
+| S-05       | saved-maps-library       | Biblioteka map: zapis z tytułem, lista, otwarcie, zmiana tytułu, usunięcie | yes            | Plan gotowy (`context/changes/saved-maps-library/plan.md`); w realizacji |
 
 ## Open Roadmap Questions
 
-1. **Kryterium drugorzędne sukcesu** — „Nie ustalono osobnego kryterium drugorzędnego dla MVP.” Do rozstrzygnięcia: pozostawienie braku dodatkowego kryterium albo jego określenie; biblioteka pozostaje poza MVP. — Owner: autor. Block: nic (nie wpływa na kolejność).
+1. ~~**Kryterium drugorzędne sukcesu**~~ — Rozwiązane 2026-10-18 (PRD v3): kryterium drugorzędnym jest biblioteka map (US-02, FR-009), realizowana w S-05.
 2. ~~**Publiczne generowanie na produkcji przed logowaniem**~~ — Rozwiązane 2026-10-02 (S-04 wdrożone): `/api/maps/generate` wymaga sesji (401 bez niej) i jest limitowane na konto, więc generowanie nie jest już publiczne na produkcji.
 
 (PRD Open Questions #1 — konflikt wymagań kompatybilności z filtrem PRD — rozwiązane 2026-09-16; #3 tworzenie kont i #4 parametry starcia — rozwiązane 2026-09-30 w PRD v2 (otwarta rejestracja; liczba pokoi i arena bossa), pominięte.)
@@ -159,7 +174,6 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Generowanie obrazów przez AI jako silnik map** — Why parked: PRD §Non-Goals (te same problemy z siatką co istniejące generatory).
 - **Działanie offline** — Why parked: PRD §Non-Goals.
 - **Hierarchia Kampania → Sesja → Mapa z CRUD** — Why parked: PRD §Non-Goals (etap 2).
-- **Zapis mapy w bibliotece z tytułem** — Why parked: PRD §Non-Goals (etap 2, poza kryteriami sukcesu MVP).
 - **Integracja z API Roll20** — Why parked: PRD §Non-Goals (eksport pozostaje ręcznym pobraniem PNG).
 - **Dodatkowe motywy graficzne, pułapki, skarby, dekoracje** — Why parked: PRD §Non-Goals (MVP ma jeden zestaw kafelków).
 - **Druk na wielu stronach w skali 1 cal na kratkę** — Why parked: PRD §Non-Goals (PNG 140 px na kratkę wystarcza do samodzielnego wydruku).

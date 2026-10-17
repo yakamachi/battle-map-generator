@@ -615,9 +615,9 @@ Move the library from "deferred" to "in scope" everywhere the product and operat
 
 #### Automated
 
-- [ ] 5.1 No stale "deferred" wording remains in `context/foundation/`
-- [ ] 5.2 Roadmap carries S-05 with Change ID `saved-maps-library`
+- [x] 5.1 No stale "deferred" wording remains in `context/foundation/`
+- [x] 5.2 Roadmap carries S-05 with Change ID `saved-maps-library`
 
 #### Manual
 
-- [ ] 5.3 Doc edits read correctly and agree with the implemented behaviour
+- [x] 5.3 Doc edits read correctly and agree with the implemented behaviour

@@ -6,7 +6,7 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-10-05
+> Last updated: 2026-10-18
 
 ## 1. Strategy
 
@@ -58,8 +58,13 @@ research's job, see §1 principle #3).
 
 Risks #3 is the abuse lens: the product has open registration and an
 unauthenticated boundary, so at least one row is a scenario only an
-attacker's path surfaces. No row covers resource ownership (IDOR): the API
-exposes no endpoints for another account's data beyond the session.
+attacker's path surfaces. Resource ownership (IDOR) has no row of its own:
+since S-05 (`saved-maps-library`, 2026-10-18) the saved-map endpoints are the
+first to expose per-account data, and their isolation is pinned by the
+change's integration tests rather than a rollout phase:
+`api.Tests/SavedMapEndpointTests.cs` (`Another_accounts_map_is_404_for_get_rename_and_delete`
+— another account's map answers 404 like a missing one and the owner's row is
+unchanged; `List_shows_only_own_maps_newest_first`).
 
 ### Risk Response Guidance
 
@@ -196,13 +201,14 @@ changes.
 - **Exact room and corridor shape and look** — only the boss-arena distinctness is tested (risk #6). Re-evaluate if shape becomes a PRD requirement. (Source: interview Q5.)
 - **The generated OpenAPI client, beyond the existing drift gate** — the gate already fails the build on drift. (Source: interview Q5, by extension.)
 - **Visual snapshots beyond the 3 pinned themes and screens** — diminishing returns at this scale. (Source: interview Q5.)
-- **Map library, CRUD, offline mode** — PRD non-goals; no test budget until they enter scope.
+- **Offline mode** — PRD non-goal; no test budget until it enters scope. (The map library left this list on 2026-10-18 when it entered scope as S-05; its tests live with the change, see §2.)
 
 ## 8. Freshness Ledger
 
 - Strategy (§1–§5) last reviewed: 2026-10-05
 - Stack versions last verified: not yet — versions to be confirmed in per-phase research
 - AI-native tool references last verified: n/a (none proposed)
+- 2026-10-18 — saved-maps-library (S-05): the map library entered scope. §2's IDOR note now points to the isolation tests in `api.Tests/SavedMapEndpointTests.cs`, and §7 no longer excludes the map library. Risks, rollout phases (4 and 5 still not started) and gates are unchanged; Save's storage growth and its generator runs outside the generate limits are recorded in `infrastructure.md` for Phase 4.
 
 Refresh (`/10x-test-plan --refresh`) when:
 
