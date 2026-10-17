@@ -575,13 +575,13 @@ Move the library from "deferred" to "in scope" everywhere the product and operat
 
 #### Automated
 
-- [x] 2.1 API tests pass: `dotnet test api.Tests`
-- [x] 2.2 Contract unchanged: OpenAPI json and `schema.d.ts` show no drift
-- [x] 2.3 Break-check: swapping two cell encodings turns the codec pin tests red (round-trip stays green by design)
+- [x] 2.1 API tests pass: `dotnet test api.Tests` — 161484e
+- [x] 2.2 Contract unchanged: OpenAPI json and `schema.d.ts` show no drift — 161484e
+- [x] 2.3 Break-check: swapping two cell encodings turns the codec pin tests red (round-trip stays green by design) — 161484e
 
 #### Manual
 
-- [x] 2.4 Local stack works after rollback and re-applied migration; table holds bytes, no JSON
+- [x] 2.4 Local stack works after rollback and re-applied migration; table holds bytes, no JSON — 161484e
 
 ### Phase 3: Web UI
 

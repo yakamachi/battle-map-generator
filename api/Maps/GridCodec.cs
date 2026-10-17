@@ -28,7 +28,12 @@ public static class GridCodec
 
     public static CellKind[] DecodeCells(byte[] bytes, int width, int height)
     {
-        if (width < 0 || height < 0 || bytes.Length != width * height)
+        // Checked first, so corrupted sizes cannot overflow width * height into a length that matches.
+        if (width is < 1 or > MapSize.MaxWidth || height is < 1 or > MapSize.MaxHeight)
+        {
+            throw new InvalidDataException($"A map is 1×1 to {MapSize.MaxWidth}×{MapSize.MaxHeight}, found {width}×{height}.");
+        }
+        if (bytes.Length != width * height)
         {
             throw new InvalidDataException($"Expected {width}×{height} cells, found {bytes.Length} bytes.");
         }

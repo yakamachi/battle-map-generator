@@ -46,8 +46,25 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
 
     // Stores an enum by its JSON name ("skirmish", "large"), so the column reads like the API and a
     // reordered enum cannot change what a stored row means. On a nullable property EF passes no nulls.
+    // Reading accepts only a member's exact JSON name: anything else (a number, a comma list, an old
+    // name) throws InvalidDataException, like an unreadable grid.
     private sealed class JsonEnumNameConverter<TEnum>() : ValueConverter<TEnum, string>(
-        value => JsonNamingPolicy.CamelCase.ConvertName(value.ToString()),
-        name => Enum.Parse<TEnum>(name, true))
-        where TEnum : struct, Enum;
+        value => ToName(value),
+        name => FromName(name))
+        where TEnum : struct, Enum
+    {
+        private static string ToName(TEnum value) => JsonNamingPolicy.CamelCase.ConvertName(value.ToString());
+
+        private static TEnum FromName(string name)
+        {
+            foreach (var value in Enum.GetValues<TEnum>())
+            {
+                if (ToName(value) == name)
+                {
+                    return value;
+                }
+            }
+            throw new InvalidDataException($"'{name}' is not a stored {typeof(TEnum).Name} name.");
+        }
+    }
 }

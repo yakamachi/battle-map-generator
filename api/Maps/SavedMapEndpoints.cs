@@ -190,6 +190,9 @@ public static class SavedMapEndpoints
 
         row.Title = SavedMapTitleAttribute.Normalize(request.Title!);
         row.UpdatedAt = time.GetUtcNow();
+        // Decode before saving, so a map whose grid no longer decodes refuses the rename instead of
+        // storing it and then failing the response.
+        var renamed = ToSavedMap(row);
         try
         {
             await db.SaveChangesAsync(cancellationToken);
@@ -198,7 +201,7 @@ public static class SavedMapEndpoints
         {
             return TypedResults.NotFound();
         }
-        return TypedResults.Ok(ToSavedMap(row));
+        return TypedResults.Ok(renamed);
     }
 
     private static async Task<Results<NoContent, NotFound>> Delete(

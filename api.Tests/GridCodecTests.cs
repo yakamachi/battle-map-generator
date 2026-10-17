@@ -71,6 +71,17 @@ public sealed class GridCodecTests
         Assert.Throws<InvalidDataException>(() => GridCodec.DecodeCells(new byte[length], width, height));
     }
 
+    // 65536 × 65536 overflows int to 0, which would otherwise match an empty Cells column.
+    [Theory]
+    [InlineData(0, 0, 0)]
+    [InlineData(0, 65536, 65536)]
+    [InlineData(61, 61, 1)]
+    [InlineData(0, -1, 0)]
+    public void Sizes_outside_the_map_cap_are_rejected(int length, int width, int height)
+    {
+        Assert.Throws<InvalidDataException>(() => GridCodec.DecodeCells(new byte[length], width, height));
+    }
+
     [Fact]
     public void An_undefined_cell_kind_is_rejected()
     {

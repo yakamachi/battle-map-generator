@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 
 namespace BattleMapGenerator.Api.Maps;
 
@@ -30,7 +31,9 @@ public sealed record RenameMapRequest([property: SavedMapTitle] string? Title);
 
 // Shared by Save and Rename, keyed "title". Leading and trailing whitespace is dropped before the
 // length is checked; duplicate titles are allowed. A control character left after trimming (a newline,
-// a tab, a bell) is refused under the same message, so a list never shows a broken or multi-line title.
+// a tab, a bell), an invisible format character (zero-width space, a bidi override that reorders the
+// text) or a line/paragraph separator is refused under the same message, so a list never shows a
+// broken, multi-line or visually spoofed title.
 [AttributeUsage(AttributeTargets.Property)]
 public sealed class SavedMapTitleAttribute : ValidationAttribute
 {
@@ -43,7 +46,11 @@ public sealed class SavedMapTitleAttribute : ValidationAttribute
     public override bool IsValid(object? value) =>
         value is string title
         && Normalize(title) is { Length: >= 1 and <= Data.SavedMap.MaxTitleLength } normalized
-        && !normalized.Any(char.IsControl);
+        && !normalized.Any(IsRefused);
 
     public static string Normalize(string title) => title.Trim();
+
+    private static bool IsRefused(char c) =>
+        char.IsControl(c)
+        || CharUnicodeInfo.GetUnicodeCategory(c) is UnicodeCategory.Format or UnicodeCategory.LineSeparator or UnicodeCategory.ParagraphSeparator;
 }

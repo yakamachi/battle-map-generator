@@ -173,7 +173,7 @@ public sealed class SavedMapEndpointTests(SqlServerFixture sql)
         var path = existing.Headers.Location!.OriginalString;
 
         // A control character left after trimming (a newline, a tab, a bell) is refused like a bad length.
-        string?[] invalid = ["", "   ", new string('t', 81), null, "Two\nlines", "Tab\tinside", "Bell\u0007", "Ends\r\nhere\u0000"];
+        string?[] invalid = ["", "   ", new string('t', 81), null, "Two\nlines", "Tab\tinside", "Bell\u0007", "Ends\r\nhere\u0000", "Zero\u200Bwidth", "Flip\u202Eme", "Line\u2028break"];
         foreach (var title in invalid)
         {
             foreach (var response in new[]
@@ -374,6 +374,34 @@ public sealed class SavedMapEndpointTests(SqlServerFixture sql)
         // Opening the corrupted map fails (the codec refuses the bytes); the healthy one still opens.
         await AssertServerErrorAsync(() => client.GetAsync(broken.Headers.Location));
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync(healthy.Headers.Location)).StatusCode);
+
+        // Renaming it fails too, and stores nothing: the grid is decoded before the rename is saved.
+        await AssertServerErrorAsync(() => PatchJsonAsync(client, broken.Headers.Location!.OriginalString, """{"title":"Renamed"}"""));
+        await using (var db = SqlServerFixture.CreateContext(sql.ConnectionString))
+        {
+            Assert.Equal("Broken", await db.SavedMaps.Where(m => m.Id == brokenId).Select(m => m.Title).SingleAsync());
+        }
+    }
+
+    // A parameter column is read by its exact JSON name only; a number or an unknown name fails the map
+    // with InvalidDataException instead of reading as an undefined enum value.
+    [Theory]
+    [InlineData("7")]
+    [InlineData("Boss")]
+    [InlineData("skirmish,boss")]
+    public async Task A_row_with_an_unreadable_encounter_fails_to_open(string stored)
+    {
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
+        var saved = await SaveAsync(client, new { title = "Odd", seed = 23 });
+        using var savedJson = await ReadJsonAsync(saved);
+        var id = savedJson.RootElement.GetProperty("id").GetGuid();
+        await using (var db = SqlServerFixture.CreateContext(sql.ConnectionString))
+        {
+            Assert.Equal(1, await db.Database.ExecuteSqlAsync($"UPDATE SavedMaps SET Encounter = {stored} WHERE Id = {id}"));
+        }
+
+        await AssertServerErrorAsync(() => client.GetAsync(saved.Headers.Location));
     }
 
     // Real bodies are well under 1 KB; a body over 16 KB is refused before it is buffered, and nothing
@@ -392,7 +420,13 @@ public sealed class SavedMapEndpointTests(SqlServerFixture sql)
         var rename = await PatchJsonAsync(client, path, Padded("""{"title":"Too big"}""", limit + 1));
         var generate = await PostJsonAsync(client, GeneratePath, Padded("""{"seed":3}""", limit + 1));
 
-        foreach (var response in new[] { save, rename, generate })
+        // Without a Content-Length (a chunked body) the cap is enforced while reading instead.
+        var chunked = new StreamContent(new NonSeekableStream(Encoding.UTF8.GetBytes(Padded("""{"title":"Too big","seed":2}""", limit + 1))));
+        chunked.Headers.ContentType = new("application/json");
+        var chunkedSave = await client.PostAsync(MapsPath, chunked);
+        Assert.Null(chunked.Headers.ContentLength);
+
+        foreach (var response in new[] { save, rename, generate, chunkedSave })
         {
             Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
         }
@@ -465,6 +499,12 @@ public sealed class SavedMapEndpointTests(SqlServerFixture sql)
 
     // JSON followed by spaces up to exactly the given number of UTF-8 bytes (still valid JSON).
     private static string Padded(string json, int bytes) => json + new string(' ', bytes - Encoding.UTF8.GetByteCount(json));
+
+    // StreamContent sends no Content-Length for a stream it cannot seek, so the body goes chunked.
+    private sealed class NonSeekableStream(byte[] bytes) : MemoryStream(bytes)
+    {
+        public override bool CanSeek => false;
+    }
 
     private static ByteArrayContent WithoutContentType(string body)
     {
