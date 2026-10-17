@@ -8,6 +8,9 @@ public static class AuthEndpoints
 {
     public const string AuthRateLimitPolicy = "auth";
 
+    // Register and login calls per minute per client IP, across both.
+    public const int PerIpAuthLimit = 10;
+
     // Chained onto the per-client-IP auth limiter in Program.cs: one shared bucket across every IP,
     // so a scripted client cannot escape the per-IP ceiling by spreading registrations across addresses.
     public const int GlobalAuthLimit = 50;

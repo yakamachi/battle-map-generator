@@ -17,21 +17,18 @@ public sealed class AbuseResistantQuotaTests(SqlServerFixture sql)
     private const string RegisterPath = "/api/auth/register";
     private const string GeneratePath = "/api/maps/generate";
 
-    // The per-IP auth and per-account generate budgets set in Program.cs.
-    private const int PerCallerLimit = 10;
-
     // One more IP than the global ceiling needs to fill it: the last IP has spent none of its own budget.
     [Fact]
     public async Task Registrations_spread_across_client_ips_stop_at_the_global_auth_limit()
     {
         await using var factory = new ApiFactory(sql.ConnectionString);
-        var ipCount = AuthEndpoints.GlobalAuthLimit / PerCallerLimit + 1;
+        var ipCount = AuthEndpoints.GlobalAuthLimit / AuthEndpoints.PerIpAuthLimit + 1;
         var allowed = 0;
 
         for (var ip = 1; ip <= ipCount; ip++)
         {
             var client = factory.CreateClientFromIp($"203.0.113.{ip}");
-            for (var attempt = 1; attempt <= PerCallerLimit; attempt++)
+            for (var attempt = 1; attempt <= AuthEndpoints.PerIpAuthLimit; attempt++)
             {
                 var response = await client.PostAsJsonAsync(RegisterPath,
                     new { email = ApiFactory.NewEmail(), password = ApiFactory.TestPassword });
@@ -76,7 +73,7 @@ public sealed class AbuseResistantQuotaTests(SqlServerFixture sql)
 
         var allowedPerAccount = new int[accounts.Count];
         var rejectedPerAccount = new int[accounts.Count];
-        for (var round = 1; round <= PerCallerLimit; round++)
+        for (var round = 1; round <= MapEndpoints.PerAccountGenerateLimit; round++)
         {
             for (var account = 0; account < accounts.Count; account++)
             {
@@ -95,9 +92,9 @@ public sealed class AbuseResistantQuotaTests(SqlServerFixture sql)
         }
 
         Assert.Equal(MapEndpoints.GlobalGenerateLimit, allowedPerAccount.Sum());
-        Assert.Equal(accounts.Count * PerCallerLimit - MapEndpoints.GlobalGenerateLimit, rejectedPerAccount.Sum());
+        Assert.Equal(accounts.Count * MapEndpoints.PerAccountGenerateLimit - MapEndpoints.GlobalGenerateLimit, rejectedPerAccount.Sum());
         // Every account was refused while under its own limit: the refusal came from the shared ceiling.
-        Assert.All(allowedPerAccount, allowed => Assert.InRange(allowed, 1, PerCallerLimit - 1));
+        Assert.All(allowedPerAccount, allowed => Assert.InRange(allowed, 1, MapEndpoints.PerAccountGenerateLimit - 1));
         Assert.All(rejectedPerAccount, rejected => Assert.True(rejected > 0));
     }
 }

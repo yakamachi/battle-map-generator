@@ -65,7 +65,7 @@ builder.Services.AddRateLimiter(options =>
         _ => RateLimiter.CreateChained(
             new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 10,
+                PermitLimit = MapEndpoints.PerAccountGenerateLimit,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0,
             }),
@@ -83,7 +83,7 @@ builder.Services.AddRateLimiter(options =>
         _ => RateLimiter.CreateChained(
             new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 10,
+                PermitLimit = AuthEndpoints.PerIpAuthLimit,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0,
             }),

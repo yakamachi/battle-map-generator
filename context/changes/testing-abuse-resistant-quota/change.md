@@ -1,7 +1,7 @@
 ---
 change_id: testing-abuse-resistant-quota
 title: Abuse-resistant quota
-status: implemented
+status: impl_reviewed
 created: 2026-10-15
 updated: 2026-10-17
 archived_at: null

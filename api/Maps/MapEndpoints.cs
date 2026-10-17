@@ -12,6 +12,9 @@ public static class MapEndpoints
 {
     public const string GenerateRateLimitPolicy = "generate";
 
+    // Generate calls per minute per account (the NameIdentifier claim).
+    public const int PerAccountGenerateLimit = 10;
+
     // Chained onto the per-account generate limiter in Program.cs: one shared bucket across every
     // account, so a scripted client cannot escape the per-account ceiling by creating unlimited accounts.
     public const int GlobalGenerateLimit = 50;
