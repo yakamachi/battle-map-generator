@@ -17,6 +17,8 @@ namespace BattleMapGenerator.Api.Maps;
 // only once authorization has passed, so an anonymous request never touches the database.
 // No rate-limit policy applies beyond SessionCookieGate's per-IP limit; Save regenerates the map but
 // spends no generate permit.
+// Storage is compact: the parameters are columns and the cells and rooms are bytes (GridCodec). The
+// list projects summary columns only, so one unreadable grid cannot break it.
 public static class SavedMapEndpoints
 {
     public const int MaxSavedMapsPerAccount = 100;
@@ -51,11 +53,13 @@ public static class SavedMapEndpoints
             .Accepts<SaveMapRequest>("application/json")
             .WithName("SaveMap")
             .RequireAuthorization()
+            .WithBodySizeLimit()
             .Produces(StatusCodes.Status401Unauthorized);
         app.MapPatch("/api/maps/{id:guid}", Rename)
             .Accepts<RenameMapRequest>("application/json")
             .WithName("RenameSavedMap")
             .RequireAuthorization()
+            .WithBodySizeLimit()
             .Produces(StatusCodes.Status401Unauthorized);
         app.MapDelete("/api/maps/{id:guid}", Delete)
             .WithName("DeleteSavedMap")
@@ -65,35 +69,31 @@ public static class SavedMapEndpoints
     }
 
     // Newest first; maps saved at the same instant are ordered by id, never left to the database.
-    // Parameters live only in MapJson, so each row's JSON is read for them (at most 100 small rows).
+    // The projection selects the summary columns only: the query never reads Cells or Rooms.
     private static async Task<Ok<SavedMapSummary[]>> List(
-        ClaimsPrincipal user, AppDbContext db, IOptions<HttpJsonOptions> json, CancellationToken cancellationToken)
+        ClaimsPrincipal user, AppDbContext db, CancellationToken cancellationToken)
     {
         var ownerId = OwnerId(user);
-        var rows = await db.SavedMaps
+        var summaries = await db.SavedMaps
             .AsNoTracking()
             .Where(m => m.OwnerId == ownerId)
             .OrderByDescending(m => m.CreatedAt)
             .ThenBy(m => m.Id)
-            .ToListAsync(cancellationToken);
-
-        var options = json.Value.SerializerOptions;
-        var summaries = rows
-            .Select(row => new SavedMapSummary(
-                row.Id, row.Title, (uint)row.Seed, row.Width, row.Height, ReadMap(row, options).Parameters,
-                row.CreatedAt, row.UpdatedAt))
-            .ToArray();
+            .Select(m => new SavedMapSummary(
+                m.Id, m.Title, (uint)m.Seed, m.Width, m.Height, new MapParameters(m.RoomCount, m.Encounter, m.BossSize),
+                m.CreatedAt, m.UpdatedAt))
+            .ToArrayAsync(cancellationToken);
         return TypedResults.Ok(summaries);
     }
 
     private static async Task<Results<Ok<SavedMap>, NotFound>> Get(
-        Guid id, ClaimsPrincipal user, AppDbContext db, IOptions<HttpJsonOptions> json, CancellationToken cancellationToken)
+        Guid id, ClaimsPrincipal user, AppDbContext db, CancellationToken cancellationToken)
     {
         var ownerId = OwnerId(user);
         var row = await db.SavedMaps
             .AsNoTracking()
             .SingleOrDefaultAsync(m => m.Id == id && m.OwnerId == ownerId, cancellationToken);
-        return row is null ? TypedResults.NotFound() : TypedResults.Ok(ToSavedMap(row, json.Value.SerializerOptions));
+        return row is null ? TypedResults.NotFound() : TypedResults.Ok(ToSavedMap(row));
     }
 
     // The map is regenerated here from seed and parameters, so the stored grid is always genuine
@@ -144,7 +144,11 @@ public static class SavedMapEndpoints
             Seed = map.Seed,
             Width = map.Width,
             Height = map.Height,
-            MapJson = JsonSerializer.Serialize(map, options),
+            RoomCount = map.Parameters.RoomCount,
+            Encounter = map.Parameters.Encounter,
+            BossSize = map.Parameters.BossSize,
+            Cells = GridCodec.EncodeCells(map.Cells),
+            Rooms = GridCodec.EncodeRooms(map.Rooms),
             CreatedAt = now,
             UpdatedAt = now,
         };
@@ -154,7 +158,8 @@ public static class SavedMapEndpoints
         return TypedResults.Created($"/api/maps/{row.Id}", new SavedMap(row.Id, row.Title, row.CreatedAt, row.UpdatedAt, map));
     }
 
-    // Only the title changes; UpdatedAt records when.
+    // Only the title changes; UpdatedAt records when. A delete landing between the load and the update
+    // makes the update touch no row, which EF reports as a concurrency conflict: the map is gone, so 404.
     private static async Task<Results<Ok<SavedMap>, ValidationProblem, NotFound>> Rename(
         Guid id, HttpRequest http, ClaimsPrincipal user, AppDbContext db, TimeProvider time,
         IOptions<HttpJsonOptions> json, CancellationToken cancellationToken)
@@ -185,8 +190,15 @@ public static class SavedMapEndpoints
 
         row.Title = SavedMapTitleAttribute.Normalize(request.Title!);
         row.UpdatedAt = time.GetUtcNow();
-        await db.SaveChangesAsync(cancellationToken);
-        return TypedResults.Ok(ToSavedMap(row, options));
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return TypedResults.NotFound();
+        }
+        return TypedResults.Ok(ToSavedMap(row));
     }
 
     private static async Task<Results<NoContent, NotFound>> Delete(
@@ -204,10 +216,14 @@ public static class SavedMapEndpoints
         user.FindFirstValue(ClaimTypes.NameIdentifier)
         ?? throw new InvalidOperationException("An authorized request has no NameIdentifier claim.");
 
-    private static SavedMap ToSavedMap(SavedMapRow row, JsonSerializerOptions options) =>
-        new(row.Id, row.Title, row.CreatedAt, row.UpdatedAt, ReadMap(row, options));
-
-    private static GeneratedMap ReadMap(SavedMapRow row, JsonSerializerOptions options) =>
-        JsonSerializer.Deserialize<GeneratedMap>(row.MapJson, options)
-        ?? throw new InvalidOperationException($"Saved map {row.Id} has no map JSON.");
+    // Rebuilds the GeneratedMap from the columns and the decoded bytes. A row whose bytes do not decode
+    // throws InvalidDataException (a 500 for that one map, reported to the error tracker).
+    private static SavedMap ToSavedMap(SavedMapRow row) =>
+        new(row.Id, row.Title, row.CreatedAt, row.UpdatedAt, new GeneratedMap(
+            (uint)row.Seed,
+            new MapParameters(row.RoomCount, row.Encounter, row.BossSize),
+            row.Width,
+            row.Height,
+            GridCodec.DecodeCells(row.Cells, row.Width, row.Height),
+            GridCodec.DecodeRooms(row.Rooms)));
 }

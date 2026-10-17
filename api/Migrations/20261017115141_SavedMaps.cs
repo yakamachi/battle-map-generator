@@ -21,7 +21,11 @@ namespace BattleMapGenerator.Api.Migrations
                     Seed = table.Column<long>(type: "bigint", nullable: false),
                     Width = table.Column<int>(type: "int", nullable: false),
                     Height = table.Column<int>(type: "int", nullable: false),
-                    MapJson = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RoomCount = table.Column<int>(type: "int", nullable: false),
+                    Encounter = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
+                    BossSize = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: true),
+                    Cells = table.Column<byte[]>(type: "varbinary(3600)", maxLength: 3600, nullable: false),
+                    Rooms = table.Column<byte[]>(type: "varbinary(60)", maxLength: 60, nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
                 },

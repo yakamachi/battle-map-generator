@@ -1,11 +1,23 @@
+using BattleMapGenerator.Api.Maps;
+
 namespace BattleMapGenerator.Api.Data;
 
 // One map in an account's library. The grid is stored, not only the seed: a seed reproduces its map
-// only while the generator is unchanged, so MapJson keeps the full GeneratedMap the account saved.
-// Seed, Width and Height repeat what MapJson holds, for the list.
+// only while the generator is unchanged, so the row keeps the GeneratedMap the account saved, compactly:
+// the parameters as columns and the cells and rooms as bytes (GridCodec). The list reads the summary
+// columns only and never touches Cells or Rooms.
 public class SavedMap
 {
     public const int MaxTitleLength = 80;
+
+    // One byte per cell, at the 60×60 cap.
+    public const int MaxCellBytes = MapSize.MaxWidth * MapSize.MaxHeight;
+
+    // Five bytes per room, at the 12-room cap.
+    public const int MaxRoomBytes = MapSize.MaxRoomCount * GridCodec.BytesPerRoom;
+
+    // Long enough for every EncounterType and BossSize name.
+    public const int MaxEnumNameLength = 16;
 
     public Guid Id { get; set; }
 
@@ -21,8 +33,19 @@ public class SavedMap
 
     public int Height { get; set; }
 
-    // The GeneratedMap serialised with the API's JSON options (MapJson).
-    public string MapJson { get; set; } = string.Empty;
+    public int RoomCount { get; set; }
+
+    // Stored by its JSON name ("skirmish", "boss"), see AppDbContext.
+    public EncounterType Encounter { get; set; }
+
+    // Set only on a boss fight; stored by its JSON name ("large", "huge", "gargantuan").
+    public BossSize? BossSize { get; set; }
+
+    // GridCodec.EncodeCells: one CellKind number per cell, row-major.
+    public byte[] Cells { get; set; } = [];
+
+    // GridCodec.EncodeRooms: X, Y, Width, Height and the RoomKind number per room.
+    public byte[] Rooms { get; set; } = [];
 
     public DateTimeOffset CreatedAt { get; set; }
 

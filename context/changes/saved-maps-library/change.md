@@ -1,7 +1,7 @@
 ---
 change_id: saved-maps-library
 title: Saved maps library (save, list, rename, delete a DM's maps)
-status: implementing
+status: impl_reviewed
 created: 2026-10-17
 updated: 2026-10-17
 archived_at: null

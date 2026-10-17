@@ -9,12 +9,48 @@ namespace BattleMapGenerator.Api.Maps;
 // `.Accepts<T>` keeps the request schema in OpenAPI and still limits the endpoint to JSON.
 internal static class RequestBody
 {
+    // Real bodies are well under 1 KB; anything above this is refused with a bare 413 before it is buffered.
+    public const int MaxBytes = 16 * 1024;
+
+    // The size cap lives in the read itself rather than in RequestSizeLimit metadata: the metadata only
+    // works through the server's IHttpMaxRequestBodySizeFeature, which TestServer does not implement, so
+    // the tests could not see it (lessons.md, "Triage a .NET native swap..."). Reading here behaves the
+    // same under Kestrel and TestServer, and Kestrel's own 30 MB limit still applies first.
+    public static RouteHandlerBuilder WithBodySizeLimit(this RouteHandlerBuilder builder) =>
+        builder.AddEndpointFilter(async (context, next) =>
+        {
+            try
+            {
+                return await next(context);
+            }
+            catch (BadHttpRequestException exception) when (exception.StatusCode == StatusCodes.Status413PayloadTooLarge)
+            {
+                return Results.StatusCode(StatusCodes.Status413PayloadTooLarge);
+            }
+        });
+
     // An empty body (or a JSON null) gives null; each endpoint decides what that means.
+    // A body over MaxBytes throws a 413 BadHttpRequestException, which WithBodySizeLimit answers.
     public static async Task<T?> ReadAsync<T>(
         HttpRequest http, JsonSerializerOptions options, CancellationToken cancellationToken)
     {
+        if (http.ContentLength > MaxBytes)
+        {
+            throw TooLarge();
+        }
+
         using var body = new MemoryStream();
-        await http.Body.CopyToAsync(body, cancellationToken);
+        var buffer = new byte[4096];
+        int read;
+        while ((read = await http.Body.ReadAsync(buffer, cancellationToken)) > 0)
+        {
+            if (body.Length + read > MaxBytes)
+            {
+                throw TooLarge();
+            }
+            body.Write(buffer, 0, read);
+        }
+
         if (body.Length == 0)
         {
             return default;
@@ -22,6 +58,9 @@ internal static class RequestBody
         body.Position = 0;
         return await JsonSerializer.DeserializeAsync<T>(body, options, cancellationToken);
     }
+
+    private static BadHttpRequestException TooLarge() =>
+        new($"The request body is larger than {MaxBytes} bytes.", StatusCodes.Status413PayloadTooLarge);
 
     // Names the field from the exception's JSON path ("$.encounter"). Broken JSON (the reader's own
     // exception, wrapped) is reported against the whole request, even when the path ends in a field.

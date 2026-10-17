@@ -1,7 +1,10 @@
+using System.Text.Json;
+using BattleMapGenerator.Api.Maps;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace BattleMapGenerator.Api.Data;
 
@@ -28,9 +31,23 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Cascade);
             map.Property(m => m.Title).HasMaxLength(SavedMap.MaxTitleLength).IsRequired();
-            map.Property(m => m.MapJson).IsRequired();
+            map.Property(m => m.Encounter)
+                .HasConversion(new JsonEnumNameConverter<EncounterType>())
+                .HasMaxLength(SavedMap.MaxEnumNameLength);
+            map.Property(m => m.BossSize)
+                .HasConversion(new JsonEnumNameConverter<BossSize>())
+                .HasMaxLength(SavedMap.MaxEnumNameLength);
+            map.Property(m => m.Cells).HasMaxLength(SavedMap.MaxCellBytes).IsRequired();
+            map.Property(m => m.Rooms).HasMaxLength(SavedMap.MaxRoomBytes).IsRequired();
             // The library lists one account's maps, newest first.
             map.HasIndex(m => new { m.OwnerId, m.CreatedAt });
         });
     }
+
+    // Stores an enum by its JSON name ("skirmish", "large"), so the column reads like the API and a
+    // reordered enum cannot change what a stored row means. On a nullable property EF passes no nulls.
+    private sealed class JsonEnumNameConverter<TEnum>() : ValueConverter<TEnum, string>(
+        value => JsonNamingPolicy.CamelCase.ConvertName(value.ToString()),
+        name => Enum.Parse<TEnum>(name, true))
+        where TEnum : struct, Enum;
 }

@@ -28,19 +28,37 @@ namespace BattleMapGenerator.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("BossSize")
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<byte[]>("Cells")
+                        .IsRequired()
+                        .HasMaxLength(3600)
+                        .HasColumnType("varbinary(3600)");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Encounter")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
 
                     b.Property<int>("Height")
                         .HasColumnType("int");
 
-                    b.Property<string>("MapJson")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("OwnerId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("RoomCount")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("Rooms")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("varbinary(60)");
 
                     b.Property<long>("Seed")
                         .HasColumnType("bigint");

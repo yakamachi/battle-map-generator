@@ -29,7 +29,8 @@ public sealed record SaveMapRequest(
 public sealed record RenameMapRequest([property: SavedMapTitle] string? Title);
 
 // Shared by Save and Rename, keyed "title". Leading and trailing whitespace is dropped before the
-// length is checked; duplicate titles are allowed.
+// length is checked; duplicate titles are allowed. A control character left after trimming (a newline,
+// a tab, a bell) is refused under the same message, so a list never shows a broken or multi-line title.
 [AttributeUsage(AttributeTargets.Property)]
 public sealed class SavedMapTitleAttribute : ValidationAttribute
 {
@@ -40,7 +41,9 @@ public sealed class SavedMapTitleAttribute : ValidationAttribute
     }
 
     public override bool IsValid(object? value) =>
-        value is string title && Normalize(title).Length is >= 1 and <= Data.SavedMap.MaxTitleLength;
+        value is string title
+        && Normalize(title) is { Length: >= 1 and <= Data.SavedMap.MaxTitleLength } normalized
+        && !normalized.Any(char.IsControl);
 
     public static string Normalize(string title) => title.Trim();
 }

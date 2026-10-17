@@ -172,7 +172,8 @@ public sealed class SavedMapEndpointTests(SqlServerFixture sql)
         var existing = await SaveAsync(client, new { title = "Existing", seed = 12 });
         var path = existing.Headers.Location!.OriginalString;
 
-        string?[] invalid = ["", "   ", new string('t', 81), null];
+        // A control character left after trimming (a newline, a tab, a bell) is refused like a bad length.
+        string?[] invalid = ["", "   ", new string('t', 81), null, "Two\nlines", "Tab\tinside", "Bell\u0007", "Ends\r\nhere\u0000"];
         foreach (var title in invalid)
         {
             foreach (var response in new[]
@@ -255,21 +256,10 @@ public sealed class SavedMapEndpointTests(SqlServerFixture sql)
         await using (var db = SqlServerFixture.CreateContext(connectionString))
         {
             var ownerId = (await db.Users.SingleAsync(u => u.Email == email)).Id;
-            var mapJson = JsonSerializer.Serialize(BspGenerator.Generate(1, MapSize.DefaultWidth, MapSize.DefaultHeight), MapDeterminismTests.Json());
+            var map = BspGenerator.Generate(1, MapSize.DefaultWidth, MapSize.DefaultHeight);
             for (var i = 0; i < SavedMapEndpoints.MaxSavedMapsPerAccount; i++)
             {
-                db.SavedMaps.Add(new SavedMapRow
-                {
-                    Id = Guid.NewGuid(),
-                    OwnerId = ownerId,
-                    Title = $"Map {i}",
-                    Seed = 1,
-                    Width = MapSize.DefaultWidth,
-                    Height = MapSize.DefaultHeight,
-                    MapJson = mapJson,
-                    CreatedAt = T0.AddMinutes(i),
-                    UpdatedAt = T0.AddMinutes(i),
-                });
+                db.SavedMaps.Add(Row(ownerId, $"Map {i}", map, T0.AddMinutes(i)));
             }
             await db.SaveChangesAsync();
         }
@@ -332,6 +322,9 @@ public sealed class SavedMapEndpointTests(SqlServerFixture sql)
             var response = await client.PostAsync(MapsPath, new StringContent(body, Encoding.UTF8, contentType));
             Assert.False(response.IsSuccessStatusCode, $"Save accepted {contentType} with {(int)response.StatusCode}.");
         }
+        // A cross-site no-cors fetch can send a body with no Content-Type at all, without a preflight.
+        var withoutContentType = await client.PostAsync(MapsPath, WithoutContentType("""{"title":"Forged","seed":1}"""));
+        Assert.False(withoutContentType.IsSuccessStatusCode, $"Save accepted no Content-Type with {(int)withoutContentType.StatusCode}.");
         Assert.Equal(0, await CountMapsAsync(connectionString));
 
         var saved = await SaveAsync(client, new { title = "Original", seed = 1 });
@@ -342,8 +335,73 @@ public sealed class SavedMapEndpointTests(SqlServerFixture sql)
             var response = await client.PatchAsync(path, new StringContent(body, Encoding.UTF8, contentType));
             Assert.False(response.IsSuccessStatusCode, $"Rename accepted {contentType} with {(int)response.StatusCode}.");
         }
+        var renameWithoutContentType = await client.PatchAsync(path, WithoutContentType("""{"title":"Forged"}"""));
+        Assert.False(renameWithoutContentType.IsSuccessStatusCode,
+            $"Rename accepted no Content-Type with {(int)renameWithoutContentType.StatusCode}.");
         Assert.Equal("Original", await SavedTitleAsync(await client.GetAsync(path)));
         Assert.Equal(1, await CountMapsAsync(connectionString));
+    }
+
+    // The list reads summary columns only, so a row whose grid bytes are unreadable cannot break it;
+    // only opening that one map fails.
+    [Fact]
+    public async Task List_still_answers_when_a_rows_cells_are_corrupted()
+    {
+        await using var factory = new ApiFactory(sql.ConnectionString);
+        var client = await factory.CreateLoggedInClientAsync();
+        var healthy = await SaveAsync(client, new { title = "Healthy", seed = 21 });
+        var broken = await SaveAsync(client, new { title = "Broken", seed = 22, roomCount = 3 });
+        using var brokenJson = await ReadJsonAsync(broken);
+        var brokenId = brokenJson.RootElement.GetProperty("id").GetGuid();
+        await using (var db = SqlServerFixture.CreateContext(sql.ConnectionString))
+        {
+            var updated = await db.SavedMaps
+                .Where(m => m.Id == brokenId)
+                .ExecuteUpdateAsync(set => set.SetProperty(m => m.Cells, new byte[] { 0xFF, 0xFF, 0xFF }));
+            Assert.Equal(1, updated);
+        }
+
+        var list = await client.GetAsync(MapsPath);
+
+        Assert.Equal(HttpStatusCode.OK, list.StatusCode);
+        using var listJson = await ReadJsonAsync(list);
+        var items = listJson.RootElement.EnumerateArray().ToList();
+        Assert.Equal(["Broken", "Healthy"], items.Select(item => item.GetProperty("title").GetString()).Order());
+        var brokenItem = items.Single(item => item.GetProperty("id").GetGuid() == brokenId);
+        Assert.Equal(3, brokenItem.GetProperty("parameters").GetProperty("roomCount").GetInt32());
+        Assert.Equal("skirmish", brokenItem.GetProperty("parameters").GetProperty("encounter").GetString());
+
+        // Opening the corrupted map fails (the codec refuses the bytes); the healthy one still opens.
+        await AssertServerErrorAsync(() => client.GetAsync(broken.Headers.Location));
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync(healthy.Headers.Location)).StatusCode);
+    }
+
+    // Real bodies are well under 1 KB; a body over 16 KB is refused before it is buffered, and nothing
+    // is stored or changed. A body of exactly 16 KB still goes through.
+    [Fact]
+    public async Task A_body_over_16_kb_is_refused_on_save_rename_and_generate()
+    {
+        var connectionString = await sql.CreateMigratedDatabaseAsync();
+        await using var factory = new ApiFactory(connectionString);
+        var client = await factory.CreateLoggedInClientAsync();
+        var saved = await SaveAsync(client, new { title = "Original", seed = 1 });
+        var path = saved.Headers.Location!.OriginalString;
+        const int limit = 16 * 1024;
+
+        var save = await PostJsonAsync(client, MapsPath, Padded("""{"title":"Too big","seed":2}""", limit + 1));
+        var rename = await PatchJsonAsync(client, path, Padded("""{"title":"Too big"}""", limit + 1));
+        var generate = await PostJsonAsync(client, GeneratePath, Padded("""{"seed":3}""", limit + 1));
+
+        foreach (var response in new[] { save, rename, generate })
+        {
+            Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
+        }
+        Assert.Equal(1, await CountMapsAsync(connectionString));
+        Assert.Equal("Original", await SavedTitleAsync(await client.GetAsync(path)));
+
+        Assert.Equal(HttpStatusCode.Created, (await PostJsonAsync(client, MapsPath, Padded("""{"title":"Fits","seed":2}""", limit))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await PatchJsonAsync(client, path, Padded("""{"title":"Fits"}""", limit))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await PostJsonAsync(client, GeneratePath, Padded("""{"seed":3}""", limit))).StatusCode);
     }
 
     // Save regenerates the map but is not rate-limited as a generation: after more saves than the
@@ -387,6 +445,50 @@ public sealed class SavedMapEndpointTests(SqlServerFixture sql)
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.DoesNotContain(ApiFactory.SpaShellMarker, await response.Content.ReadAsStringAsync());
     }
+
+    private static SavedMapRow Row(string ownerId, string title, GeneratedMap map, DateTimeOffset at) => new()
+    {
+        Id = Guid.NewGuid(),
+        OwnerId = ownerId,
+        Title = title,
+        Seed = map.Seed,
+        Width = map.Width,
+        Height = map.Height,
+        RoomCount = map.Parameters.RoomCount,
+        Encounter = map.Parameters.Encounter,
+        BossSize = map.Parameters.BossSize,
+        Cells = GridCodec.EncodeCells(map.Cells),
+        Rooms = GridCodec.EncodeRooms(map.Rooms),
+        CreatedAt = at,
+        UpdatedAt = at,
+    };
+
+    // JSON followed by spaces up to exactly the given number of UTF-8 bytes (still valid JSON).
+    private static string Padded(string json, int bytes) => json + new string(' ', bytes - Encoding.UTF8.GetByteCount(json));
+
+    private static ByteArrayContent WithoutContentType(string body)
+    {
+        var content = new ByteArrayContent(Encoding.UTF8.GetBytes(body));
+        Assert.Null(content.Headers.ContentType);
+        return content;
+    }
+
+    // The app has no exception handler: TestServer hands an unhandled exception to the client instead of
+    // the 500 Kestrel would send. Either way the request does not succeed.
+    private static async Task AssertServerErrorAsync(Func<Task<HttpResponseMessage>> send)
+    {
+        try
+        {
+            var response = await send();
+            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        }
+        catch (InvalidDataException)
+        {
+        }
+    }
+
+    private static Task<HttpResponseMessage> PatchJsonAsync(HttpClient client, string path, string body) =>
+        client.PatchAsync(path, new StringContent(body, null, "application/json"));
 
     private static Task<HttpResponseMessage> SaveAsync(HttpClient client, object body) =>
         client.PostAsJsonAsync(MapsPath, body);

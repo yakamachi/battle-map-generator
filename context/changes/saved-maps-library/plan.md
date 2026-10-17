@@ -41,7 +41,8 @@ Verify with: `dotnet test api.Tests`, `npm run typecheck && npm test && npm run 
 - No campaign → session → map hierarchy, sharing, or public maps (still PRD Non-Goals).
 - No editing of a saved map's grid or parameters; only the title changes. "Regenerate" from a saved map is not part of this change (S-02 owns regenerate).
 - No unique titles, no search, filter, sort options or pagination (the 100-map cap bounds the list).
-- No new rate-limit policy for library routes. Only the existing SessionCookieGate 60/min-per-IP applies, and Save does **not** spend a `generate` permit.
+- No new rate-limit policy for library routes. Only the existing SessionCookieGate 60/min-per-IP applies, and Save does **not** spend a `generate` permit. Save still runs the generator, so it sits outside both the per-account generate limit and the 50/min global generate ceiling (impl-review phase 1 F2, accepted). This residual is recorded in `infrastructure.md` in Phase 5.
+- No change to the wire format. `cells` stays a JSON array of kind names on the API, and the fixtures keep their current shape. Moving the wire format to bytes is recorded as a 10xArchitect candidate, to be found and ranked through the Module 4 refactor-opportunities workflow (impl-review phase 1, triage 2026-10-17).
 - No storing of images, atlas or renderer versions. A saved map re-renders with the current atlas.
 - No global storage ceiling across accounts. The residual risk is recorded in `infrastructure.md`.
 - No antiforgery tokens or CORS configuration. The rewritten rule relies on the absence of CORS plus `SameSite=Lax`.
@@ -60,6 +61,18 @@ API first, so the contract (OpenAPI + `schema.d.ts`) lands in one commit with it
 - **Ownership by query shape.** Every load, rename and delete must filter on `Id == id && OwnerId == callerId` in the same query. Loading by id and then comparing owners would need a second code path and would make it easy to leak a 403 or a timing difference.
 - **Save vs. a deploy in between.** If the algorithm changes between Generate and Save, the regenerated grid differs from the one on screen. This is accepted as rare. The client therefore must show the saved map from the **Save response**, not keep the old in-memory grid.
 - **Cap race.** The 100-map check is a count-then-insert. Two concurrent saves at 99 can produce 101. This is accepted (a soft cap); note it in the code comment.
+
+### Addendum (impl-review phase 1, 2026-10-17)
+
+- **Storage changes from one JSON column to compact columns.** Phase 1 stored the whole `GeneratedMap` as `MapJson nvarchar(max)` (~10–25 KB per map, since nvarchar is UTF-16). The list deserialized every row just to read the parameters (F1, F3). The user ruled out JSON in SQL Server.
+- **The new Phase 2 ("Compact storage")** stores:
+  - the parameters as columns;
+  - the cells as one byte per cell;
+  - the rooms as 5 bytes each.
+
+  The list reads summary columns only. It also takes in the triaged fixes F4 (rename vs delete race), F5 (no-Content-Type test), F6 (16 KB request size limit), F7 (test-clock comment) and F8 (control characters in titles).
+- **The later phases are renumbered:** Web 2→3, E2E 3→4, Docs 4→5.
+- **Phase 1 stays as committed (3e9afdf).** Its `MapJson` description is superseded by Phase 2.
 
 ## Phase 1: API and contract
 
@@ -181,11 +194,127 @@ Rules:
 
 - Against the local stack (`dotnet ef database update` applied), `api/BattleMapGenerator.Api.http` or curl with a session cookie shows the five routes behaving as in the table above
 
-**Implementation Note**: After this phase passes, pause for manual confirmation and run `/10x-impl-review saved-maps-library phase 1` before Phase 2.
+**Implementation Note**: After this phase passes, pause for manual confirmation and run `/10x-impl-review saved-maps-library phase 1` before Phase 2 (compact storage).
 
 ---
 
-## Phase 2: Web UI
+## Phase 2: Compact storage
+
+### Overview
+
+Replace the `MapJson` column with compact columns: parameters as columns, cells and rooms as bytes. The list then never touches a grid. Fold in the triaged phase 1 review fixes F4–F8. The API contract (OpenAPI, `schema.d.ts`) and the wire format do not change.
+
+### Changes Required:
+
+#### 1. Persisted enum numbers
+
+**File**: `api/Maps/MapModels.cs`
+
+**Intent**: The storage now records cell and room kinds by number, so give `CellKind` and `RoomKind` explicit values and mark them as persisted. JSON keeps using names, so the wire is unaffected.
+
+**Contract**:
+- `CellKind`: Void=0, Floor=1, Corridor=2, Wall=3, Door=4, BossArena=5.
+- `RoomKind`: explicit values in their current order.
+- Add a comment on both: "persisted in SavedMaps: append new values, never renumber".
+
+#### 2. Grid codec
+
+**File**: `api/Maps/GridCodec.cs` (new; or `api/Data/` if it reads better next to the entity)
+
+**Intent**: One place that turns cells and rooms into bytes and back. Decoding validates what it reads instead of trusting the row.
+
+**Contract**:
+- `byte[] EncodeCells(CellKind[])` stores one byte per cell, row-major.
+- `CellKind[] DecodeCells(byte[], int width, int height)` checks that the length is `width*height` and that every value is defined.
+- `byte[] EncodeRooms(Room[])` stores 5 bytes per room: X, Y, Width, Height (each ≤ 60) and Kind.
+- `Room[] DecodeRooms(byte[])` checks that the length is a multiple of 5 and that every kind is defined.
+- Invalid input throws `InvalidDataException`.
+
+#### 3. Entity and migration
+
+**Files**:
+- `api/Data/SavedMap.cs`, `api/Data/AppDbContext.cs`
+- `api/Migrations/*_SavedMaps.*` (regenerated)
+- `api/Migrations/AppDbContextModelSnapshot.cs`
+
+**Intent**:
+- Drop `MapJson`.
+- Add `RoomCount int`, `Encounter nvarchar(16)` (enum name via value conversion, matching the JSON spelling), `BossSize nvarchar(16) NULL`, `Cells varbinary(3600)` (60×60 cap) and `Rooms varbinary(60)` (12 rooms × 5 bytes).
+- Keep every other Phase 1 column, the FK and the index.
+
+**Contract**:
+- The Phase 1 migration has not been merged or deployed. Delete it and regenerate one `SavedMaps` migration instead of stacking a second one.
+- Local databases that already applied it must first be rolled back with `dotnet ef database update InitialAccountStore --project api`. This covers the dev database and the e2e compose database if `npm run db:up` ran.
+- The regenerated migration still only adds things.
+
+#### 4. Endpoints use the columns
+
+**File**: `api/Maps/SavedMapEndpoints.cs`
+
+**Intent**:
+- **Save** writes the parameter columns and the encoded cells and rooms from the generated map.
+- **List** projects summary columns only with `.Select(...)`, so the query never reads `Cells` or `Rooms`.
+- **Get** and **Rename** rebuild `GeneratedMap` from the columns plus the decoded bytes.
+- **F4:** Rename catches `DbUpdateConcurrencyException` (a concurrent delete) and returns 404.
+- **F6:** `generate`, Save and Rename get a 16 KB request size limit. Verify end to end that an oversized body is refused (413) under TestServer as well. If the metadata isn't honoured there, cap the read in `RequestBody.ReadAsync` instead (lessons: verify a framework feature against what it actually does).
+
+**Contract**: Response shapes are unchanged (`SavedMapSummary`, `SavedMap`). `parameters` in the list comes from the columns.
+
+#### 5. Title rule
+
+**File**: `api/Maps/SavedMapModels.cs`
+
+**Intent**: **F8:** reject titles containing control characters (`char.IsControl`, which covers newlines and tabs) under the existing `title` message, after trimming.
+
+**Contract**: Same key and message as the length rule.
+
+#### 6. Tests and test infrastructure
+
+**Files**: `api.Tests/SavedMapEndpointTests.cs`, `api.Tests/GridCodecTests.cs` (new), `api.Tests/Infrastructure/ApiFactory.cs`
+
+**Intent**:
+- **Codec tests:**
+  - round-trips for every fixture grid;
+  - a wrong cell length, an undefined kind and a room-bytes length that isn't a multiple of 5 are each rejected;
+  - the persisted enum numbers are pinned, so renumbering an enum turns a test red.
+- **Endpoint tests:**
+  - the existing round-trip test still compares with `BspGenerator.Generate`;
+  - the list works when a row's `Cells` is corrupted (written directly through `SqlServerFixture.CreateContext`), which proves the list never decodes grids;
+  - **F5:** a POST/PATCH with no Content-Type is refused and stores nothing;
+  - **F6:** a body over 16 KB on Save, Rename and generate is refused;
+  - **F8:** titles with a newline or a control character get 400 keyed `title`.
+- **F7:** the `ApiFactory.Time` comment says the override also drives the clocks for the login cookie, account lockout and the security stamp.
+
+**Contract**: The existing Phase 1 test names stay.
+
+#### 7. API rules
+
+**File**: `api/AGENTS.md`
+
+**Intent**:
+- Update the "Saved maps" section with the storage layout and the persisted enum-number rule.
+- Note the request size limit.
+- Record that Save sits outside the generate limits (F2, accepted).
+
+**Contract**: Prose only.
+
+### Success Criteria:
+
+#### Automated Verification:
+
+- API tests pass: `dotnet test api.Tests`
+- Contract unchanged: `dotnet build api && (cd web && npm run api:types) && git diff --exit-code api/BattleMapGenerator.Api.json web/app/api/schema.d.ts` (relative to Phase 1's commit)
+- Break-check: swapping two values in the cell encoding (for example Floor and Wall) turns the codec and round-trip tests red
+
+#### Manual Verification:
+
+- After rolling the local database back and re-applying the regenerated migration, save, list, open, rename and delete work against the local stack. The `SavedMaps` table shows `Cells`/`Rooms` as bytes and has no JSON column.
+
+**Implementation Note**: After this phase passes, pause for manual confirmation and run `/10x-impl-review saved-maps-library phase 2` before Phase 3.
+
+---
+
+## Phase 3: Web UI
 
 ### Overview
 
@@ -268,11 +397,11 @@ Add library calls to the API client, a Dialog primitive, Save on the home view, 
 - The keyboard alone can open, submit and cancel each dialog. Focus returns to the triggering button.
 - The preview height on home is unchanged at desktop and phone widths.
 
-**Implementation Note**: After this phase passes, pause for manual confirmation and run `/10x-impl-review saved-maps-library phase 2` before Phase 3.
+**Implementation Note**: After this phase passes, pause for manual confirmation and run `/10x-impl-review saved-maps-library phase 3` before Phase 4.
 
 ---
 
-## Phase 3: End-to-end lifecycle
+## Phase 4: End-to-end lifecycle
 
 ### Overview
 
@@ -318,11 +447,11 @@ Prove the whole user path against the real stack in Chrome and Firefox.
 
 - After a full e2e run, the local database holds no leftover library rows for `e2e@example.com`
 
-**Implementation Note**: After this phase passes, pause for manual confirmation and run `/10x-impl-review saved-maps-library phase 3` before Phase 4.
+**Implementation Note**: After this phase passes, pause for manual confirmation and run `/10x-impl-review saved-maps-library phase 4` before Phase 5.
 
 ---
 
-## Phase 4: Foundation docs
+## Phase 5: Foundation docs
 
 ### Overview
 
@@ -359,11 +488,12 @@ Move the library from "deferred" to "in scope" everywhere the product and operat
 - `context/foundation/test-plan.md`
 
 **Intent**:
-- **Tech-stack docs:** the `:29` lines describe stored maps (EF Core table, JSON grid column) instead of "no persistence".
+- **Tech-stack docs:** the `:29` lines describe stored maps (EF Core table with parameter columns and the grid as bytes) instead of "no persistence".
 - **infrastructure.md:**
-  - `:38` says maps are stored (~5–12 KB each, ≤100 per account).
+  - `:38` says maps are stored (~0.7–2 KB each including the bytes, ≤100 per account, so ≤ ~200 KB per account).
   - The `:170` backup row now includes saved maps.
-  - Add a risk-register row: the storage growth residual (many scripted accounts × 100 maps; there is no global ceiling; revisit with test-plan Phase 4).
+  - Add a risk-register row: the storage growth residual (many scripted accounts × 100 maps; there is no global ceiling; registration's 50/min global limit bounds how fast accounts are created, not total storage; revisit with test-plan Phase 4).
+  - Add a risk-register row (F2): Save runs the generator outside the generate limits (60/min per IP, no global cap; one generation is well under 1 ms; revisit with test-plan Phase 4).
   - Note that the free-offer storage limit is not recorded in the repo.
 - **test-plan.md:**
   - Replace the ownership-attack (IDOR) negative space (`:60-62`) with a pointer to the isolation tests from Phase 1.
@@ -383,7 +513,7 @@ Move the library from "deferred" to "in scope" everywhere the product and operat
 
 - The PRD, roadmap and infrastructure edits read correctly in Polish/English and agree with the implemented behaviour (cap 100, owner-only 404, title 1–80)
 
-**Implementation Note**: After this phase, run `/10x-impl-review saved-maps-library phase 4`, then a full-plan review before opening the PR.
+**Implementation Note**: After this phase, run `/10x-impl-review saved-maps-library phase 5`, then a full-plan review before opening the PR.
 
 ---
 
@@ -407,7 +537,7 @@ Move the library from "deferred" to "in scope" everywhere the product and operat
 
 ## Performance Considerations
 
-- Save runs one generation (well under 1 ms) plus one insert. The list reads summary columns only, never `MapJson`. At most 100 rows come back per account, so no pagination is needed.
+- Save runs one generation (well under 1 ms) plus one insert. From Phase 2 the list reads summary columns only, never `Cells`/`Rooms`. At most 100 rows come back per account, so no pagination is needed.
 - Each library request with a session cookie touches the database, waking it from auto-pause. This is the same as any authenticated request today.
 
 ## Migration Notes
@@ -432,50 +562,62 @@ Move the library from "deferred" to "in scope" everywhere the product and operat
 
 #### Automated
 
-- [x] 1.1 API tests pass: `dotnet test api.Tests`
-- [x] 1.2 Contract has no drift: `dotnet build api && (cd web && npm run api:types) && git diff --exit-code api/BattleMapGenerator.Api.json web/app/api/schema.d.ts`
-- [x] 1.3 Web still typechecks against the new schema: `cd web && npm run typecheck`
-- [x] 1.4 Break-check: dropping the owner filter turns the isolation test red
+- [x] 1.1 API tests pass: `dotnet test api.Tests` — 3e9afdf
+- [x] 1.2 Contract has no drift: `dotnet build api && (cd web && npm run api:types) && git diff --exit-code api/BattleMapGenerator.Api.json web/app/api/schema.d.ts` — 3e9afdf
+- [x] 1.3 Web still typechecks against the new schema: `cd web && npm run typecheck` — 3e9afdf
+- [x] 1.4 Break-check: dropping the owner filter turns the isolation test red — 3e9afdf
 
 #### Manual
 
-- [x] 1.5 Five routes behave as specified against the local stack
+- [x] 1.5 Five routes behave as specified against the local stack — 3e9afdf
 
-### Phase 2: Web UI
+### Phase 2: Compact storage
 
 #### Automated
 
-- [ ] 2.1 Typecheck passes: `cd web && npm run typecheck`
-- [ ] 2.2 Unit and render tests pass: `cd web && npm test`
-- [ ] 2.3 UI token scan passes: `cd web && npm run ui:scan`
-- [ ] 2.4 Visual gate passes with the new baselines: `cd web && npm run visual:docker`
-- [ ] 2.5 Production build succeeds: `cd web && npm run build`
+- [x] 2.1 API tests pass: `dotnet test api.Tests`
+- [x] 2.2 Contract unchanged: OpenAPI json and `schema.d.ts` show no drift
+- [x] 2.3 Break-check: swapping two cell encodings turns the codec pin tests red (round-trip stays green by design)
 
 #### Manual
 
-- [ ] 2.6 Full save/list/open/rename/delete path works in Chrome and Firefox
-- [ ] 2.7 Dialogs are keyboard-operable and return focus
-- [ ] 2.8 Home preview height unchanged at desktop and phone widths
+- [x] 2.4 Local stack works after rollback and re-applied migration; table holds bytes, no JSON
 
-### Phase 3: End-to-end lifecycle
+### Phase 3: Web UI
 
 #### Automated
 
-- [ ] 3.1 E2E specs typecheck: `cd e2e && npm run typecheck`
-- [ ] 3.2 Full e2e run passes in Chromium and Firefox
-- [ ] 3.3 Break-check: a delete that doesn't delete turns `library.spec.ts` red
+- [ ] 3.1 Typecheck passes: `cd web && npm run typecheck`
+- [ ] 3.2 Unit and render tests pass: `cd web && npm test`
+- [ ] 3.3 UI token scan passes: `cd web && npm run ui:scan`
+- [ ] 3.4 Visual gate passes with the new baselines: `cd web && npm run visual:docker`
+- [ ] 3.5 Production build succeeds: `cd web && npm run build`
 
 #### Manual
 
-- [ ] 3.4 No leftover library rows for the e2e account after a full run
+- [ ] 3.6 Full save/list/open/rename/delete path works in Chrome and Firefox
+- [ ] 3.7 Dialogs are keyboard-operable and return focus
+- [ ] 3.8 Home preview height unchanged at desktop and phone widths
 
-### Phase 4: Foundation docs
+### Phase 4: End-to-end lifecycle
 
 #### Automated
 
-- [ ] 4.1 No stale "deferred" wording remains in `context/foundation/`
-- [ ] 4.2 Roadmap carries S-05 with Change ID `saved-maps-library`
+- [ ] 4.1 E2E specs typecheck: `cd e2e && npm run typecheck`
+- [ ] 4.2 Full e2e run passes in Chromium and Firefox
+- [ ] 4.3 Break-check: a delete that doesn't delete turns `library.spec.ts` red
 
 #### Manual
 
-- [ ] 4.3 Doc edits read correctly and agree with the implemented behaviour
+- [ ] 4.4 No leftover library rows for the e2e account after a full run
+
+### Phase 5: Foundation docs
+
+#### Automated
+
+- [ ] 5.1 No stale "deferred" wording remains in `context/foundation/`
+- [ ] 5.2 Roadmap carries S-05 with Change ID `saved-maps-library`
+
+#### Manual
+
+- [ ] 5.3 Doc edits read correctly and agree with the implemented behaviour

@@ -30,6 +30,7 @@ public static class MapEndpoints
             .WithName("GenerateMap")
             .RequireAuthorization()
             .RequireRateLimiting(GenerateRateLimitPolicy)
+            .WithBodySizeLimit()
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status429TooManyRequests);
         return app;

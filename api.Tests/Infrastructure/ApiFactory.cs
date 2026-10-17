@@ -32,6 +32,8 @@ public sealed class ApiFactory(string? connectionString, string? readyKey = ApiF
     private readonly string _webRoot = CreateStubWebRoot();
 
     // Replaces the app's clock (TimeProvider.System) when set, so a test can pin saved-map timestamps.
+    // The framework reads the same DI TimeProvider, so the override also drives the clocks for the login
+    // cookie's expiry, account lockout and the security-stamp check: a test that moves this clock moves those too.
     public TimeProvider? Time { get; init; }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
