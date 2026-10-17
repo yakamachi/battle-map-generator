@@ -33,7 +33,7 @@ A DM toolkit that generates grid-aligned D&D battle maps. Monorepo: `api/` (ASP.
 
 ## Deployment
 
-- Every change reaches `main` through a pull request, including `context/` docs and the chore commits that close or archive a change. `main` is protected: required `CI` checks, branch up to date, no direct or force pushes, admins included, no required approvals.
+- Every change reaches `main` through a pull request, including `context/` docs and the chore commits that close or archive a change. `main` is protected: required `CI` checks, branch up to date, no direct or force pushes, admins included. The ruleset "Owner review for outside PRs" also requires 1 approving review from a code owner (`.github/CODEOWNERS`: `@yakamachi` owns everything). Repository admins can bypass it, but only when merging a pull request, so the owner's own PRs merge with `gh pr merge --admin` (required CI checks still apply), while anyone else's PR waits for the owner's approval.
 - `ci.yml` has no `paths`/`paths-ignore` filters on purpose: a required check that never reports would block docs-only pull requests forever.
 - `.github/workflows/deploy.yml` runs on merge to `main` and does not re-run tests: build `web/`, copy `web/build/client` into the API's published `wwwroot`, publish `api/`, apply migrations, deploy with `azure/login` (OIDC) and `azure/webapps-deploy`, then smoke-test. This reverses F-01's "a failing test blocks the deploy": the test now blocks the merge instead.
 - Destructive or billing actions are human-only: raising the plan tier, "continue with charges" on the Azure SQL free offer, dropping a database, rotating secrets.
