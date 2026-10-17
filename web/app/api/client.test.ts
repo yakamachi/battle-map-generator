@@ -6,8 +6,15 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 // each test only changes what that mock answers.
 const fetchMock = vi.fn<typeof fetch>();
 vi.stubGlobal("fetch", fetchMock);
-const { deleteSavedMap, generateMap, getSavedMap, listSavedMaps, renameSavedMap, saveMap } =
-  await import("./client");
+const {
+  deleteSavedMap,
+  generateMap,
+  getSavedMap,
+  listSavedMaps,
+  renameSavedMap,
+  saveMap,
+  sessionRedirect,
+} = await import("./client");
 
 afterEach(() => {
   fetchMock.mockReset();
@@ -27,11 +34,25 @@ describe("generateMap", () => {
   });
 });
 
-// Each library call maps a failed response to a UI-safe kind. The 401 redirect is not exercised
-// here: window.location.assign cannot be stubbed in browser mode.
+// Each library call maps a failed response to a UI-safe kind. window.location cannot be stubbed in
+// browser mode, so the 401 redirect is observed through sessionRedirect.
 const MAP_ID = "3f2b1c4d-0000-4000-8000-000000000001";
 
 describe("library calls", () => {
+  test("a 401 sends the user to the expired-session login", async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 401 }));
+    const go = vi.spyOn(sessionRedirect, "go").mockImplementation(() => {});
+    expect(await listSavedMaps()).toEqual({ ok: false, error: { kind: "http", status: 401 } });
+    expect(go).toHaveBeenCalledExactlyOnceWith("/login?expired=1");
+  });
+
+  test("a 429 is rate-limited and does not redirect", async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 429 }));
+    const go = vi.spyOn(sessionRedirect, "go").mockImplementation(() => {});
+    expect(await deleteSavedMap(MAP_ID)).toEqual({ ok: false, error: { kind: "rate-limited" } });
+    expect(go).not.toHaveBeenCalled();
+  });
+
   test("a 404 is not-found", async () => {
     fetchMock.mockResolvedValue(new Response(null, { status: 404 }));
     expect(await getSavedMap(MAP_ID)).toEqual({ ok: false, error: { kind: "not-found" } });

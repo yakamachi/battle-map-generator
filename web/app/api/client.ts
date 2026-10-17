@@ -103,9 +103,13 @@ export async function generateMap({
 // it redirected, so the caller can stop and return its failure.
 function redirectIfSessionExpired(response: Response): boolean {
   if (response.status !== 401) return false;
-  window.location.assign("/login?expired=1");
+  sessionRedirect.go("/login?expired=1");
   return true;
 }
+
+// The navigation behind that redirect, as an object so client.test.ts can observe it: browser-mode
+// tests cannot stub window.location.
+export const sessionRedirect = { go: (url: string) => window.location.assign(url) };
 
 // Maps a library call's failed response to a UI-safe kind. A 400 without an errors record falls
 // back to the generic HTTP error, as register does in auth.ts. 429 comes from SessionCookieGate's

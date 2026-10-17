@@ -171,6 +171,9 @@ function MapRow({
           initialTitle={summary.title}
           submit={(title) => renameSavedMap(summary.id, title)}
           onSaved={onRenamed}
+          // Renaming a map deleted in another tab: it leaves the list once the dialog closes,
+          // as a Delete that finds it gone does.
+          onGone={() => onDeleted(summary.id)}
         />
         <DeleteMapDialog summary={summary} onDeleted={onDeleted} />
       </div>
@@ -192,7 +195,10 @@ function DeleteMapDialog({
   // trigger, which is removed with the row.
   const deleted = useRef(false);
 
+  // The dialog stays open while the delete is in flight, so its outcome (the row leaving, or an
+  // error) always lands in an open dialog.
   function onOpenChange(next: boolean) {
+    if (!next && pending) return;
     setOpen(next);
     if (next) setError(null);
   }
@@ -238,7 +244,9 @@ function DeleteMapDialog({
         )}
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">Cancel</Button>
+            <Button variant="outline" disabled={pending}>
+              Cancel
+            </Button>
           </DialogClose>
           <Button variant="destructive" onClick={onConfirm} disabled={pending}>
             {pending ? "Deleting…" : "Delete"}
