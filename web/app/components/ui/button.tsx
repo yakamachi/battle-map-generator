@@ -12,6 +12,10 @@ const buttonVariants = cva(
         default: "bg-primary text-primary-foreground hover:bg-primary/80",
         outline:
           "border-border bg-background hover:bg-muted hover:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+        // The tint stays at 10% on hover (the border darkens instead): a deeper tint drops the
+        // dark-theme text contrast under 4.5 (saved-maps-library tokens.md).
+        destructive:
+          "border-destructive/30 bg-destructive/10 text-destructive hover:border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20",
       },
       size: {
         default: "h-8 gap-1.5 px-2.5",

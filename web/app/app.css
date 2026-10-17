@@ -17,6 +17,10 @@
   --foreground: oklch(0.22 0.02 60);
   --card: oklch(0.99 0.008 85);
   --card-foreground: oklch(0.22 0.02 60);
+  /* Dialog surface and the wash behind it (saved-maps-library tokens.md). */
+  --popover: oklch(0.99 0.008 85);
+  --popover-foreground: oklch(0.22 0.02 60);
+  --overlay: oklch(0.22 0.02 60 / 40%);
   --primary: oklch(0.25 0.02 60);
   --primary-foreground: oklch(0.97 0.018 85);
   --secondary: oklch(0.92 0.025 80);
@@ -38,6 +42,9 @@
     --foreground: oklch(0.93 0.02 85);
     --card: oklch(0.24 0.012 60);
     --card-foreground: oklch(0.93 0.02 85);
+    --popover: oklch(0.24 0.012 60);
+    --popover-foreground: oklch(0.93 0.02 85);
+    --overlay: oklch(0 0 0 / 60%);
     --primary: oklch(0.9 0.03 85);
     --primary-foreground: oklch(0.22 0.02 60);
     --secondary: oklch(0.3 0.015 60);
@@ -59,6 +66,9 @@
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-overlay: var(--overlay);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
@@ -79,12 +89,14 @@
 
 /*
  * The map preview frame fits both the container width and the viewport height left under the
- * account header (routes/protected.tsx: the email and Log out row, 3.5rem) and the home view's
- * own rows, so the whole map is visible without scrolling. From sm up that is main padding,
- * heading, form row, button row and gaps: 11.5rem (15rem with the account header). Narrower, the
- * form wraps onto a second row (Boss size), which adds another row and gap: 14.5rem (18rem with
- * the account header). The frame sets --map-aspect (width / height in squares) and a matching
- * aspect-ratio inline; the height follows from the width.
+ * account header (routes/protected.tsx: the Generator and My maps links, the email and Log out,
+ * one row, 3.5rem) and the home view's own rows, so the whole map is visible without scrolling.
+ * From sm up that is main padding, heading, form row, button row (Generate, Download PNG, Save)
+ * and gaps: 11.5rem (15rem with the account header); the Save dialog is an overlay and adds no
+ * row. Narrower, the form wraps onto a second row (Boss size), which adds another row and gap:
+ * 14.5rem (18rem with the account header). The frame sets --map-aspect (width / height in
+ * squares) and a matching aspect-ratio inline; the height follows from the width. At phone width
+ * the Seed text can wrap under the buttons; the frame is width-bound there, so the map still fits.
  */
 @utility map-preview-fit {
   width: min(100%, max(12rem, calc((100dvh - 18rem) * var(--map-aspect, 1.5))));

@@ -587,17 +587,17 @@ Move the library from "deferred" to "in scope" everywhere the product and operat
 
 #### Automated
 
-- [ ] 3.1 Typecheck passes: `cd web && npm run typecheck`
-- [ ] 3.2 Unit and render tests pass: `cd web && npm test`
-- [ ] 3.3 UI token scan passes: `cd web && npm run ui:scan`
-- [ ] 3.4 Visual gate passes with the new baselines: `cd web && npm run visual:docker`
-- [ ] 3.5 Production build succeeds: `cd web && npm run build`
+- [x] 3.1 Typecheck passes: `cd web && npm run typecheck`
+- [x] 3.2 Unit and render tests pass: `cd web && npm test`
+- [x] 3.3 UI token scan passes: `cd web && npm run ui:scan`
+- [x] 3.4 Visual gate passes with the new baselines: `cd web && npm run visual:docker`
+- [x] 3.5 Production build succeeds: `cd web && npm run build`
 
 #### Manual
 
-- [ ] 3.6 Full save/list/open/rename/delete path works in Chrome and Firefox
-- [ ] 3.7 Dialogs are keyboard-operable and return focus
-- [ ] 3.8 Home preview height unchanged at desktop and phone widths
+- [x] 3.6 Full save/list/open/rename/delete path works in Chrome and Firefox
+- [x] 3.7 Dialogs are keyboard-operable and return focus
+- [x] 3.8 Home preview height unchanged at desktop and phone widths
 
 ### Phase 4: End-to-end lifecycle
 

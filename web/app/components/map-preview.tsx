@@ -14,6 +14,8 @@ type MapPreviewProps = {
   drawn: boolean;
   // The canvas's accessible name, while it holds a map.
   label?: string;
+  // What the frame says while loading: generating on home, loading a saved map elsewhere.
+  loadingLabel?: string;
 };
 
 // The preview frame. The single canvas is always mounted and only CSS sizes it on screen: its
@@ -25,6 +27,7 @@ export function MapPreview({
   state,
   drawn,
   label,
+  loadingLabel = "Generating…",
 }: MapPreviewProps) {
   const loading = state === "loading";
   const frameStyle = {
@@ -57,7 +60,7 @@ export function MapPreview({
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center p-4">
           <span className="rounded-md bg-card/80 px-3 py-1.5 text-sm font-medium text-card-foreground">
-            Generating…
+            {loadingLabel}
           </span>
         </div>
       )}

@@ -1,22 +1,27 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { Link } from "react-router";
 import type { Route } from "./+types/home";
 import { Alert } from "~/components/ui/alert";
-import { Button } from "~/components/ui/button";
+import { Button, buttonVariants } from "~/components/ui/button";
+import { DialogClose, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Label } from "~/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "~/components/ui/native-select";
 import { MapPreview, type MapPreviewState } from "~/components/map-preview";
+import { MapTitleDialog } from "~/components/map-title-dialog";
 import {
   DEFAULT_ROOM_COUNT,
   MAX_ROOM_COUNT,
   MIN_ROOM_COUNT,
   generateMap,
+  saveMap,
   type BossSize,
   type EncounterType,
   type GenerateError,
   type GeneratedMap,
 } from "~/api/client";
-import { downloadCanvas } from "~/map/download";
-import { loadAtlas, renderMap } from "~/map/render";
+import { BOSS_SIZES, ENCOUNTERS } from "~/lib/map-labels";
+import { useMapCanvas } from "~/map/use-map-canvas";
+import { cn } from "cn";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -36,17 +41,6 @@ const ROOM_COUNTS = Array.from(
   (_, i) => MIN_ROOM_COUNT + i,
 );
 
-const ENCOUNTERS: { value: EncounterType; label: string }[] = [
-  { value: "skirmish", label: "Skirmish" },
-  { value: "boss", label: "Boss fight" },
-];
-
-const BOSS_SIZES: { value: BossSize; label: string }[] = [
-  { value: "large", label: "Large" },
-  { value: "huge", label: "Huge" },
-  { value: "gargantuan", label: "Gargantuan" },
-];
-
 function errorMessage(error: GenerateError): string {
   switch (error.kind) {
     case "rate-limited":
@@ -63,23 +57,15 @@ function errorMessage(error: GenerateError): string {
 
 export default function Home() {
   const [status, setStatus] = useState<Status>({ kind: "idle" });
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const atlasRef = useRef<Promise<ImageBitmap> | null>(null);
-  // The map whose pixels are on the canvas. Rendering finishes after the atlas loads, so a map
-  // in state is not yet a map on screen; the download follows this, not the status.
-  const [renderedMap, setRenderedMap] = useState<GeneratedMap | null>(null);
-  // The map whose drawing is on screen. Unlike renderedMap it survives a new Generate, so the
-  // last drawing stays visible (dimmed) while the next one loads; an error clears it.
-  const [shownMap, setShownMap] = useState<GeneratedMap | null>(null);
-  const [downloadError, setDownloadError] = useState<string | null>(null);
   // The form's values; Generate sends them as they are when it is clicked.
   const [roomCount, setRoomCount] = useState(DEFAULT_ROOM_COUNT);
   const [encounter, setEncounter] = useState<EncounterType>("skirmish");
   const [bossSize, setBossSize] = useState<BossSize>("large");
 
   const map = status.kind === "ready" ? status.map : null;
-  const canDownload = map !== null && renderedMap === map;
-  const drawnMap = canDownload ? map : null;
+  const { canvasRef, drawnMap, shownMap, forgetShownMap, downloadError, clearDownloadError, download } =
+    useMapCanvas(map, (message) => setStatus({ kind: "error", message }));
+  const canDownload = drawnMap !== null;
   // A map in state is not on screen until the atlas has loaded and it is drawn.
   const previewState: MapPreviewState =
     status.kind === "loading" || (status.kind === "ready" && !canDownload)
@@ -91,45 +77,15 @@ export default function Home() {
   const busy = previewState === "loading";
   const previewSize = map ?? shownMap;
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (!map || !ctx) return;
-    let cancelled = false;
-    // A failed load is forgotten so the next map retries it; a render error keeps the good atlas.
-    atlasRef.current ??= loadAtlas().catch((error: unknown) => {
-      atlasRef.current = null;
-      throw error;
-    });
-    atlasRef.current
-      .then((atlas) => {
-        if (cancelled) return;
-        renderMap(ctx, map, atlas);
-        setRenderedMap(map);
-        setShownMap(map);
-      })
-      .catch((error: unknown) => {
-        if (!cancelled) {
-          const detail = error instanceof Error ? error.message : String(error);
-          setShownMap(null);
-          setStatus({ kind: "error", message: `Could not draw the map: ${detail}` });
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [map]);
-
   async function onGenerate() {
     setStatus({ kind: "loading" });
-    setRenderedMap(null);
-    setDownloadError(null);
+    clearDownloadError();
     const result = await generateMap({
       roomCount,
       encounter,
       bossSize: encounter === "boss" ? bossSize : undefined,
     });
-    if (!result.ok) setShownMap(null);
+    if (!result.ok) forgetShownMap();
     setStatus(
       result.ok
         ? { kind: "ready", map: result.map }
@@ -137,15 +93,11 @@ export default function Home() {
     );
   }
 
-  async function onDownload() {
-    const canvas = canvasRef.current;
-    if (!canDownload || !canvas) return;
-    setDownloadError(null);
-    try {
-      await downloadCanvas(canvas, map.seed);
-    } catch (error: unknown) {
-      setDownloadError(error instanceof Error ? error.message : String(error));
-    }
+  // Save sends the drawn map's seed and parameters; the server regenerates the map from them.
+  function onSave(title: string) {
+    if (!drawnMap) throw new Error("Save is enabled only while a map is drawn.");
+    const { seed, parameters } = drawnMap;
+    return saveMap({ title, seed, ...parameters });
   }
 
   return (
@@ -209,9 +161,44 @@ export default function Home() {
         <Button onClick={onGenerate} disabled={busy}>
           {busy ? "Generating…" : "Generate"}
         </Button>
-        <Button variant="outline" onClick={onDownload} disabled={!canDownload}>
+        <Button variant="outline" onClick={download} disabled={!canDownload}>
           Download PNG
         </Button>
+        {/* The dialog is a portal over the page, so it adds no row above the preview. */}
+        <MapTitleDialog
+          trigger={
+            <Button variant="outline" disabled={!canDownload}>
+              Save
+            </Button>
+          }
+          heading="Save map"
+          description="Give this map a title to find it again in My maps."
+          submitLabel="Save"
+          pendingLabel="Saving…"
+          action="save the map"
+          initialTitle=""
+          submit={onSave}
+          // The stored map is the server's regeneration of this seed; show that one.
+          onSaved={(saved) => setStatus({ kind: "ready", map: saved.map })}
+          renderSuccess={(saved) => (
+            <>
+              <DialogHeader>
+                <DialogTitle>Map saved</DialogTitle>
+                <DialogDescription>“{saved.title}” is in My maps.</DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline" autoFocus>
+                    Close
+                  </Button>
+                </DialogClose>
+                <Link to={`/maps/${saved.id}`} className={cn(buttonVariants())}>
+                  Open saved map
+                </Link>
+              </DialogFooter>
+            </>
+          )}
+        />
         {drawnMap && (
           <span className="text-sm text-muted-foreground tabular-nums">Seed: {drawnMap.seed}</span>
         )}
