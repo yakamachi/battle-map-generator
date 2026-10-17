@@ -14,6 +14,10 @@ export default defineConfig({
   snapshotPathTemplate: "{testDir}/__screenshots__/{projectName}/{arg}{ext}",
   forbidOnly: !!process.env.CI,
   retries: 0,
+  // Every ready state draws a 4200×2800 canvas. Playwright's default (half the cores) ran 8 such
+  // pages at once on a 16-core host and timed out screenshots under load; 4 is stable there and
+  // above what a CI runner gets by default anyway.
+  workers: 4,
   reporter: [["list"], ["html", { open: "never" }]],
   expect: {
     // Baselines and CI render in the same image, so the tolerance can be strict. A 1% pixel ratio

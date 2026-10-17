@@ -1,6 +1,6 @@
 ---
 project: "Battle Map Generator dla D&D (DM Toolkit)"
-version: 2
+version: 3
 status: draft
 created: 2026-09-16
 context_type: greenfield
@@ -58,10 +58,14 @@ już MVP i dali feedback (2026-09-30); od tego momentu mogą sami założyć kon
 
 ### Secondary
 
-- Nie ustalono osobnego kryterium drugorzędnego dla MVP. Zapis mapy w bibliotece
-  z tytułem należy wyłącznie do etapu 2, nie jest kryterium sukcesu MVP.
-
-# TODO: Secondary success criterion — see Open Questions
+- DM zapisuje wygenerowaną mapę pod własnym tytułem i wraca do niej z własnej
+  biblioteki: otwiera ją (wygląda tak samo jak przy zapisie), zmienia tytuł albo
+  ją usuwa (US-02, FR-009).
+  > Aktualizacja 2026-10-18 (PRD v3): wcześniej „Nie ustalono osobnego kryterium
+  > drugorzędnego dla MVP”, a biblioteka należała wyłącznie do etapu 2.
+  > Biblioteka weszła do zakresu, bo certyfikacja 10xDevs (10xBuilder) wymaga
+  > CRUD na encji domenowej (termin 2026-11-04); dotąd mapy były tylko
+  > generowane i pobierane, nigdy zapisywane.
 
 ### Guardrails
 
@@ -85,6 +89,26 @@ już MVP i dali feedback (2026-09-30); od tego momentu mogą sami założyć kon
 - Regeneracja z tymi samymi parametrami daje inny układ (inny seed), bez
   błędu
 - Pobrany plik PNG otwiera się poprawnie i odpowiada podglądowi
+
+### US-02: DM zapisuje mapę w bibliotece i nią zarządza
+
+- **Given** zalogowany DM, który wygenerował mapę
+- **When** klika „zapisz” i podaje tytuł
+- **Then** mapa trafia do jego biblioteki; z listy „Moje mapy” może ją
+  otworzyć, zmienić jej tytuł albo ją usunąć
+
+#### Acceptance Criteria
+- Lista pokazuje tylko mapy zalogowanego konta, od najnowszej
+- Otwarta mapa ma ten sam układ i ten sam seed co przy zapisie, a pobrany z niej
+  PNG odpowiada podglądowi
+- Tytuł jest wymagany: po usunięciu białych znaków z początku i końca 1–80
+  znaków, bez znaków sterujących ani niewidocznych (np. spacji o zerowej
+  szerokości); tytuły mogą się powtarzać
+- Mapa innego konta jest niedostępna — przy otwarciu, zmianie tytułu i
+  usunięciu zachowuje się jak mapa, która nie istnieje
+- Konto mieści najwyżej 100 zapisanych map; przy limicie zapis kończy się
+  czytelnym komunikatem
+- Usunięta mapa znika z listy i nie da się jej już otworzyć
 
 ## Functional Requirements
 
@@ -127,6 +151,15 @@ już MVP i dali feedback (2026-09-30); od tego momentu mogą sami założyć kon
 
 - FR-007: DM może wygenerować mapę z pętlami ("okrężny" loch): drużyna może ruszyć w dowolną stronę i obejść wszystkie pokoje bez cofania się tą samą drogą. Priority: nice-to-have
 - FR-008: DM może wygenerować mapę z terenem: trudnym (ruch kosztuje podwójnie, reguła D&D 5e) oraz nieprzechodnim (np. przepaść na środku pokoju), który nie przerywa spójności mapy. Priority: nice-to-have
+
+### Biblioteka map (2026-10-18, PRD v3)
+
+- FR-009: DM może zapisać wygenerowaną mapę z tytułem w swojej bibliotece, zobaczyć listę własnych zapisanych map, otworzyć zapisaną mapę, zmienić jej tytuł i ją usunąć. Mapy widzi i zmienia wyłącznie konto, które je zapisało; konto mieści najwyżej 100 map. Priority: must-have
+  > Aktualizacja 2026-10-18: przeniesione z Non-Goals („Zapis mapy w bibliotece
+  > z tytułem należy wyłącznie do etapu 2”) — certyfikacja 10xDevs (10xBuilder)
+  > wymaga CRUD na encji domenowej. Zapisana mapa przechowuje siatkę, nie tylko
+  > seed (seed jest stabilny tylko, dopóki algorytm się nie zmienia). Biblioteka
+  > jest płaska: bez kampanii i sesji (zob. Non-Goals).
 
 ## Non-Functional Requirements
 
@@ -173,13 +206,13 @@ rozróżnienia — np. płatny plan z większą liczbą generowań (zob. Non-Goa
   (ChatGPT itp.); wysokie ryzyko "zero-to-one" bez gwarancji poprawy.
 - **Działanie offline** — MVP nie zapewnia działania bez połączenia z internetem.
 - **Pełna hierarchia Kampania→Sesja→Mapa z CRUD** — MVP operuje na pojedynczej
-  encji Mapa; grupowanie w kampanie/sesje to praca po MVP (etap 2).
+  encji Mapa (płaska biblioteka z FR-009); grupowanie w kampanie/sesje to praca
+  po MVP (etap 2).
 - **Integracja API z Roll20** — eksport pozostaje ręczny (pobranie pliku PNG
   do samodzielnego wgrania), bez automatycznego wgrywania do Roll20.
 - **Dodatkowe motywy graficzne, pułapki, skarby, dekoracje na mapie** — MVP
   generuje tylko podstawowy układ pokoi/korytarzy z jednym tileset; rozszerzenia
   wizualne i treściowe to praca po MVP.
-- Zapis mapy w bibliotece z tytułem należy wyłącznie do etapu 2.
 - **Druk mapy na papierze w skali 1 cal na kratkę (wiele stron)** — po MVP.
   Cel: korzystanie z map zarówno online (Roll20), jak i przy stole. MVP
   zapewnia pobranie jednego PNG w stałej, wysokiej rozdzielczości (140 px na
@@ -216,6 +249,10 @@ rozróżnienia — np. płatny plan z większą liczbą generowań (zob. Non-Goa
    drugorzędnego dla MVP.” Do rozstrzygnięcia przez autora: pozostawienie
    braku dodatkowego kryterium albo jego określenie; biblioteka pozostaje
    poza MVP. Termin rozstrzygnięcia nieustalony.
+
+   Status: rozwiązany 2026-10-18 (PRD v3) — kryterium drugorzędnym jest
+   biblioteka map (US-02, FR-009), wciągnięta do zakresu na potrzeby
+   certyfikacji (zob. Success Criteria → Secondary).
 3. **Tworzenie kont i dostęp bez logowania** — Notatki określają login
    i płaskie role, ale nie sposób tworzenia kont ani zachowanie przy próbie
    dostępu bez zalogowania. Do rozstrzygnięcia przez autora; termin nieustalony.

@@ -7,6 +7,9 @@ export type CellKind = components["schemas"]["CellKind"];
 export type EncounterType = components["schemas"]["EncounterType"];
 // The generated type includes null (a skirmish echoes no boss size); a request names a real size.
 export type BossSize = NonNullable<components["schemas"]["BossSize"]>;
+export type MapParameters = components["schemas"]["MapParameters"];
+export type SavedMap = components["schemas"]["SavedMap"];
+export type SavedMapSummary = components["schemas"]["SavedMapSummary"];
 
 export type GenerateError =
   | { kind: "rate-limited" }
@@ -16,6 +19,30 @@ export type GenerateError =
 export type GenerateResult =
   | { ok: true; map: GeneratedMap }
   | { ok: false; error: GenerateError };
+
+// The saved-map library's failures. not-found is a missing map and another account's map alike
+// (the API never says which). invalid carries the API's errors record: "title" for the title rule,
+// "request" for the 100-map cap, or a generate field key.
+export type LibraryError =
+  | { kind: "not-found" }
+  | { kind: "invalid"; errors: Record<string, string[]> }
+  | { kind: "rate-limited" }
+  | { kind: "network" }
+  | { kind: "http"; status: number };
+
+export type SavedMapResult = { ok: true; savedMap: SavedMap } | { ok: false; error: LibraryError };
+export type SavedMapListResult =
+  | { ok: true; maps: SavedMapSummary[] }
+  | { ok: false; error: LibraryError };
+export type DeleteResult = { ok: true } | { ok: false; error: LibraryError };
+
+export type SaveMapRequest = {
+  title: string;
+  seed: number;
+  roomCount: number;
+  encounter: EncounterType;
+  bossSize: BossSize | null;
+};
 
 // The API's limits (api/Maps/MapModels.cs, MapSize); it answers 400 outside them.
 export const MIN_ROOM_COUNT = 2;
@@ -64,11 +91,107 @@ export async function generateMap({
   // 429 comes from the rate limiter and is not part of the OpenAPI document. A 400 (parameters
   // the API rejects) is reported like any other failed status.
   if (response.status === 429) return { ok: false, error: { kind: "rate-limited" } };
-  if (response.status === 401) {
-    // The session ended mid-use, or this 401 came from a database that was still resuming
-    // (phase 3 review F3); login.tsx reads expired=1 and explains both possibilities.
-    window.location.assign("/login?expired=1");
+  if (redirectIfSessionExpired(response)) {
     return { ok: false, error: { kind: "http", status: 401 } };
   }
   return { ok: false, error: { kind: "http", status: response.status } };
+}
+
+// The one place a 401 from a signed-in page is handled, shared by generateMap and every library
+// call: the session ended mid-use, or this 401 came from a database that was still resuming
+// (phase 3 review F3); login.tsx reads expired=1 and explains both possibilities. Returns whether
+// it redirected, so the caller can stop and return its failure.
+function redirectIfSessionExpired(response: Response): boolean {
+  if (response.status !== 401) return false;
+  sessionRedirect.go("/login?expired=1");
+  return true;
+}
+
+// The navigation behind that redirect, as an object so client.test.ts can observe it: browser-mode
+// tests cannot stub window.location.
+export const sessionRedirect = { go: (url: string) => window.location.assign(url) };
+
+// Maps a library call's failed response to a UI-safe kind. A 400 without an errors record falls
+// back to the generic HTTP error, as register does in auth.ts. 429 comes from SessionCookieGate's
+// per-IP limit and is not part of the OpenAPI document.
+function libraryError(response: Response, body: unknown): LibraryError {
+  if (redirectIfSessionExpired(response)) return { kind: "http", status: 401 };
+  if (response.status === 404) return { kind: "not-found" };
+  if (response.status === 429) return { kind: "rate-limited" };
+  const errors = (body as { errors?: Record<string, string[]> } | undefined)?.errors;
+  if (response.status === 400 && errors) return { kind: "invalid", errors };
+  return { kind: "http", status: response.status };
+}
+
+export async function listSavedMaps(): Promise<SavedMapListResult> {
+  try {
+    const { data, error, response } = await client.GET("/api/maps");
+    if (data) return { ok: true, maps: data };
+    return { ok: false, error: libraryError(response, error) };
+  } catch (error) {
+    reportError("GET /api/maps", error);
+    return { ok: false, error: { kind: "network" } };
+  }
+}
+
+export async function getSavedMap(id: string): Promise<SavedMapResult> {
+  try {
+    const { data, error, response } = await client.GET("/api/maps/{id}", {
+      params: { path: { id } },
+    });
+    if (data) return { ok: true, savedMap: data };
+    return { ok: false, error: libraryError(response, error) };
+  } catch (error) {
+    reportError("GET /api/maps/{id}", error);
+    return { ok: false, error: { kind: "network" } };
+  }
+}
+
+// The server regenerates the map from the seed and parameters and stores that, so the caller
+// shows the map in the response, not the one it already holds (they differ only if the
+// algorithm changed in between).
+export async function saveMap({
+  title,
+  seed,
+  roomCount,
+  encounter,
+  bossSize,
+}: SaveMapRequest): Promise<SavedMapResult> {
+  try {
+    const { data, error, response } = await client.POST("/api/maps", {
+      body: { title: title.trim(), seed, roomCount, encounter, bossSize },
+    });
+    if (data) return { ok: true, savedMap: data };
+    return { ok: false, error: libraryError(response, error) };
+  } catch (error) {
+    reportError("POST /api/maps", error);
+    return { ok: false, error: { kind: "network" } };
+  }
+}
+
+export async function renameSavedMap(id: string, title: string): Promise<SavedMapResult> {
+  try {
+    const { data, error, response } = await client.PATCH("/api/maps/{id}", {
+      params: { path: { id } },
+      body: { title: title.trim() },
+    });
+    if (data) return { ok: true, savedMap: data };
+    return { ok: false, error: libraryError(response, error) };
+  } catch (error) {
+    reportError("PATCH /api/maps/{id}", error);
+    return { ok: false, error: { kind: "network" } };
+  }
+}
+
+export async function deleteSavedMap(id: string): Promise<DeleteResult> {
+  try {
+    const { error, response } = await client.DELETE("/api/maps/{id}", {
+      params: { path: { id } },
+    });
+    if (response.ok) return { ok: true };
+    return { ok: false, error: libraryError(response, error) };
+  } catch (error) {
+    reportError("DELETE /api/maps/{id}", error);
+    return { ok: false, error: { kind: "network" } };
+  }
 }

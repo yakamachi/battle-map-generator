@@ -15,7 +15,8 @@ type GeneratedMap = {
   rooms: { kind: string }[];
 };
 
-// One generate call per browser (2 per run; with map.spec.ts 6 of the 10 allowed per minute).
+// One generate call per browser (2 per run; with map.spec.ts and library.spec.ts 8 of the 10
+// allowed per minute).
 test("generate a boss map with non-default parameters and download it", async ({ page }, testInfo) => {
   await page.goto("/");
   await page.getByLabel("Rooms").selectOption("8");

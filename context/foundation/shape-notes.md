@@ -11,7 +11,7 @@ timeline_budget:
   hard_deadline: 2027-01-10
   after_hours_only: true
 created: 2026-09-16
-updated: 2026-09-30
+updated: 2026-10-18
 checkpoint:
   current_phase: 8
   phases_completed: [1, 2, 3, 4, 5, 6, 7]
@@ -25,7 +25,7 @@ checkpoint:
     - topic: "MVP timeline"
       decision: "commit do dłuższego harmonogramu (4-5 tygodni po godzinach na etap 1) zamiast dalszego przycinania zakresu; zaakceptowane świadomie"
     - topic: "FR-006 (biblioteka z tytułem)"
-      decision: "usunięte z MVP na wniosek rundy sokratejskiej — biblioteka odłożona całkowicie do etapu 2"
+      decision: "usunięte z MVP na wniosek rundy sokratejskiej — biblioteka odłożona całkowicie do etapu 2; ODWRÓCONE 2026-10-18: biblioteka wraca do zakresu jako FR-009 (PRD v3, roadmapa S-05), bo certyfikacja 10xDevs wymaga CRUD na encji domenowej — zob. sekcja Zmiana zakresu (2026-10-18)"
     - topic: "non-goals"
       decision: "AI image-generation jako silnik map, offline, pełna hierarchia Kampania/Sesja, integracja z Roll20 API, dodatkowe motywy/pułapki/skarby — wszystkie jawnie wykluczone z MVP"
     - topic: "parametry generowania (peer feedback 2026-09-30)"
@@ -93,6 +93,8 @@ płatny plan z większą liczbą generowań (odłożone, zob. Forward: post-MVP)
 
 - Nie ustalono osobnego kryterium drugorzędnego dla MVP. Zapis mapy w bibliotece
   z tytułem należy wyłącznie do etapu 2, nie jest kryterium sukcesu MVP.
+  > Nieaktualne od 2026-10-18: biblioteka map jest kryterium drugorzędnym
+  > (PRD v3, US-02, FR-009) — zob. Zmiana zakresu (2026-10-18).
 
 ### Guardrails
 
@@ -237,6 +239,22 @@ Znajomi DM-owie przetestowali MVP po S-01. Triage:
 - **Wiele poziomów ze schodami** — odłożone (Non-Goals).
 - **Generator jako prosty wirtualny stół** — odłożone (Non-Goals).
 
+## Zmiana zakresu (2026-10-18): biblioteka map
+
+Decyzja z rundy sokratejskiej („biblioteka odłożona całkowicie do etapu 2”)
+zostaje odwrócona. Powód: certyfikacja 10xDevs (10xBuilder) wymaga CRUD na
+encji domenowej, a dotąd mapy były tylko generowane i pobierane, nigdy
+zapisywane; termin certyfikacji 2026-11-04.
+
+- **Przyjęte:** zalogowany DM zapisuje wygenerowaną mapę z tytułem, widzi listę
+  własnych map, otwiera mapę, zmienia jej tytuł i ją usuwa (PRD v3: US-02,
+  FR-009; roadmapa S-05, Change ID `saved-maps-library`).
+- **Granice:** mapy widzi i zmienia tylko konto, które je zapisało (mapa innego
+  konta zachowuje się jak nieistniejąca); najwyżej 100 map na konto; tytuł
+  1–80 znaków; zapisywana jest siatka, nie tylko seed.
+- **Bez zmian:** pełna hierarchia Kampania→Sesja→Mapa pozostaje poza MVP
+  (etap 2).
+
 ## Open Questions
 
 (Rozstrzygnięte 2026-09-30: znaczenie parametrów rozmiaru i typu starcia —
@@ -274,8 +292,9 @@ Access Control.)
 - Refaktoryzacja modułu generującego do osobnego, skalowalnego serwisu.
 - Rozbudowa pipeline'u CI/CD o kroki wspierane AI (np. automatyczny code
   review PR, generowanie/aktualizacja dokumentacji w CI).
-- Zapis mapy w bibliotece z tytułem oraz pełna hierarchia Kampania→Sesja→Mapa
-  z CRUD (etap 2, poza kryteriami sukcesu MVP).
+- Pełna hierarchia Kampania→Sesja→Mapa z CRUD (etap 2, poza kryteriami
+  sukcesu MVP). Zapis mapy w bibliotece z tytułem stał tu do 2026-10-18; od
+  tej daty jest w zakresie (zob. Zmiana zakresu (2026-10-18)).
 - Te punkty są opcjonalne i zależne od dostępnego czasu — nie są wymogiem
   MVP.
 

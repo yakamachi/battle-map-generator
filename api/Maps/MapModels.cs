@@ -6,15 +6,16 @@ namespace BattleMapGenerator.Api.Maps;
 
 // The semantic grid shared with web/: what each cell is, never which sprite to draw.
 // Serialised as camelCase strings ("void", "floor", ...) through MapJson.
+// Persisted in SavedMaps (one byte per cell, see GridCodec): append new values, never renumber.
 public enum CellKind
 {
-    Void,
-    Floor,
-    Corridor,
-    Wall,
-    Door,
+    Void = 0,
+    Floor = 1,
+    Corridor = 2,
+    Wall = 3,
+    Door = 4,
     // The floor of the boss arena; walkable like Floor.
-    BossArena,
+    BossArena = 5,
 }
 
 public enum EncounterType
@@ -30,10 +31,11 @@ public enum BossSize
     Gargantuan,
 }
 
+// Persisted in SavedMaps (one byte per room, see GridCodec): append new values, never renumber.
 public enum RoomKind
 {
-    Room,
-    BossArena,
+    Room = 0,
+    BossArena = 1,
 }
 
 // The floor rectangle of a room; its walls lie on the ring just outside it.

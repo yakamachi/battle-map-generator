@@ -73,8 +73,9 @@ test.describe("pointer and keyboard", () => {
 
   test("idle-focus", async ({ page }) => {
     await openHome(page);
-    // The protected layout's header (Log out) comes first, then Rooms and Encounter.
-    for (let i = 0; i < 4; i++) await page.keyboard.press("Tab");
+    // The protected layout's header (Generator, My maps, Log out) comes first, then Rooms and
+    // Encounter.
+    for (let i = 0; i < 6; i++) await page.keyboard.press("Tab");
     await expect(page.getByRole("button", { name: "Generate", exact: true })).toBeFocused();
     await shot(page, "idle-focus");
   });

@@ -154,6 +154,9 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 builder.Services.AddAuthorization();
 
+// Saved maps take their timestamps from here, so tests can control the clock.
+builder.Services.AddSingleton(TimeProvider.System);
+
 // Keys live in the database so restarts and idle unloads keep the same key ring.
 // A fixed application name keeps purpose isolation independent of the content root path.
 builder.Services.AddDataProtection()
@@ -231,6 +234,7 @@ app.MapHealthChecks("/api/health/ready", new HealthCheckOptions { Predicate = ch
     });
 
 app.MapMapEndpoints();
+app.MapSavedMapEndpoints();
 app.MapAuthEndpoints();
 
 // Unknown API routes are 404s, never the SPA shell.
