@@ -306,5 +306,5 @@ isolation rule — each test still gets its own factory):
 
 #### Automated
 
-- [x] 2.1 dotnet test api.Tests --filter AbuseResistantQuotaTests passes
-- [x] 2.2 dotnet test api.Tests (full suite) passes with no regressions
+- [x] 2.1 dotnet test api.Tests --filter AbuseResistantQuotaTests passes — e8efda2
+- [x] 2.2 dotnet test api.Tests (full suite) passes with no regressions — e8efda2
