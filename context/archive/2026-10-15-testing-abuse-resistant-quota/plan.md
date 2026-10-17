@@ -295,16 +295,16 @@ isolation rule — each test still gets its own factory):
 
 #### Automated
 
-- [x] 1.1 dotnet test api.Tests passes with no regressions — c5944fc
-- [x] 1.2 dotnet build succeeds with no unexpected OpenAPI diff — c5944fc
+- [x] 1.1 dotnet test api.Tests passes with no regressions — b5f7fcf
+- [x] 1.2 dotnet build succeeds with no unexpected OpenAPI diff — b5f7fcf
 
 #### Manual
 
-- [x] 1.3 A single logged-in generate call still returns 200 locally after the change — c5944fc
+- [x] 1.3 A single logged-in generate call still returns 200 locally after the change — b5f7fcf
 
 ### Phase 2: Multi-IP test seam + the abuse-resistant quota test
 
 #### Automated
 
-- [x] 2.1 dotnet test api.Tests --filter AbuseResistantQuotaTests passes — e8efda2
-- [x] 2.2 dotnet test api.Tests (full suite) passes with no regressions — e8efda2
+- [x] 2.1 dotnet test api.Tests --filter AbuseResistantQuotaTests passes — b5f7fcf
+- [x] 2.2 dotnet test api.Tests (full suite) passes with no regressions — b5f7fcf
