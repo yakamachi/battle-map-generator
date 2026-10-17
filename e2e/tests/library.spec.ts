@@ -22,7 +22,7 @@ test("save, list, open, rename and delete a map", async ({ page }, testInfo) => 
   const saveDialog = page.getByRole("dialog");
   await saveDialog.getByLabel("Title").fill(title);
   await saveDialog.getByRole("button", { name: "Save", exact: true }).click();
-  await expect(saveDialog.getByRole("heading", { name: "Map saved" })).toBeVisible();
+  await expect(saveDialog.getByRole("heading", { name: "Map saved", exact: true })).toBeVisible();
   await saveDialog.getByRole("button", { name: "Close" }).click();
   await expect(saveDialog).toBeHidden();
   // Home now shows the server's regeneration of the same seed.
@@ -55,7 +55,7 @@ test("save, list, open, rename and delete a map", async ({ page }, testInfo) => 
   // 5. Deleting it, once confirmed, removes it from the list.
   await page.getByRole("button", { name: `Delete ${renamed}`, exact: true }).click();
   const deleteDialog = page.getByRole("dialog");
-  await expect(deleteDialog.getByRole("heading", { name: "Delete map?" })).toBeVisible();
+  await expect(deleteDialog.getByRole("heading", { name: "Delete map?", exact: true })).toBeVisible();
   await deleteDialog.getByRole("button", { name: "Delete", exact: true }).click();
   await expect(deleteDialog).toBeHidden();
   await expect(page.getByRole("heading", { name: renamed, exact: true })).toHaveCount(0);
@@ -68,5 +68,5 @@ test("save, list, open, rename and delete a map", async ({ page }, testInfo) => 
   await expect(page.getByRole("heading", { name: renamed, exact: true })).toHaveCount(0);
 
   await page.goto(savedMapUrl);
-  await expect(page.getByRole("heading", { name: "Map not found", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Map not found", exact: true, level: 1 })).toBeVisible();
 });

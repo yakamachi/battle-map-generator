@@ -34,7 +34,7 @@ Verify with: `dotnet test api.Tests`, `npm run typecheck && npm test && npm run 
 - The body is read and validated by hand, with camelCase error keys (`MapEndpoints.cs:81-137`, lessons "Triage a .NET native swap"). New endpoints use the same approach rather than duplicating it.
 - `{id:guid}` route constraints keep `/api/maps/{id}` from colliding with `POST /api/maps/generate`. A non-guid id falls through to the `/api` 404 fallback.
 - A two-account isolation test pattern exists (`api.Tests/AuthEndpointTests.cs:234-245`), and so does the unreachable-database 401 test (`MapEndpointTests.cs:123-136`).
-- The e2e budget is documented in `e2e/AGENTS.md`: 6 of the 10/min generate permits are used per run today.
+- The e2e budget is documented in `e2e/AGENTS.md`: 8 of the 10/min generate permits are used per run (6 before this change; Phase 4 added 2).
 
 ## What We're NOT Doing
 
@@ -603,13 +603,13 @@ Move the library from "deferred" to "in scope" everywhere the product and operat
 
 #### Automated
 
-- [x] 4.1 E2E specs typecheck: `cd e2e && npm run typecheck`
-- [x] 4.2 Full e2e run passes in Chromium and Firefox
-- [x] 4.3 Break-check: a delete that doesn't delete turns `library.spec.ts` red
+- [x] 4.1 E2E specs typecheck: `cd e2e && npm run typecheck` — aeeb753
+- [x] 4.2 Full e2e run passes in Chromium and Firefox — aeeb753
+- [x] 4.3 Break-check: a delete that doesn't delete turns `library.spec.ts` red — aeeb753
 
 #### Manual
 
-- [x] 4.4 No leftover library rows for the e2e account after a full run
+- [x] 4.4 No leftover library rows for the e2e account after a full run — aeeb753
 
 ### Phase 5: Foundation docs
 
