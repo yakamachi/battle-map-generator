@@ -82,7 +82,7 @@ orchestrator updates Status as artifacts appear on disk.
 |---|---|---|---|---|---|---|
 | 1 | Invariant and boss-arena sweep | Prove every valid parameter combination yields a valid grid and a correctly sized boss arena | #1, #6 | unit (parametrized sweep) | complete | context/changes/testing-invariant-boss-sweep/ |
 | 2 | Seed determinism | Prove the same seed and parameters reproduce the same grid and render variant, across requests and re-renders | #2 | unit, integration, web render test | complete | context/changes/testing-seed-determinism/ |
-| 3 | Abuse-resistant quota | Turn "the per-account limit protects the plan" into a measured, tested ceiling | #3 | integration under scripted multi-account load | not started | — |
+| 3 | Abuse-resistant quota | Turn "the per-account limit protects the plan" into a measured, tested ceiling | #3 | integration under scripted multi-account load | complete | context/changes/testing-abuse-resistant-quota/ |
 | 4 | Generation cost budget | Measure CPU, wall time and response size on the target host, then gate on a budget | #4 | integration timing test; one-off F1 measurement | not started | — |
 | 5 | Cold-start resilience | Automated guard for the first request after idle | #5 | integration (retry-then-succeed); probe as gate candidate | not started | — |
 
@@ -160,7 +160,12 @@ the relevant rollout phase ships; before that, the sub-section reads
 
 ### 6.3 Adding a rate-limit ceiling test
 
-TBD — see §3 Phase 3 (scripted multi-account load against the `auth` and `generate` policies).
+- **Location**: `api.Tests/AbuseResistantQuotaTests.cs` for the system-wide ceilings; per-account/per-IP 429 tests stay in `api.Tests/MapEndpointTests.cs` and `api.Tests/AuthEndpointTests.cs`.
+- **Reference test**: `Registrations_spread_across_client_ips_stop_at_the_global_auth_limit` and `Generate_calls_spread_across_accounts_stop_at_the_global_generate_limit`.
+- **Run**: `dotnet test api.Tests --filter AbuseResistantQuotaTests`.
+- **Mechanism**: `ApiFactory.CreateClientFromIp(ip)` tags every request with `X-Forwarded-For` (`Infrastructure/ForwardedForHandler.cs`). The test host sets `ForwardedHeaders_Enabled`, the key behind production's `ASPNETCORE_FORWARDEDHEADERS_ENABLED`, so each simulated IP gets its own `auth` bucket. Clients without the header share the "unknown" bucket. The limiters count per app instance, so every test builds its own `ApiFactory`.
+- **Adding a ceiling test**: keep every caller inside its own budget (`AuthEndpoints.PerIpAuthLimit`, `MapEndpoints.PerAccountGenerateLimit`), so that only the shared ceiling (`GlobalAuthLimit`, `GlobalGenerateLimit`) can refuse a request. Derive request counts from those constants, never from literals. Send requests sequentially and round-robin across callers, then assert the exact allowed total. Prove a new ceiling with a break-check: unchain its global limiter in `api/Program.cs`, and the test must go red.
+- **Not here**: measuring CPU or bandwidth cost per generation (§6.4), and `X-Forwarded-For` spoofing. A global cap bounds throughput however many IPs a client fakes.
 
 ### 6.4 Adding a generation cost budget test
 

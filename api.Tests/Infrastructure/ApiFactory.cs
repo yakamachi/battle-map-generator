@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.Mvc.Testing.Handlers;
 using Microsoft.Extensions.Configuration;
 
 namespace BattleMapGenerator.Api.Tests.Infrastructure;
@@ -36,8 +37,17 @@ public sealed class ApiFactory(string? connectionString, string? readyKey = ApiF
         {
             ["ConnectionStrings:AppDb"] = connectionString,
             ["Health:ReadyKey"] = readyKey,
+            // The configuration key behind production's ASPNETCORE_FORWARDEDHEADERS_ENABLED app setting:
+            // the framework then reads X-Forwarded-For/-Proto from any proxy, as on App Service.
+            // A request without the header keeps TestServer's null client IP (the "unknown" bucket).
+            ["ForwardedHeaders_Enabled"] = "true",
         }));
     }
+
+    // A client whose requests arrive from the given client IP, so a test can spread traffic across many
+    // per-IP buckets of one app instance. It keeps its session cookie like CreateClient's clients do.
+    public HttpClient CreateClientFromIp(string simulatedIp) =>
+        CreateDefaultClient(new CookieContainerHandler(), new ForwardedForHandler(simulatedIp));
 
     public HttpClient CreateReadyClient()
     {

@@ -39,6 +39,11 @@ builder.Services.ConfigureHttpJsonOptions(options => MapJson.Configure(options.S
 // unreachable; it is there because a null partition key throws.
 // The per-IP auth policy uses the "unknown" bucket for the same reason: TestServer leaves the remote
 // address null. Behind App Service the client IP comes from X-Forwarded-For (ASPNETCORE_FORWARDEDHEADERS_ENABLED).
+// Each per-key limiter is chained with one shared global limiter per policy (GlobalGenerateLimit /
+// GlobalAuthLimit per minute), bounding aggregate throughput however many accounts or IPs exist.
+// AddPolicy takes no pre-built limiter, so the chain is built in the partition factory and the global
+// limiter is captured by closure. The per-key limiter goes first; a request refused only by the global
+// one still spends its per-key permit for the window, since fixed-window leases are not given back.
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -48,23 +53,41 @@ builder.Services.AddRateLimiter(options =>
         context.HttpContext.Response.Headers.RetryAfter = ((int)Math.Ceiling(retryAfter.TotalSeconds)).ToString();
         return ValueTask.CompletedTask;
     };
-    options.AddPolicy(MapEndpoints.GenerateRateLimitPolicy, httpContext => RateLimitPartition.GetFixedWindowLimiter(
+
+    var generateGlobalLimiter = new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
+    {
+        PermitLimit = MapEndpoints.GlobalGenerateLimit,
+        Window = TimeSpan.FromMinutes(1),
+        QueueLimit = 0,
+    });
+    options.AddPolicy(MapEndpoints.GenerateRateLimitPolicy, httpContext => RateLimitPartition.Get(
         httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
-        _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = 10,
-            Window = TimeSpan.FromMinutes(1),
-            QueueLimit = 0,
-        }));
+        _ => RateLimiter.CreateChained(
+            new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = MapEndpoints.PerAccountGenerateLimit,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            }),
+            generateGlobalLimiter)));
+
     // Register and login are public and hash a password: 10 calls per minute per client IP across both.
-    options.AddPolicy(AuthEndpoints.AuthRateLimitPolicy, httpContext => RateLimitPartition.GetFixedWindowLimiter(
+    var authGlobalLimiter = new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
+    {
+        PermitLimit = AuthEndpoints.GlobalAuthLimit,
+        Window = TimeSpan.FromMinutes(1),
+        QueueLimit = 0,
+    });
+    options.AddPolicy(AuthEndpoints.AuthRateLimitPolicy, httpContext => RateLimitPartition.Get(
         httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-        _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = 10,
-            Window = TimeSpan.FromMinutes(1),
-            QueueLimit = 0,
-        }));
+        _ => RateLimiter.CreateChained(
+            new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = AuthEndpoints.PerIpAuthLimit,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            }),
+            authGlobalLimiter)));
 });
 
 // Account store. The connection string is read when the context is built, not at startup:
