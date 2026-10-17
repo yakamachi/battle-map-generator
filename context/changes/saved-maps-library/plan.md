@@ -86,6 +86,8 @@ Add the `SavedMap` table and migration, and five owner-scoped endpoints with val
 
 **Files**: `api/Data/SavedMap.cs` (new), `api/Data/AppDbContext.cs`, `api/Migrations/<timestamp>_SavedMaps.cs` (new, generated)
 
+> Superseded by Phase 2 §3: the `MapJson` column below was replaced by parameter columns and `Cells`/`Rooms` bytes before merge (impl-review phase 1 F1/F3).
+
 **Intent**: Store one row per saved map, owned by an Identity user. Deleting the account deletes its maps.
 
 **Contract**: Table `SavedMaps`:
@@ -304,7 +306,7 @@ Replace the `MapJson` column with compact columns: parameters as columns, cells 
 
 - API tests pass: `dotnet test api.Tests`
 - Contract unchanged: `dotnet build api && (cd web && npm run api:types) && git diff --exit-code api/BattleMapGenerator.Api.json web/app/api/schema.d.ts` (relative to Phase 1's commit)
-- Break-check: swapping two values in the cell encoding (for example Floor and Wall) turns the codec and round-trip tests red
+- Break-check: swapping two values in the cell encoding (for example Floor and Wall) turns the codec pin tests red (the enum-number and exact-bytes tests; round-trip tests stay green by design, since encode and decode change together)
 
 #### Manual Verification:
 
@@ -615,9 +617,9 @@ Move the library from "deferred" to "in scope" everywhere the product and operat
 
 #### Automated
 
-- [x] 5.1 No stale "deferred" wording remains in `context/foundation/`
-- [x] 5.2 Roadmap carries S-05 with Change ID `saved-maps-library`
+- [x] 5.1 No stale "deferred" wording remains in `context/foundation/` — de54b5e
+- [x] 5.2 Roadmap carries S-05 with Change ID `saved-maps-library` — de54b5e
 
 #### Manual
 
-- [x] 5.3 Doc edits read correctly and agree with the implemented behaviour
+- [x] 5.3 Doc edits read correctly and agree with the implemented behaviour — de54b5e

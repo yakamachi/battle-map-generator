@@ -17,8 +17,8 @@ import type { LibraryError, SavedMap, SavedMapResult } from "~/api/client";
 import { hasNonTitleError, libraryErrorMessage, titleErrorOf } from "~/lib/library-errors";
 
 // The API's title rule (api/Maps/SavedMapModels.cs): trimmed, then 1 to 80 characters. The input
-// enforces the length and presence; the API's message covers the rest (only spaces, control
-// characters).
+// enforces the length and presence; the API's message covers the rest (only spaces, control or
+// invisible format characters, line separators).
 export const MAX_TITLE_LENGTH = 80;
 
 type MapTitleDialogProps = {

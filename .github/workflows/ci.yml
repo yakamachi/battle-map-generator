@@ -38,6 +38,8 @@ jobs:
         run: |
           dotnet tool restore
           dotnet restore api
+          # A model change without its migration would deploy no schema change; fail it here.
+          dotnet ef migrations has-pending-model-changes --project api
           dotnet ef migrations bundle --project api --self-contained -r linux-x64 -o efbundle/efbundle --force
           dotnet publish api -c Release -o publish
 
@@ -65,7 +67,8 @@ jobs:
         working-directory: web
         run: npm run ui:scan
 
-  # Screenshot gate for the home view (API mocked), in the image the baselines were made in.
+  # Screenshot gate for the home, auth and library views (API mocked), in the image the baselines
+  # were made in.
   visual:
     runs-on: ubuntu-latest
     timeout-minutes: 15

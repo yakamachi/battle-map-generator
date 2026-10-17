@@ -107,7 +107,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Change ID:** regenerate-with-new-seed
 - **PRD refs:** US-01, FR-005
 - **Prerequisites:** S-01
-- **Parallel with:** F-01, S-03, S-04
+- **Parallel with:** F-01, S-03, S-04, S-05
 - **Blockers:** —
 - **Unknowns:** Może być w większości gotowe (stan 2026-10-18): „Generuj” na stronie głównej nie wysyła seeda, więc każde kliknięcie daje nowy losowy układ przy tych samych parametrach, a `e2e/tests/map.spec.ts` sprawdza, że drugi pobrany plik różni się od pierwszego. Do ustalenia: etykieta „generuj ponownie” i test, że zmienia się sam seed. Przy planowaniu warto też rozważyć, czy pokazywać DM-owi „Seed: N” — po S-05 zapisana mapa przechowuje siatkę, a w UI nie da się wpisać seeda, więc seed służy już głównie jako identyfikator (nazwa pliku PNG, zgłoszenia błędów).
 - **Risk:** Mały slice, ale sprawdza determinizm: ten sam seed musi dawać tę samą mapę, a nowy — inną; każda regeneracja obciąża limity CPU planu F1.

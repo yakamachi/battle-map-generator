@@ -20,7 +20,7 @@ A DM toolkit that generates grid-aligned D&D battle maps. Monorepo: `api/` (ASP.
 
 - Deterministic: the same seed and parameters give the same grid. Use the project's own small seeded PRNG, never `System.Random` or `Math.random()`.
 - Any randomness in `web/` (sprite variants, decoration) is derived from the response's seed, so re-rendering the same map always looks the same.
-- A seed is only stable while the algorithm is unchanged. Improving the generator is expected to change which map a seed produces; tests pin fixed-seed grids and are updated deliberately when the algorithm changes. If maps are ever saved, store the grid, not only the seed.
+- A seed is only stable while the algorithm is unchanged. Improving the generator is expected to change which map a seed produces; tests pin fixed-seed grids and are updated deliberately when the algorithm changes. Saved maps (the library) store the grid, as bytes, never only the seed, so they keep their layout when the algorithm changes.
 - The PRD guardrail (the map is always aligned to the grid, with no shifted or cut-off tiles) is tested on both sides: grid invariants in `api/`, rendered output in `web/`.
 
 ## Testing

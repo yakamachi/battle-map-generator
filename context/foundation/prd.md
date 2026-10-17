@@ -101,9 +101,9 @@ już MVP i dali feedback (2026-09-30); od tego momentu mogą sami założyć kon
 - Lista pokazuje tylko mapy zalogowanego konta, od najnowszej
 - Otwarta mapa ma ten sam układ i ten sam seed co przy zapisie, a pobrany z niej
   PNG odpowiada podglądowi
-- Tytuł jest wymagany: po przycięciu spacji 1–80 znaków, bez znaków
-  sterujących ani niewidocznych (np. spacji o zerowej szerokości); tytuły mogą
-  się powtarzać
+- Tytuł jest wymagany: po usunięciu białych znaków z początku i końca 1–80
+  znaków, bez znaków sterujących ani niewidocznych (np. spacji o zerowej
+  szerokości); tytuły mogą się powtarzać
 - Mapa innego konta jest niedostępna — przy otwarciu, zmianie tytułu i
   usunięciu zachowuje się jak mapa, która nie istnieje
 - Konto mieści najwyżej 100 zapisanych map; przy limicie zapis kończy się
