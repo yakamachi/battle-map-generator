@@ -25,6 +25,50 @@ Accept: application/json
 
 ###
 
+# Saved maps: the caller's own library. Each needs a session; replace {{map_id}} with an id from
+# the list or from a save's Location header. A map another account owns answers 404.
+@map_id = 00000000-0000-0000-0000-000000000000
+
+GET {{HostAddress}}/api/maps
+Accept: application/json
+
+###
+
+# Regenerates the map from seed and parameters and stores it; 201 with Location. At most 100 per account.
+POST {{HostAddress}}/api/maps
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "Goblin warren",
+  "seed": 42,
+  "roomCount": 8,
+  "encounter": "boss",
+  "bossSize": "huge"
+}
+
+###
+
+GET {{HostAddress}}/api/maps/{{map_id}}
+Accept: application/json
+
+###
+
+PATCH {{HostAddress}}/api/maps/{{map_id}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "Goblin warren, cleared"
+}
+
+###
+
+# 204, then 404 for a second delete.
+DELETE {{HostAddress}}/api/maps/{{map_id}}
+
+###
+
 # Auth needs the local database (docker compose up -d, then dotnet ef database update --project api).
 # Register and login share 10 calls per minute per client IP. Both answer with the session cookie,
 # which the client keeps for the requests below.

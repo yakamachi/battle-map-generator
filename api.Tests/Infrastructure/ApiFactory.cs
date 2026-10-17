@@ -2,7 +2,9 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Mvc.Testing.Handlers;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BattleMapGenerator.Api.Tests.Infrastructure;
 
@@ -29,6 +31,9 @@ public sealed class ApiFactory(string? connectionString, string? readyKey = ApiF
     // fallback answer 200, so an /api path that ever reaches it fails the tests.
     private readonly string _webRoot = CreateStubWebRoot();
 
+    // Replaces the app's clock (TimeProvider.System) when set, so a test can pin saved-map timestamps.
+    public TimeProvider? Time { get; init; }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
@@ -42,6 +47,10 @@ public sealed class ApiFactory(string? connectionString, string? readyKey = ApiF
             // A request without the header keeps TestServer's null client IP (the "unknown" bucket).
             ["ForwardedHeaders_Enabled"] = "true",
         }));
+        if (Time is { } time)
+        {
+            builder.ConfigureTestServices(services => services.AddSingleton(time));
+        }
     }
 
     // A client whose requests arrive from the given client IP, so a test can spread traffic across many
