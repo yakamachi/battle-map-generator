@@ -603,13 +603,13 @@ Move the library from "deferred" to "in scope" everywhere the product and operat
 
 #### Automated
 
-- [ ] 4.1 E2E specs typecheck: `cd e2e && npm run typecheck`
-- [ ] 4.2 Full e2e run passes in Chromium and Firefox
-- [ ] 4.3 Break-check: a delete that doesn't delete turns `library.spec.ts` red
+- [x] 4.1 E2E specs typecheck: `cd e2e && npm run typecheck`
+- [x] 4.2 Full e2e run passes in Chromium and Firefox
+- [x] 4.3 Break-check: a delete that doesn't delete turns `library.spec.ts` red
 
 #### Manual
 
-- [ ] 4.4 No leftover library rows for the e2e account after a full run
+- [x] 4.4 No leftover library rows for the e2e account after a full run
 
 ### Phase 5: Foundation docs
 
