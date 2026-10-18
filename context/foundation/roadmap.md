@@ -46,7 +46,7 @@ DM przed sesją D&D potrzebuje czytelnej mapy bitewnej wyrównanej do siatki, a 
 | S-02 | regenerate-with-new-seed | DM generuje mapę ponownie i dostaje inny układ przy tych samych parametrach           | S-01          | US-01, FR-005                 | ready    |
 | S-03 | encounter-parameters     | DM wybiera liczbę pokoi (2–12) i typ starcia; walka z bossem dodaje arenę skalowaną rozmiarem bossa | S-01 | US-01, FR-002, Business Logic | done |
 | S-04 | dm-email-login           | DM zakłada konto i loguje się e-mailem i hasłem; bez zalogowania nie wygeneruje mapy, a generowania na konto są limitowane | F-01, S-01 | US-01, FR-001, NFR (dane konta niewidoczne dla innych kont), Access Control | done |
-| S-05 | saved-maps-library       | DM zapisuje mapę z tytułem w swojej bibliotece, a potem ją otwiera, zmienia jej tytuł i ją usuwa | S-01, S-04 | US-02, FR-009, NFR (dane konta niewidoczne dla innych kont), Success Criteria (Secondary) | in-progress |
+| S-05 | saved-maps-library       | DM zapisuje mapę z tytułem w swojej bibliotece, a potem ją otwiera, zmienia jej tytuł i ją usuwa | S-01, S-04 | US-02, FR-009, NFR (dane konta niewidoczne dla innych kont), Success Criteria (Secondary) | done |
 
 ## Streams
 
@@ -149,7 +149,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Pierwsza encja domenowa w bazie i pierwsze dane filtrowane po właścicielu — wyciek cudzej mapy łamie NFR izolacji kont, a każda zapisana mapa zużywa miejsce w darmowej bazie; zapis generuje mapę ponownie na serwerze poza limitami generowania. Dodane 2026-10-18 (PRD v3) na potrzeby certyfikacji 10xDevs (termin 2026-11-04).
-- **Status:** in-progress
+- **Status:** done
 
 ## Backlog Handoff
 
@@ -160,7 +160,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-02       | regenerate-with-new-seed | Regeneracja mapy z nowym seedem                              | yes                   | Run `/10x-plan regenerate-with-new-seed`; nie równolegle z S-03 (wspólny formularz i żądanie) |
 | S-03       | encounter-parameters     | Parametry starcia: liczba pokoi i arena bossa                 | yes                   | Run `/10x-plan encounter-parameters`; zalecana para równoległa z S-04 |
 | S-04       | dm-email-login           | Rejestracja i logowanie e-mail/hasło, ochrona i limit generowania | yes              | Run `/10x-plan dm-email-login`; zalecana para równoległa z S-03 |
-| S-05       | saved-maps-library       | Biblioteka map: zapis z tytułem, lista, otwarcie, zmiana tytułu, usunięcie | yes            | Plan gotowy (`context/changes/saved-maps-library/plan.md`); w realizacji |
+| S-05       | saved-maps-library       | Biblioteka map: zapis z tytułem, lista, otwarcie, zmiana tytułu, usunięcie | yes            | Zarchiwizowane 2026-10-18 → `context/archive/2026-10-17-saved-maps-library/` |
 
 ## Open Roadmap Questions
 
@@ -196,3 +196,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **S-01: DM klika „generuj” i widzi mapę z pokojami i korytarzami wyrównaną do siatki (na jednym domyślnym rozmiarze i typie starcia), a potem pobiera PNG w stałej rozdzielczości 140 px na kratkę, zgodny z podglądem, w Chrome i Firefox.** — Archived 2026-09-29 → `context/archive/2026-09-25-first-map-download/`. Lesson: —.
 - **S-03: DM wybiera liczbę pokoi (2–12, domyślnie 6) i typ starcia (potyczka / walka z bossem); mapa ma dokładnie tyle pokoi, a przy walce z bossem jeden z nich jest oznaczoną areną o podłodze co najmniej 8×8 / 10×10 / 12×12 dla bossa Dużego / Ogromnego / Gigantycznego.** — Archived 2026-10-02 → `context/archive/2026-09-30-encounter-parameters/`. Lesson: —.
 - **S-04: DM zakłada konto (otwarta rejestracja, bez weryfikacji e-mail) i loguje się e-mailem i hasłem; niezalogowany użytkownik widzi tylko logowanie / rejestrację i nie może wygenerować mapy; liczba generowań na konto jest ograniczona; pełny przepływ rejestracja/logowanie → generowanie → regeneracja → pobranie działa w Chrome i Firefox na wdrożonej aplikacji.** — Archived 2026-10-02 → `context/archive/2026-09-30-dm-email-login/`. Lesson: —.
+- **S-05: Zalogowany DM zapisuje wygenerowaną mapę pod tytułem (1–80 znaków), widzi w „Moje mapy” listę tylko własnych map od najnowszej, otwiera mapę (ten sam układ, seed i PNG co przy zapisie), zmienia jej tytuł i ją usuwa; mapa innego konta zachowuje się jak nieistniejąca, a konto mieści najwyżej 100 map; przepływ działa w Chrome i Firefox.** — Archived 2026-10-18 → `context/archive/2026-10-17-saved-maps-library/`. Lesson: —.

@@ -564,62 +564,62 @@ Move the library from "deferred" to "in scope" everywhere the product and operat
 
 #### Automated
 
-- [x] 1.1 API tests pass: `dotnet test api.Tests` — 3e9afdf
-- [x] 1.2 Contract has no drift: `dotnet build api && (cd web && npm run api:types) && git diff --exit-code api/BattleMapGenerator.Api.json web/app/api/schema.d.ts` — 3e9afdf
-- [x] 1.3 Web still typechecks against the new schema: `cd web && npm run typecheck` — 3e9afdf
-- [x] 1.4 Break-check: dropping the owner filter turns the isolation test red — 3e9afdf
+- [x] 1.1 API tests pass: `dotnet test api.Tests` — 8d8ae13
+- [x] 1.2 Contract has no drift: `dotnet build api && (cd web && npm run api:types) && git diff --exit-code api/BattleMapGenerator.Api.json web/app/api/schema.d.ts` — 8d8ae13
+- [x] 1.3 Web still typechecks against the new schema: `cd web && npm run typecheck` — 8d8ae13
+- [x] 1.4 Break-check: dropping the owner filter turns the isolation test red — 8d8ae13
 
 #### Manual
 
-- [x] 1.5 Five routes behave as specified against the local stack — 3e9afdf
+- [x] 1.5 Five routes behave as specified against the local stack — 8d8ae13
 
 ### Phase 2: Compact storage
 
 #### Automated
 
-- [x] 2.1 API tests pass: `dotnet test api.Tests` — 161484e
-- [x] 2.2 Contract unchanged: OpenAPI json and `schema.d.ts` show no drift — 161484e
-- [x] 2.3 Break-check: swapping two cell encodings turns the codec pin tests red (round-trip stays green by design) — 161484e
+- [x] 2.1 API tests pass: `dotnet test api.Tests` — 8d8ae13
+- [x] 2.2 Contract unchanged: OpenAPI json and `schema.d.ts` show no drift — 8d8ae13
+- [x] 2.3 Break-check: swapping two cell encodings turns the codec pin tests red (round-trip stays green by design) — 8d8ae13
 
 #### Manual
 
-- [x] 2.4 Local stack works after rollback and re-applied migration; table holds bytes, no JSON — 161484e
+- [x] 2.4 Local stack works after rollback and re-applied migration; table holds bytes, no JSON — 8d8ae13
 
 ### Phase 3: Web UI
 
 #### Automated
 
-- [x] 3.1 Typecheck passes: `cd web && npm run typecheck` — 396515c
-- [x] 3.2 Unit and render tests pass: `cd web && npm test` — 396515c
-- [x] 3.3 UI token scan passes: `cd web && npm run ui:scan` — 396515c
-- [x] 3.4 Visual gate passes with the new baselines: `cd web && npm run visual:docker` — 396515c
-- [x] 3.5 Production build succeeds: `cd web && npm run build` — 396515c
+- [x] 3.1 Typecheck passes: `cd web && npm run typecheck` — 8d8ae13
+- [x] 3.2 Unit and render tests pass: `cd web && npm test` — 8d8ae13
+- [x] 3.3 UI token scan passes: `cd web && npm run ui:scan` — 8d8ae13
+- [x] 3.4 Visual gate passes with the new baselines: `cd web && npm run visual:docker` — 8d8ae13
+- [x] 3.5 Production build succeeds: `cd web && npm run build` — 8d8ae13
 
 #### Manual
 
-- [x] 3.6 Full save/list/open/rename/delete path works in Chrome and Firefox — 396515c
-- [x] 3.7 Dialogs are keyboard-operable and return focus — 396515c
-- [x] 3.8 Home preview height unchanged at desktop and phone widths — 396515c
+- [x] 3.6 Full save/list/open/rename/delete path works in Chrome and Firefox — 8d8ae13
+- [x] 3.7 Dialogs are keyboard-operable and return focus — 8d8ae13
+- [x] 3.8 Home preview height unchanged at desktop and phone widths — 8d8ae13
 
 ### Phase 4: End-to-end lifecycle
 
 #### Automated
 
-- [x] 4.1 E2E specs typecheck: `cd e2e && npm run typecheck` — aeeb753
-- [x] 4.2 Full e2e run passes in Chromium and Firefox — aeeb753
-- [x] 4.3 Break-check: a delete that doesn't delete turns `library.spec.ts` red — aeeb753
+- [x] 4.1 E2E specs typecheck: `cd e2e && npm run typecheck` — 8d8ae13
+- [x] 4.2 Full e2e run passes in Chromium and Firefox — 8d8ae13
+- [x] 4.3 Break-check: a delete that doesn't delete turns `library.spec.ts` red — 8d8ae13
 
 #### Manual
 
-- [x] 4.4 No leftover library rows for the e2e account after a full run — aeeb753
+- [x] 4.4 No leftover library rows for the e2e account after a full run — 8d8ae13
 
 ### Phase 5: Foundation docs
 
 #### Automated
 
-- [x] 5.1 No stale "deferred" wording remains in `context/foundation/` — de54b5e
-- [x] 5.2 Roadmap carries S-05 with Change ID `saved-maps-library` — de54b5e
+- [x] 5.1 No stale "deferred" wording remains in `context/foundation/` — 8d8ae13
+- [x] 5.2 Roadmap carries S-05 with Change ID `saved-maps-library` — 8d8ae13
 
 #### Manual
 
-- [x] 5.3 Doc edits read correctly and agree with the implemented behaviour — de54b5e
+- [x] 5.3 Doc edits read correctly and agree with the implemented behaviour — 8d8ae13
