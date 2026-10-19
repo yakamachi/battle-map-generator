@@ -348,29 +348,29 @@ These changes were agreed during phase 1 manual testing and its review (`reviews
 
 #### Automated
 
-- [x] 1.1 Type checking passes: `npm --prefix web run typecheck` — 09a1096
-- [x] 1.2 UI contract scan passes: `npm --prefix web run ui:scan` — 09a1096
-- [x] 1.3 Unit and rendering tests pass in Chromium and Firefox, including the new `generate-button.test.ts`: `npm --prefix web test` — 09a1096
-- [x] 1.4 Production build succeeds: `npm --prefix web run build` — 09a1096
+- [x] 1.1 Type checking passes: `npm --prefix web run typecheck` — 4e5b36a
+- [x] 1.2 UI contract scan passes: `npm --prefix web run ui:scan` — 4e5b36a
+- [x] 1.3 Unit and rendering tests pass in Chromium and Firefox, including the new `generate-button.test.ts`: `npm --prefix web test` — 4e5b36a
+- [x] 1.4 Production build succeeds: `npm --prefix web run build` — 4e5b36a
 
 #### Manual
 
-- [x] 1.5 In `npm run dev`, the full D4 flow looks like the prototype in light and dark themes — 09a1096
-- [x] 1.6 Changing Rooms, Encounter or (on a Boss fight) Boss size after a roll brings back the d20, and changing them back brings back Reroll — 09a1096
-- [x] 1.7 A failed Generate shakes the button and ends in Ready, and the alert shows — 09a1096
-- [x] 1.8 Save does not flash the button or the preview, and `/maps/:id` does not flash — 09a1096
-- [x] 1.9 With reduced motion on, nothing moves, and Ready, Rolling and Reroll stay distinguishable — 09a1096
-- [x] 1.10 Keyboard focus stays on Generate through the roll, and the screen reader announces "New map generated, seed N" — 09a1096
+- [x] 1.5 In `npm run dev`, the full D4 flow looks like the prototype in light and dark themes — 4e5b36a
+- [x] 1.6 Changing Rooms, Encounter or (on a Boss fight) Boss size after a roll brings back the d20, and changing them back brings back Reroll — 4e5b36a
+- [x] 1.7 A failed Generate shakes the button and ends in Ready, and the alert shows — 4e5b36a
+- [x] 1.8 Save does not flash the button or the preview, and `/maps/:id` does not flash — 4e5b36a
+- [x] 1.9 With reduced motion on, nothing moves, and Ready, Rolling and Reroll stay distinguishable — 4e5b36a
+- [x] 1.10 Keyboard focus stays on Generate through the roll, and the screen reader announces "New map generated, seed N" — 4e5b36a
 
 ### Phase 2: Gates and docs
 
 #### Automated
 
-- [x] 2.1 Visual gate passes with updated and new baselines in the CI image: `npm --prefix web run visual:docker` — 0013153
-- [x] 2.2 e2e passes in Chrome and Firefox against the built app: `npm --prefix e2e run build:app && npm --prefix e2e test` — 0013153
-- [x] 2.3 UI contract scan still passes: `npm --prefix web run ui:scan` — 0013153
+- [x] 2.1 Visual gate passes with updated and new baselines in the CI image: `npm --prefix web run visual:docker` — 4e5b36a
+- [x] 2.2 e2e passes in Chrome and Firefox against the built app: `npm --prefix e2e run build:app && npm --prefix e2e test` — 4e5b36a
+- [x] 2.3 UI contract scan still passes: `npm --prefix web run ui:scan` — 4e5b36a
 
 #### Manual
 
-- [x] 2.4 The baseline diff touches only the Generate button plus the new `ready-params-changed` shots, and each delta is explained in the PR description — 0013153
-- [x] 2.5 The `web/AGENTS.md` and roadmap S-02 wording reads correctly and matches the shipped behaviour — 0013153
+- [x] 2.4 The baseline diff touches only the Generate button plus the new `ready-params-changed` shots, and each delta is explained in the PR description — 4e5b36a
+- [x] 2.5 The `web/AGENTS.md` and roadmap S-02 wording reads correctly and matches the shipped behaviour — 4e5b36a
