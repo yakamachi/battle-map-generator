@@ -16,6 +16,10 @@ const buttonVariants = cva(
         // dark-theme text contrast under 4.5 (saved-maps-library tokens.md).
         destructive:
           "border-destructive/30 bg-destructive/10 text-destructive hover:border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20",
+        // A quieter action that is still the next step (home's Reroll). The fill stays on hover and
+        // the border takes the ring colour; focus-visible keeps the base ring, as outline does.
+        // Contrast: regenerate-with-new-seed tokens.md.
+        accent: "border-border bg-accent text-accent-foreground hover:border-ring",
       },
       size: {
         default: "h-8 gap-1.5 px-2.5",

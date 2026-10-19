@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import type { Route } from "./+types/home";
 import { Alert } from "~/components/ui/alert";
@@ -6,6 +6,7 @@ import { Button, buttonVariants } from "~/components/ui/button";
 import { DialogClose, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Label } from "~/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "~/components/ui/native-select";
+import { DiceIcon } from "~/components/dice-icon";
 import { MapPreview, type MapPreviewState } from "~/components/map-preview";
 import { MapTitleDialog } from "~/components/map-title-dialog";
 import {
@@ -19,6 +20,7 @@ import {
   type GenerateError,
   type GeneratedMap,
 } from "~/api/client";
+import { generateButtonState } from "~/lib/generate-button";
 import { BOSS_SIZES, ENCOUNTERS } from "~/lib/map-labels";
 import { useMapCanvas } from "~/map/use-map-canvas";
 import { cn } from "cn";
@@ -35,6 +37,18 @@ type Status =
   | { kind: "loading" }
   | { kind: "ready"; map: GeneratedMap }
   | { kind: "error"; message: string };
+
+// The Generate button's error shake, restarted on the same element for each failed Generate.
+const SHAKE = "motion-safe:animate-shake";
+
+// A roll lasts at least one full tumble (--animate-tumble in app.css, four hops), so a fast server
+// still shows the dice. Nothing moves under reduced motion, so there is nothing to wait for.
+const MIN_ROLL_MS = 900;
+
+function minimumRoll(): Promise<void> {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return Promise.resolve();
+  return new Promise((resolve) => setTimeout(resolve, MIN_ROLL_MS));
+}
 
 const ROOM_COUNTS = Array.from(
   { length: MAX_ROOM_COUNT - MIN_ROOM_COUNT + 1 },
@@ -76,15 +90,53 @@ export default function Home() {
   // One busy state for the button and the frame: a map is not done until it is drawn.
   const busy = previewState === "loading";
   const previewSize = map ?? shownMap;
+  const buttonState = generateButtonState({
+    busy,
+    drawnParameters: drawnMap?.parameters ?? null,
+    form: { roomCount, encounter, bossSize },
+  });
+
+  // The Done flash and the Error shake follow a Generate only: Save also replaces the drawn map,
+  // but never sets this marker, so it never flashes. Each effect replays through a counter, never
+  // by remounting the button, so keyboard focus stays on it.
+  const generatePending = useRef(false);
+  const [flash, setFlash] = useState({ count: 0, seed: 0 });
+  const [shakeCount, setShakeCount] = useState(0);
+  const generateButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!generatePending.current) return;
+    if (drawnMap) {
+      generatePending.current = false;
+      const { seed } = drawnMap;
+      setFlash((previous) => ({ count: previous.count + 1, seed }));
+    } else if (status.kind === "error") {
+      generatePending.current = false;
+      setShakeCount((count) => count + 1);
+    }
+  }, [drawnMap, status.kind]);
+
+  useEffect(() => {
+    const button = generateButtonRef.current;
+    if (shakeCount === 0 || !button) return;
+    // Restart the animation on the same element: drop the class, force a reflow, add it back.
+    button.classList.remove(SHAKE);
+    void button.offsetWidth;
+    button.classList.add(SHAKE);
+  }, [shakeCount]);
 
   async function onGenerate() {
+    generatePending.current = true;
     setStatus({ kind: "loading" });
     clearDownloadError();
-    const result = await generateMap({
-      roomCount,
-      encounter,
-      bossSize: encounter === "boss" ? bossSize : undefined,
-    });
+    const [result] = await Promise.all([
+      generateMap({
+        roomCount,
+        encounter,
+        bossSize: encounter === "boss" ? bossSize : undefined,
+      }),
+      minimumRoll(),
+    ]);
     if (!result.ok) forgetShownMap();
     setStatus(
       result.ok
@@ -158,8 +210,30 @@ export default function Home() {
         )}
       </div>
       <div className="flex flex-wrap items-center gap-4">
-        <Button onClick={onGenerate} disabled={busy}>
-          {busy ? "Generating…" : "Generate"}
+        <Button
+          ref={generateButtonRef}
+          // aria-disabled, not disabled: a disabled button loses keyboard focus in Chromium, and
+          // focus must stay on Generate through the roll. onClick ignores clicks while busy.
+          onClick={busy ? undefined : onGenerate}
+          aria-disabled={busy || undefined}
+          aria-busy={buttonState === "rolling" || undefined}
+          variant={buttonState === "reroll" ? "accent" : "default"}
+          title={buttonState === "reroll" ? "Roll a new layout with the same settings" : undefined}
+          className={cn("relative aria-disabled:pointer-events-none", shakeCount > 0 && SHAKE)}
+        >
+          <DiceIcon
+            variant={buttonState === "reroll" ? "dice" : "d20"}
+            rolling={buttonState === "rolling"}
+          />
+          Generate
+          {/* A new key remounts only this decoration, which replays the Done ring pulse. */}
+          {flash.count > 0 && (
+            <span
+              key={flash.count}
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 rounded-lg motion-safe:animate-ring-pulse"
+            />
+          )}
         </Button>
         <Button variant="outline" onClick={download} disabled={!canDownload}>
           Download PNG
@@ -202,6 +276,10 @@ export default function Home() {
         {drawnMap && (
           <span className="text-sm text-muted-foreground tabular-nums">Seed: {drawnMap.seed}</span>
         )}
+        {/* Always mounted, so screen readers hear each change; the seed makes repeats differ. */}
+        <p role="status" className="sr-only">
+          {flash.count > 0 ? `New map generated, seed ${flash.seed}` : ""}
+        </p>
       </div>
       {status.kind === "error" && <Alert variant="destructive">{status.message}</Alert>}
       {downloadError && <Alert variant="destructive">{downloadError}</Alert>}
@@ -212,6 +290,7 @@ export default function Home() {
         state={previewState}
         drawn={shownMap !== null}
         label={shownMap ? `Battle map, seed ${shownMap.seed}` : undefined}
+        flashKey={flash.count}
       />
     </main>
   );

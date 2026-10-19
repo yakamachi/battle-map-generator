@@ -3,6 +3,98 @@
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+  /*
+   * Motion for the Generate button and the preview (regenerate-with-new-seed, prototype variant
+   * D4). Views apply these as motion-safe:animate-*, so reduced motion keeps every state but
+   * moves nothing. Colours come only from --ring. The one-shot effects (pop, ring-pulse, arrive,
+   * shake) are finite and end on the settled style, so a screenshot with animations disabled
+   * shows the resting state.
+   */
+  /* The d20 rolls in 90° hops with a small lift. */
+  --animate-tumble: tumble 0.9s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  /* One of eight stacked faces, shown for 1/8 of two tumbles: the number changes on each hop. */
+  --animate-flick8: flick8 1.8s steps(1) infinite;
+  /* The two-dice icon lands with an overshoot. */
+  --animate-pop: pop 0.35s cubic-bezier(0.3, 1.6, 0.6, 1);
+  /* Done: the ring spreads out of the button and fades. */
+  --animate-ring-pulse: ring-pulse 0.7s ease-out;
+  /* Done: the preview frame glows once from inside. */
+  --animate-arrive: arrive 0.7s ease-out;
+  /* Error: the button shakes. */
+  --animate-shake: shake 0.4s ease-in-out;
+
+  @keyframes tumble {
+    0% {
+      transform: translateY(0) rotate(0);
+    }
+    25% {
+      transform: translateY(-3px) rotate(90deg);
+    }
+    50% {
+      transform: translateY(0) rotate(180deg);
+    }
+    75% {
+      transform: translateY(-3px) rotate(270deg);
+    }
+    100% {
+      transform: translateY(0) rotate(360deg);
+    }
+  }
+
+  @keyframes flick8 {
+    0% {
+      opacity: 1;
+    }
+    12.6% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes pop {
+    0% {
+      transform: scale(0.4) rotate(-40deg);
+      opacity: 0;
+    }
+    100% {
+      transform: none;
+      opacity: 1;
+    }
+  }
+
+  @keyframes ring-pulse {
+    0% {
+      box-shadow: 0 0 0 0 color-mix(in oklch, var(--ring) 70%, transparent);
+    }
+    100% {
+      box-shadow: 0 0 0 10px color-mix(in oklch, var(--ring) 0%, transparent);
+    }
+  }
+
+  @keyframes arrive {
+    0% {
+      box-shadow: inset 0 0 0 3px color-mix(in oklch, var(--ring) 80%, transparent);
+      backdrop-filter: brightness(1.15);
+    }
+    100% {
+      box-shadow: inset 0 0 0 0 color-mix(in oklch, var(--ring) 0%, transparent);
+      backdrop-filter: brightness(1);
+    }
+  }
+
+  @keyframes shake {
+    20%,
+    60% {
+      transform: translateX(-4px);
+    }
+    40%,
+    80% {
+      transform: translateX(4px);
+    }
+  }
 }
 
 /*
