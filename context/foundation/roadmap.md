@@ -43,7 +43,7 @@ DM przed sesją D&D potrzebuje czytelnej mapy bitewnej wyrównanej do siatki, a 
 | ---- | ------------------------ | ------------------------------------------------------------------------------------ | ------------- | ----------------------------- | -------- |
 | F-01 | account-store-foundation | (foundation) baza kont działa w chmurze, a sesje przetrwają restart i uśpienie aplikacji | —             | FR-001, NFR (dane konta niewidoczne dla innych kont), Access Control | done |
 | S-01 | first-map-download       | DM generuje mapę, widzi podgląd wyrównany do siatki i pobiera zgodny z nim PNG        | —             | US-01, FR-003, FR-004, FR-006, NFR (czas generacji, Chrome i Firefox), Guardrail wyrównania do siatki | done        |
-| S-02 | regenerate-with-new-seed | DM generuje mapę ponownie i dostaje inny układ przy tych samych parametrach           | S-01          | US-01, FR-005                 | in-progress |
+| S-02 | regenerate-with-new-seed | DM widzi na przycisku „Generate” stan kości (gotowy, rzut, gotowy na nowy układ) bez zmiany etykiety i kolejnym kliknięciem dostaje nowy układ przy tych samych parametrach | S-01 | US-01, FR-005                 | in-progress |
 | S-03 | encounter-parameters     | DM wybiera liczbę pokoi (2–12) i typ starcia; walka z bossem dodaje arenę skalowaną rozmiarem bossa | S-01 | US-01, FR-002, Business Logic | done |
 | S-04 | dm-email-login           | DM zakłada konto i loguje się e-mailem i hasłem; bez zalogowania nie wygeneruje mapy, a generowania na konto są limitowane | F-01, S-01 | US-01, FR-001, NFR (dane konta niewidoczne dla innych kont), Access Control | done |
 | S-05 | saved-maps-library       | DM zapisuje mapę z tytułem w swojej bibliotece, a potem ją otwiera, zmienia jej tytuł i ją usuwa | S-01, S-04 | US-02, FR-009, NFR (dane konta niewidoczne dla innych kont), Success Criteria (Secondary) | done |
@@ -103,13 +103,13 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ### S-02: DM generuje mapę ponownie
 
-- **Outcome:** DM klika „generuj ponownie” i bez błędu dostaje inny układ (nowy seed) przy tych samych parametrach; pobrany plik odpowiada aktualnemu podglądowi.
+- **Outcome:** Przycisk „Generate” pokazuje stanami kości, bez zmiany etykiety, czy jest gotowy, czy trwa rzut, czy kolejne kliknięcie da nowy układ przy tych samych parametrach; DM klika go ponownie i bez błędu dostaje inny układ (nowy seed), a pobrany plik odpowiada aktualnemu podglądowi.
 - **Change ID:** regenerate-with-new-seed
 - **PRD refs:** US-01, FR-005
 - **Prerequisites:** S-01
 - **Parallel with:** F-01, S-03, S-04, S-05
 - **Blockers:** —
-- **Unknowns:** Może być w większości gotowe (stan 2026-10-18): „Generuj” na stronie głównej nie wysyła seeda, więc każde kliknięcie daje nowy losowy układ przy tych samych parametrach, a `e2e/tests/map.spec.ts` sprawdza, że drugi pobrany plik różni się od pierwszego. Do ustalenia: etykieta „generuj ponownie” i test, że zmienia się sam seed. Przy planowaniu warto też rozważyć, czy pokazywać DM-owi „Seed: N” — po S-05 zapisana mapa przechowuje siatkę, a w UI nie da się wpisać seeda, więc seed służy już głównie jako identyfikator (nazwa pliku PNG, zgłoszenia błędów).
+- **Unknowns:** — Rozwiązane 2026-10-19: regeneracja działała już wcześniej (strona główna wysyła `seed: null`, więc każde kliknięcie losuje nowy układ); ta zmiana dodała stany kości na przycisku „Generate” zamiast osobnej etykiety „generuj ponownie”. Seed zostaje widoczny jako „Seed: N”.
 - **Risk:** Mały slice, ale sprawdza determinizm: ten sam seed musi dawać tę samą mapę, a nowy — inną; każda regeneracja obciąża limity CPU planu F1.
 - **Status:** in-progress
 

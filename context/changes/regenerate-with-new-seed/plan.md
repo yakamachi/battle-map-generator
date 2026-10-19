@@ -366,11 +366,11 @@ These changes were agreed during phase 1 manual testing and its review (`reviews
 
 #### Automated
 
-- [ ] 2.1 Visual gate passes with updated and new baselines in the CI image: `npm --prefix web run visual:docker`
-- [ ] 2.2 e2e passes in Chrome and Firefox against the built app: `npm --prefix e2e run build:app && npm --prefix e2e test`
-- [ ] 2.3 UI contract scan still passes: `npm --prefix web run ui:scan`
+- [x] 2.1 Visual gate passes with updated and new baselines in the CI image: `npm --prefix web run visual:docker`
+- [x] 2.2 e2e passes in Chrome and Firefox against the built app: `npm --prefix e2e run build:app && npm --prefix e2e test`
+- [x] 2.3 UI contract scan still passes: `npm --prefix web run ui:scan`
 
 #### Manual
 
-- [ ] 2.4 The baseline diff touches only the Generate button plus the new `ready-params-changed` shots, and each delta is explained in the PR description
-- [ ] 2.5 The `web/AGENTS.md` and roadmap S-02 wording reads correctly and matches the shipped behaviour
+- [x] 2.4 The baseline diff touches only the Generate button plus the new `ready-params-changed` shots, and each delta is explained in the PR description
+- [x] 2.5 The `web/AGENTS.md` and roadmap S-02 wording reads correctly and matches the shipped behaviour

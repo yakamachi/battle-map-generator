@@ -53,8 +53,10 @@ async function waitForReady(page: Page) {
   });
 }
 
+// The busy Generate button keeps its name and is aria-disabled (not disabled, so it keeps focus);
+// Playwright counts aria-disabled="true" on a button as disabled.
 async function waitForLoading(page: Page) {
-  await expect(page.getByRole("button", { name: "Generating…" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Generate", exact: true })).toBeDisabled();
 }
 
 test("idle", async ({ page }) => {
@@ -103,6 +105,17 @@ test("ready", async ({ page }) => {
   await waitForReady(page);
   await expect(page.getByText("Seed: 42")).toBeVisible();
   await shot(page, "ready");
+});
+
+test("ready-params-changed", async ({ page }) => {
+  // A map is drawn, then the form changes: Generate goes back from Reroll to Ready (the d20).
+  await page.route(GENERATE, (route) => fulfilMap(route, SEED_42));
+  await openHome(page);
+  await clickGenerate(page);
+  await waitForReady(page);
+  await page.getByLabel("Rooms").selectOption("8");
+  await page.mouse.move(0, 0);
+  await shot(page, "ready-params-changed");
 });
 
 test("loading-regenerate", async ({ page }) => {
