@@ -1,7 +1,7 @@
 ---
 change_id: regenerate-with-new-seed
 title: Generate button states that make regenerating a map discoverable
-status: implementing
+status: impl_reviewed
 created: 2026-10-18
 updated: 2026-10-19
 archived_at: null

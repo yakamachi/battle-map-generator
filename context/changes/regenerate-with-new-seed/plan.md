@@ -322,6 +322,16 @@ There are only CSS transform and opacity animations on a 20 px SVG and one overl
 
 Not applicable: no data, API or stored-map change.
 
+## Addendum (implementation, 2026-10-19)
+
+These changes were agreed during phase 1 manual testing and its review (`reviews/impl-review-phase-1.md`). They override the phase text above where the two disagree.
+
+- **Focus-safe busy state**: Generate uses `aria-disabled` while busy, with no `onClick`, instead of `disabled={busy}`. Chromium drops keyboard focus from a button that becomes disabled. The button primitive's base string styles `aria-disabled` the same way as `disabled` (`pointer-events-none`, `opacity-50`), so the busy button is dimmed in every motion setting (review F1).
+- **Minimum roll**: `onGenerate` waits for whichever is slower, the response or a 0.9 s timer (one tumble). Under `prefers-reduced-motion` there is no wait. This supersedes "adds no JavaScript timers" in Performance Considerations: there is one bounded 900 ms timer per Generate.
+- **Pop only after a Generate**: `DiceIcon` takes a `pop` prop. Home sets it in `onGenerate` and clears it on Save and on any form change. The dice that come back after those appear without the pop (review F2).
+- **Busy announcement**: while a Generate is loading, the `role="status"` region reads "Generating a map…". It then reads "New map generated, seed N" (review F4).
+- **Phase 2 locator**: `waitForLoading` can keep `toBeDisabled()` on `getByRole("button", { name: "Generate", exact: true })`, because Playwright treats `aria-disabled="true"` on a button as disabled. The `loading-*` shots now show the dimmed d20 at rest with no face. Each Generate takes at least 0.9 s, which is well inside the specs' 20 s render timeout.
+
 ## References
 
 - Research: `context/changes/regenerate-with-new-seed/research.md` (including the 2026-10-19 dice follow-up and the D4 decision)
@@ -338,19 +348,19 @@ Not applicable: no data, API or stored-map change.
 
 #### Automated
 
-- [x] 1.1 Type checking passes: `npm --prefix web run typecheck`
-- [x] 1.2 UI contract scan passes: `npm --prefix web run ui:scan`
-- [x] 1.3 Unit and rendering tests pass in Chromium and Firefox, including the new `generate-button.test.ts`: `npm --prefix web test`
-- [x] 1.4 Production build succeeds: `npm --prefix web run build`
+- [x] 1.1 Type checking passes: `npm --prefix web run typecheck` — 09a1096
+- [x] 1.2 UI contract scan passes: `npm --prefix web run ui:scan` — 09a1096
+- [x] 1.3 Unit and rendering tests pass in Chromium and Firefox, including the new `generate-button.test.ts`: `npm --prefix web test` — 09a1096
+- [x] 1.4 Production build succeeds: `npm --prefix web run build` — 09a1096
 
 #### Manual
 
-- [x] 1.5 In `npm run dev`, the full D4 flow looks like the prototype in light and dark themes
-- [x] 1.6 Changing Rooms, Encounter or (on a Boss fight) Boss size after a roll brings back the d20, and changing them back brings back Reroll
-- [x] 1.7 A failed Generate shakes the button and ends in Ready, and the alert shows
-- [x] 1.8 Save does not flash the button or the preview, and `/maps/:id` does not flash
-- [x] 1.9 With reduced motion on, nothing moves, and Ready, Rolling and Reroll stay distinguishable
-- [x] 1.10 Keyboard focus stays on Generate through the roll, and the screen reader announces "New map generated, seed N"
+- [x] 1.5 In `npm run dev`, the full D4 flow looks like the prototype in light and dark themes — 09a1096
+- [x] 1.6 Changing Rooms, Encounter or (on a Boss fight) Boss size after a roll brings back the d20, and changing them back brings back Reroll — 09a1096
+- [x] 1.7 A failed Generate shakes the button and ends in Ready, and the alert shows — 09a1096
+- [x] 1.8 Save does not flash the button or the preview, and `/maps/:id` does not flash — 09a1096
+- [x] 1.9 With reduced motion on, nothing moves, and Ready, Rolling and Reroll stay distinguishable — 09a1096
+- [x] 1.10 Keyboard focus stays on Generate through the roll, and the screen reader announces "New map generated, seed N" — 09a1096
 
 ### Phase 2: Gates and docs
 

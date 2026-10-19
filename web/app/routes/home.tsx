@@ -103,6 +103,14 @@ export default function Home() {
   const [flash, setFlash] = useState({ count: 0, seed: 0 });
   const [shakeCount, setShakeCount] = useState(0);
   const generateButtonRef = useRef<HTMLButtonElement>(null);
+  // The dice pop in only on the swap that ends a Generate. Save and any form change clear this
+  // flag, so the dice that come back after them appear without the pop. It stays set while the
+  // dice are shown, since clearing it would cut the pop short.
+  const [popDice, setPopDice] = useState(false);
+
+  useEffect(() => {
+    setPopDice(false);
+  }, [roomCount, encounter, bossSize]);
 
   useEffect(() => {
     if (!generatePending.current) return;
@@ -127,6 +135,7 @@ export default function Home() {
 
   async function onGenerate() {
     generatePending.current = true;
+    setPopDice(true);
     setStatus({ kind: "loading" });
     clearDownloadError();
     const [result] = await Promise.all([
@@ -148,6 +157,7 @@ export default function Home() {
   // Save sends the drawn map's seed and parameters; the server regenerates the map from them.
   function onSave(title: string) {
     if (!drawnMap) throw new Error("Save is enabled only while a map is drawn.");
+    setPopDice(false);
     const { seed, parameters } = drawnMap;
     return saveMap({ title, seed, ...parameters });
   }
@@ -219,11 +229,12 @@ export default function Home() {
           aria-busy={buttonState === "rolling" || undefined}
           variant={buttonState === "reroll" ? "accent" : "default"}
           title={buttonState === "reroll" ? "Roll a new layout with the same settings" : undefined}
-          className={cn("relative aria-disabled:pointer-events-none", shakeCount > 0 && SHAKE)}
+          className={cn("relative", shakeCount > 0 && SHAKE)}
         >
           <DiceIcon
             variant={buttonState === "reroll" ? "dice" : "d20"}
             rolling={buttonState === "rolling"}
+            pop={popDice}
           />
           Generate
           {/* A new key remounts only this decoration, which replays the Done ring pulse. */}
@@ -278,7 +289,11 @@ export default function Home() {
         )}
         {/* Always mounted, so screen readers hear each change; the seed makes repeats differ. */}
         <p role="status" className="sr-only">
-          {flash.count > 0 ? `New map generated, seed ${flash.seed}` : ""}
+          {status.kind === "loading"
+            ? "Generating a map…"
+            : flash.count > 0
+              ? `New map generated, seed ${flash.seed}`
+              : ""}
         </p>
       </div>
       {status.kind === "error" && <Alert variant="destructive">{status.message}</Alert>}

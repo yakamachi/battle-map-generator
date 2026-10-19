@@ -28,15 +28,23 @@ type DiceIconProps = {
   variant: "d20" | "dice";
   // The d20 tumbles and its face changes on each hop.
   rolling: boolean;
+  // The dice pop in when they mount: only after a Generate, not when Save redraws the map or the
+  // form is changed back to the drawn map's settings.
+  pop: boolean;
 };
 
 // The Generate button's icon (prototype variant D4). Decorative: the button's name stays
 // "Generate". Under reduced motion nothing moves and the d20 keeps its resting "20".
-export function DiceIcon({ variant, rolling }: DiceIconProps) {
+export function DiceIcon({ variant, rolling, pop }: DiceIconProps) {
   if (variant === "dice") {
-    // Keyed apart from the d20, so it mounts on the swap and its pop plays.
+    // Keyed apart from the d20, so it mounts on the swap and, after a Generate, its pop plays.
     return (
-      <svg key="dice" viewBox="0 0 24 24" aria-hidden="true" className="size-5 motion-safe:animate-pop">
+      <svg
+        key="dice"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+        className={cn("size-5", pop && "motion-safe:animate-pop")}
+      >
         <path fill="currentColor" d={DICE_MULTIPLE_OUTLINE} />
       </svg>
     );
