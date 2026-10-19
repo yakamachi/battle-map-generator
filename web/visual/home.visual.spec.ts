@@ -98,12 +98,32 @@ test("loading-first", async ({ page }) => {
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
+test.describe("reduced motion", () => {
+  test.use({ reducedMotion: "reduce" });
+
+  test("loading-first-reduced-motion", async ({ page }) => {
+    // Nothing moves: the busy button tells Rolling from Ready by its dimming alone, and the d20
+    // keeps its resting "20".
+    await page.route(GENERATE, hold);
+    await openHome(page);
+    await clickGenerate(page);
+    await waitForLoading(page);
+    await shot(page, "loading-first-reduced-motion");
+    await page.unrouteAll({ behavior: "ignoreErrors" });
+  });
+});
+
 test("ready", async ({ page }) => {
   await page.route(GENERATE, (route) => fulfilMap(route, SEED_42));
   await openHome(page);
   await clickGenerate(page);
   await waitForReady(page);
   await expect(page.getByText("Seed: 42")).toBeVisible();
+  // Reroll: the accent variant, so the next click rolls a new layout with the same settings.
+  await expect(page.getByRole("button", { name: "Generate", exact: true })).toHaveAttribute(
+    "data-variant",
+    "accent",
+  );
   await shot(page, "ready");
 });
 
@@ -114,7 +134,10 @@ test("ready-params-changed", async ({ page }) => {
   await clickGenerate(page);
   await waitForReady(page);
   await page.getByLabel("Rooms").selectOption("8");
-  await page.mouse.move(0, 0);
+  await expect(page.getByRole("button", { name: "Generate", exact: true })).toHaveAttribute(
+    "data-variant",
+    "default",
+  );
   await shot(page, "ready-params-changed");
 });
 

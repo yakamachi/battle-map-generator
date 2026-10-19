@@ -100,8 +100,11 @@ export default function Home() {
   // but never sets this marker, so it never flashes. Each effect replays through a counter, never
   // by remounting the button, so keyboard focus stays on it.
   const generatePending = useRef(false);
-  const [flash, setFlash] = useState({ count: 0, seed: 0 });
+  const [flashCount, setFlashCount] = useState(0);
   const [shakeCount, setShakeCount] = useState(0);
+  // What the status region says. Set at each step of a Generate, never derived from status, so a
+  // failed Generate or a redraw never repeats an earlier map's message; on error the Alert speaks.
+  const [announcement, setAnnouncement] = useState("");
   const generateButtonRef = useRef<HTMLButtonElement>(null);
   // The dice pop in only on the swap that ends a Generate. Save and any form change clear this
   // flag, so the dice that come back after them appear without the pop. It stays set while the
@@ -116,11 +119,12 @@ export default function Home() {
     if (!generatePending.current) return;
     if (drawnMap) {
       generatePending.current = false;
-      const { seed } = drawnMap;
-      setFlash((previous) => ({ count: previous.count + 1, seed }));
+      setFlashCount((count) => count + 1);
+      setAnnouncement(`New map generated, seed ${drawnMap.seed}`);
     } else if (status.kind === "error") {
       generatePending.current = false;
       setShakeCount((count) => count + 1);
+      setAnnouncement("");
     }
   }, [drawnMap, status.kind]);
 
@@ -136,6 +140,7 @@ export default function Home() {
   async function onGenerate() {
     generatePending.current = true;
     setPopDice(true);
+    setAnnouncement("Generating a map…");
     setStatus({ kind: "loading" });
     clearDownloadError();
     const [result] = await Promise.all([
@@ -238,9 +243,9 @@ export default function Home() {
           />
           Generate
           {/* A new key remounts only this decoration, which replays the Done ring pulse. */}
-          {flash.count > 0 && (
+          {flashCount > 0 && (
             <span
-              key={flash.count}
+              key={flashCount}
               aria-hidden="true"
               className="pointer-events-none absolute inset-0 rounded-lg motion-safe:animate-ring-pulse"
             />
@@ -289,11 +294,7 @@ export default function Home() {
         )}
         {/* Always mounted, so screen readers hear each change; the seed makes repeats differ. */}
         <p role="status" className="sr-only">
-          {status.kind === "loading"
-            ? "Generating a map…"
-            : flash.count > 0
-              ? `New map generated, seed ${flash.seed}`
-              : ""}
+          {announcement}
         </p>
       </div>
       {status.kind === "error" && <Alert variant="destructive">{status.message}</Alert>}
@@ -305,7 +306,7 @@ export default function Home() {
         state={previewState}
         drawn={shownMap !== null}
         label={shownMap ? `Battle map, seed ${shownMap.seed}` : undefined}
-        flashKey={flash.count}
+        flashKey={flashCount}
       />
     </main>
   );
