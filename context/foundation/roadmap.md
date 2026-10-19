@@ -9,7 +9,7 @@ main_goal: learn
 top_blocker: time
 milestone_id: dm-downloads-session-map
 milestone_seq: 1
-milestone_status: open           # open | done
+milestone_status: done           # open | done
 ---
 
 # Roadmap: Battle Map Generator dla D&D (DM Toolkit)
@@ -20,7 +20,7 @@ milestone_status: open           # open | done
 
 ## Milestone
 
-**M-1: DM pobiera gotową mapę na sesję** — Status: open
+**M-1: DM pobiera gotową mapę na sesję** — Status: done
 
 - **Intent:** Etap 1 PRD działa end-to-end: DM zakłada konto i loguje się, ustawia parametry starcia (liczba pokoi, typ starcia), generuje mapę wyrównaną do siatki, w razie potrzeby generuje ją ponownie i pobiera PNG gotowy do wgrania do Roll20, a od 2026-10-18 (PRD v3) także zapisuje mapy w swojej bibliotece i do nich wraca (S-05).
 - **Source materials:** `context/foundation/prd.md` (v3; v1 → v2 2026-09-30 po peer feedback: liczba pokoi i arena bossa, otwarta rejestracja; v2 → v3 2026-10-18: biblioteka map US-02 / FR-009 na potrzeby certyfikacji 10xDevs)
@@ -189,6 +189,8 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Kroki AI w CI (automatyczny code review, aktualizacja dokumentacji)** — Why parked: `shape-notes.md` §Forward: post-MVP; przy głównym ryzyku „czas” nie wchodzi do milestone'u.
 
 ## Milestone History
+
+- **M-1: DM pobiera gotową mapę na sesję** (`dm-downloads-session-map`) — closed 2026-10-19. DM zakłada konto, ustawia parametry starcia, generuje mapę wyrównaną do siatki, regeneruje ją (stany kości na przycisku „Generate”), pobiera PNG i zapisuje mapy w bibliotece; F-01 i S-01–S-05 zarchiwizowane, przepływ przechodzi e2e w Chrome i Firefox.
 
 ## Done
 
