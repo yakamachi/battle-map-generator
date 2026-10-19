@@ -9,7 +9,7 @@ main_goal: learn
 top_blocker: time
 milestone_id: dm-downloads-session-map
 milestone_seq: 1
-milestone_status: open           # open | done
+milestone_status: done           # open | done
 ---
 
 # Roadmap: Battle Map Generator dla D&D (DM Toolkit)
@@ -20,7 +20,7 @@ milestone_status: open           # open | done
 
 ## Milestone
 
-**M-1: DM pobiera gotową mapę na sesję** — Status: open
+**M-1: DM pobiera gotową mapę na sesję** — Status: done
 
 - **Intent:** Etap 1 PRD działa end-to-end: DM zakłada konto i loguje się, ustawia parametry starcia (liczba pokoi, typ starcia), generuje mapę wyrównaną do siatki, w razie potrzeby generuje ją ponownie i pobiera PNG gotowy do wgrania do Roll20, a od 2026-10-18 (PRD v3) także zapisuje mapy w swojej bibliotece i do nich wraca (S-05).
 - **Source materials:** `context/foundation/prd.md` (v3; v1 → v2 2026-09-30 po peer feedback: liczba pokoi i arena bossa, otwarta rejestracja; v2 → v3 2026-10-18: biblioteka map US-02 / FR-009 na potrzeby certyfikacji 10xDevs)
@@ -43,7 +43,7 @@ DM przed sesją D&D potrzebuje czytelnej mapy bitewnej wyrównanej do siatki, a 
 | ---- | ------------------------ | ------------------------------------------------------------------------------------ | ------------- | ----------------------------- | -------- |
 | F-01 | account-store-foundation | (foundation) baza kont działa w chmurze, a sesje przetrwają restart i uśpienie aplikacji | —             | FR-001, NFR (dane konta niewidoczne dla innych kont), Access Control | done |
 | S-01 | first-map-download       | DM generuje mapę, widzi podgląd wyrównany do siatki i pobiera zgodny z nim PNG        | —             | US-01, FR-003, FR-004, FR-006, NFR (czas generacji, Chrome i Firefox), Guardrail wyrównania do siatki | done        |
-| S-02 | regenerate-with-new-seed | DM widzi na przycisku „Generate” stan kości (gotowy, rzut, gotowy na nowy układ) bez zmiany etykiety i kolejnym kliknięciem dostaje nowy układ przy tych samych parametrach | S-01 | US-01, FR-005                 | in-progress |
+| S-02 | regenerate-with-new-seed | DM widzi na przycisku „Generate” stan kości (gotowy, rzut, gotowy na nowy układ) bez zmiany etykiety i kolejnym kliknięciem dostaje nowy układ przy tych samych parametrach | S-01 | US-01, FR-005                 | done |
 | S-03 | encounter-parameters     | DM wybiera liczbę pokoi (2–12) i typ starcia; walka z bossem dodaje arenę skalowaną rozmiarem bossa | S-01 | US-01, FR-002, Business Logic | done |
 | S-04 | dm-email-login           | DM zakłada konto i loguje się e-mailem i hasłem; bez zalogowania nie wygeneruje mapy, a generowania na konto są limitowane | F-01, S-01 | US-01, FR-001, NFR (dane konta niewidoczne dla innych kont), Access Control | done |
 | S-05 | saved-maps-library       | DM zapisuje mapę z tytułem w swojej bibliotece, a potem ją otwiera, zmienia jej tytuł i ją usuwa | S-01, S-04 | US-02, FR-009, NFR (dane konta niewidoczne dla innych kont), Success Criteria (Secondary) | done |
@@ -111,7 +111,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** — Rozwiązane 2026-10-19: regeneracja działała już wcześniej (strona główna wysyła `seed: null`, więc każde kliknięcie losuje nowy układ); ta zmiana dodała stany kości na przycisku „Generate” zamiast osobnej etykiety „generuj ponownie”. Seed zostaje widoczny jako „Seed: N”.
 - **Risk:** Mały slice, ale sprawdza determinizm: ten sam seed musi dawać tę samą mapę, a nowy — inną; każda regeneracja obciąża limity CPU planu F1.
-- **Status:** in-progress
+- **Status:** done
 
 ### S-03: DM ustawia parametry starcia
 
@@ -157,7 +157,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | ---------- | ------------------------ | ------------------------------------------------------------ | --------------------- | ----- |
 | F-01       | account-store-foundation | Baza kont w chmurze i trwałe sesje po restarcie              | yes                   | Wymaga ręcznego utworzenia bazy przez właściciela; można równolegle z S-01 |
 | S-01       | first-map-download       | Generowanie mapy z podglądem wyrównanym do siatki i pobraniem PNG | yes              | Run `/10x-plan first-map-download` |
-| S-02       | regenerate-with-new-seed | Regeneracja mapy z nowym seedem                              | yes                   | Run `/10x-plan regenerate-with-new-seed`; nie równolegle z S-03 (wspólny formularz i żądanie) |
+| S-02       | regenerate-with-new-seed | Regeneracja mapy z nowym seedem                              | yes                   | Zarchiwizowane 2026-10-19 → `context/archive/2026-10-18-regenerate-with-new-seed/` |
 | S-03       | encounter-parameters     | Parametry starcia: liczba pokoi i arena bossa                 | yes                   | Run `/10x-plan encounter-parameters`; zalecana para równoległa z S-04 |
 | S-04       | dm-email-login           | Rejestracja i logowanie e-mail/hasło, ochrona i limit generowania | yes              | Run `/10x-plan dm-email-login`; zalecana para równoległa z S-03 |
 | S-05       | saved-maps-library       | Biblioteka map: zapis z tytułem, lista, otwarcie, zmiana tytułu, usunięcie | yes            | Zarchiwizowane 2026-10-18 → `context/archive/2026-10-17-saved-maps-library/` |
@@ -190,6 +190,8 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ## Milestone History
 
+- **M-1: DM pobiera gotową mapę na sesję** (`dm-downloads-session-map`) — closed 2026-10-19. DM zakłada konto, ustawia parametry starcia, generuje mapę wyrównaną do siatki, regeneruje ją (stany kości na przycisku „Generate”), pobiera PNG i zapisuje mapy w bibliotece; F-01 i S-01–S-05 zarchiwizowane, przepływ przechodzi e2e w Chrome i Firefox.
+
 ## Done
 
 - **F-01: (foundation) baza kont działa w chmurze w tym samym regionie co aplikacja, połączenie przeżywa wybudzanie bazy, a klucze sesji są trwałe — restart lub uśpienie aplikacji nie wylogowuje użytkownika.** — Archived 2026-09-25 → `context/archive/2026-09-23-account-store-foundation/`. Lesson: —.
@@ -197,3 +199,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **S-03: DM wybiera liczbę pokoi (2–12, domyślnie 6) i typ starcia (potyczka / walka z bossem); mapa ma dokładnie tyle pokoi, a przy walce z bossem jeden z nich jest oznaczoną areną o podłodze co najmniej 8×8 / 10×10 / 12×12 dla bossa Dużego / Ogromnego / Gigantycznego.** — Archived 2026-10-02 → `context/archive/2026-09-30-encounter-parameters/`. Lesson: —.
 - **S-04: DM zakłada konto (otwarta rejestracja, bez weryfikacji e-mail) i loguje się e-mailem i hasłem; niezalogowany użytkownik widzi tylko logowanie / rejestrację i nie może wygenerować mapy; liczba generowań na konto jest ograniczona; pełny przepływ rejestracja/logowanie → generowanie → regeneracja → pobranie działa w Chrome i Firefox na wdrożonej aplikacji.** — Archived 2026-10-02 → `context/archive/2026-09-30-dm-email-login/`. Lesson: —.
 - **S-05: Zalogowany DM zapisuje wygenerowaną mapę pod tytułem (1–80 znaków), widzi w „Moje mapy” listę tylko własnych map od najnowszej, otwiera mapę (ten sam układ, seed i PNG co przy zapisie), zmienia jej tytuł i ją usuwa; mapa innego konta zachowuje się jak nieistniejąca, a konto mieści najwyżej 100 map; przepływ działa w Chrome i Firefox.** — Archived 2026-10-18 → `context/archive/2026-10-17-saved-maps-library/`. Lesson: —.
+- **S-02: Przycisk „Generate” pokazuje stanami kości, bez zmiany etykiety, czy jest gotowy, czy trwa rzut, czy kolejne kliknięcie da nowy układ przy tych samych parametrach; DM klika go ponownie i bez błędu dostaje inny układ (nowy seed), a pobrany plik odpowiada aktualnemu podglądowi.** — Archived 2026-10-19 → `context/archive/2026-10-18-regenerate-with-new-seed/`. Lesson: —.
