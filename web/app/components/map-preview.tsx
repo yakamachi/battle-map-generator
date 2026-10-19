@@ -16,6 +16,9 @@ type MapPreviewProps = {
   label?: string;
   // What the frame says while loading: generating on home, loading a saved map elsewhere.
   loadingLabel?: string;
+  // Home only: raised once per generated map, so the frame glows once when it arrives. Views that
+  // load a saved map leave it out and never glow.
+  flashKey?: number;
 };
 
 // The preview frame. The single canvas is always mounted and only CSS sizes it on screen: its
@@ -28,6 +31,7 @@ export function MapPreview({
   drawn,
   label,
   loadingLabel = "Generating…",
+  flashKey = 0,
 }: MapPreviewProps) {
   const loading = state === "loading";
   const frameStyle = {
@@ -63,6 +67,14 @@ export function MapPreview({
             {loadingLabel}
           </span>
         </div>
+      )}
+      {/* A new key remounts the overlay, which replays its one-shot glow. */}
+      {flashKey > 0 && (
+        <span
+          key={flashKey}
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 rounded-lg motion-safe:animate-arrive"
+        />
       )}
     </div>
   );
