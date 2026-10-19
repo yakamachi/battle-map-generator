@@ -157,7 +157,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | ---------- | ------------------------ | ------------------------------------------------------------ | --------------------- | ----- |
 | F-01       | account-store-foundation | Baza kont w chmurze i trwałe sesje po restarcie              | yes                   | Wymaga ręcznego utworzenia bazy przez właściciela; można równolegle z S-01 |
 | S-01       | first-map-download       | Generowanie mapy z podglądem wyrównanym do siatki i pobraniem PNG | yes              | Run `/10x-plan first-map-download` |
-| S-02       | regenerate-with-new-seed | Regeneracja mapy z nowym seedem                              | yes                   | Run `/10x-plan regenerate-with-new-seed`; nie równolegle z S-03 (wspólny formularz i żądanie) |
+| S-02       | regenerate-with-new-seed | Regeneracja mapy z nowym seedem                              | yes                   | Zarchiwizowane 2026-10-19 → `context/archive/2026-10-18-regenerate-with-new-seed/` |
 | S-03       | encounter-parameters     | Parametry starcia: liczba pokoi i arena bossa                 | yes                   | Run `/10x-plan encounter-parameters`; zalecana para równoległa z S-04 |
 | S-04       | dm-email-login           | Rejestracja i logowanie e-mail/hasło, ochrona i limit generowania | yes              | Run `/10x-plan dm-email-login`; zalecana para równoległa z S-03 |
 | S-05       | saved-maps-library       | Biblioteka map: zapis z tytułem, lista, otwarcie, zmiana tytułu, usunięcie | yes            | Zarchiwizowane 2026-10-18 → `context/archive/2026-10-17-saved-maps-library/` |
