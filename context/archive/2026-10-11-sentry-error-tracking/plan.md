@@ -270,48 +270,48 @@ Update `reportError()` (the choke point added in `client-error-reporting`, expli
 
 #### Automated
 
-- [x] 1.1 `dotnet build` succeeds from `api/` — 8e01223
-- [x] 1.2 `dotnet test api.Tests` passes with no regressions — 8e01223
+- [x] 1.1 `dotnet build` succeeds from `api/` — ca7e5c0
+- [x] 1.2 `dotnet test api.Tests` passes with no regressions — ca7e5c0
 
 #### Manual
 
-- [x] 1.3 Local DSN via user-secrets; triggered exception confirmed in Sentry dashboard — 8e01223
-- [x] 1.4 Production `Sentry__Dsn` Application Setting created — 8e01223
+- [x] 1.3 Local DSN via user-secrets; triggered exception confirmed in Sentry dashboard — ca7e5c0
+- [x] 1.4 Production `Sentry__Dsn` Application Setting created — ca7e5c0
 
 ### Phase 2: Wire API-side audit findings to Sentry (L1, G4)
 
 #### Automated
 
-- [x] 2.1 `dotnet build` succeeds from `api/` — 358e810
-- [x] 2.2 `dotnet test api.Tests` passes with no regressions — 358e810
+- [x] 2.1 `dotnet build` succeeds from `api/` — ca7e5c0
+- [x] 2.2 `dotnet test api.Tests` passes with no regressions — ca7e5c0
 
 #### Manual
 
-- [x] 2.3 Data Protection failure confirmed reaching Sentry with the right message — 358e810
-- [x] 2.4 Map-generation failure confirmed reaching Sentry with seed/roomCount/encounter attributes — 358e810
+- [x] 2.3 Data Protection failure confirmed reaching Sentry with the right message — ca7e5c0
+- [x] 2.4 Map-generation failure confirmed reaching Sentry with seed/roomCount/encounter attributes — ca7e5c0
 
 ### Phase 3: Install and initialize Sentry in web/
 
 #### Automated
 
-- [x] 3.1 `npm run typecheck` passes — 7711c8b
-- [x] 3.2 `npm test` passes with no regressions — 7711c8b
-- [x] 3.3 `npm run build` succeeds locally with `VITE_SENTRY_DSN` unset — 7711c8b
+- [x] 3.1 `npm run typecheck` passes — ca7e5c0
+- [x] 3.2 `npm test` passes with no regressions — ca7e5c0
+- [x] 3.3 `npm run build` succeeds locally with `VITE_SENTRY_DSN` unset — ca7e5c0
 
 #### Manual
 
-- [x] 3.4 Local `.env.local` DSN; browser error confirmed in Sentry dashboard — 7711c8b
-- [x] 3.5 `VITE_SENTRY_DSN` repository variable created — 7711c8b
+- [x] 3.4 Local `.env.local` DSN; browser error confirmed in Sentry dashboard — ca7e5c0
+- [x] 3.5 `VITE_SENTRY_DSN` repository variable created — ca7e5c0
 - [ ] 3.6 Post-merge deploy build confirmed to pick up the variable (pending next merge to main)
 
 ### Phase 4: Wire web-side audit findings to Sentry (reportError, ErrorBoundary)
 
 #### Automated
 
-- [x] 4.1 `npm run typecheck` passes — dd1374d
-- [x] 4.2 `npm test` passes, including existing `client.test.ts`/`auth.test.ts` — dd1374d
+- [x] 4.1 `npm run typecheck` passes — ca7e5c0
+- [x] 4.2 `npm test` passes, including existing `client.test.ts`/`auth.test.ts` — ca7e5c0
 
 #### Manual
 
-- [x] 4.3 All 4 `reportError` call sites confirmed reaching Sentry tagged with their call label — dd1374d
-- [x] 4.4 Root `ErrorBoundary` throw confirmed reaching Sentry — dd1374d
+- [x] 4.3 All 4 `reportError` call sites confirmed reaching Sentry tagged with their call label — ca7e5c0
+- [x] 4.4 Root `ErrorBoundary` throw confirmed reaching Sentry — ca7e5c0

@@ -1,10 +1,10 @@
 ---
 change_id: testing-seed-determinism
 title: Seed determinism
-status: impl_reviewed
+status: archived
 created: 2026-10-05
-updated: 2026-10-10
-archived_at: null
+updated: 2026-10-20
+archived_at: 2026-10-20T16:23:49Z
 ---
 
 ## Notes
