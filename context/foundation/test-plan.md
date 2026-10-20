@@ -85,8 +85,8 @@ orchestrator updates Status as artifacts appear on disk.
 
 | # | Phase name | Goal (one line) | Risks covered | Test types | Status | Change folder |
 |---|---|---|---|---|---|---|
-| 1 | Invariant and boss-arena sweep | Prove every valid parameter combination yields a valid grid and a correctly sized boss arena | #1, #6 | unit (parametrized sweep) | complete | context/changes/testing-invariant-boss-sweep/ |
-| 2 | Seed determinism | Prove the same seed and parameters reproduce the same grid and render variant, across requests and re-renders | #2 | unit, integration, web render test | complete | context/changes/testing-seed-determinism/ |
+| 1 | Invariant and boss-arena sweep | Prove every valid parameter combination yields a valid grid and a correctly sized boss arena | #1, #6 | unit (parametrized sweep) | complete | context/archive/2026-10-05-testing-invariant-boss-sweep/ |
+| 2 | Seed determinism | Prove the same seed and parameters reproduce the same grid and render variant, across requests and re-renders | #2 | unit, integration, web render test | complete | context/archive/2026-10-05-testing-seed-determinism/ |
 | 3 | Abuse-resistant quota | Turn "the per-account limit protects the plan" into a measured, tested ceiling | #3 | integration under scripted multi-account load | complete | context/archive/2026-10-15-testing-abuse-resistant-quota/ |
 | 4 | Generation cost budget | Measure CPU, wall time and response size on the target host, then gate on a budget | #4 | integration timing test; one-off F1 measurement | not started | — |
 | 5 | Cold-start resilience | Automated guard for the first request after idle | #5 | integration (retry-then-succeed); probe as gate candidate | not started | — |

@@ -119,14 +119,14 @@ None. The change touches no data, API or fixture.
 
 #### Automated
 
-- [x] 1.1 Generator sweep passes with 1000 seeds on all 44 combinations: `dotnet test api.Tests --filter "FullyQualifiedName~MapGeneratorTests"` — b9d98e1
-- [x] 1.2 Fixture tests still pass unchanged: `dotnet test api.Tests --filter "FullyQualifiedName~MapFixtureTests"` — b9d98e1
-- [x] 1.3 The full API test suite passes where Docker is available: `dotnet test api.Tests` — b9d98e1
-- [x] 1.4 The API builds without new warnings: `dotnet build api` — b9d98e1
-- [x] 1.5 `SweepSeedCount` is the only seed bound changed in `MapGeneratorTests.cs` — b9d98e1
+- [x] 1.1 Generator sweep passes with 1000 seeds on all 44 combinations: `dotnet test api.Tests --filter "FullyQualifiedName~MapGeneratorTests"` — 1f79e62
+- [x] 1.2 Fixture tests still pass unchanged: `dotnet test api.Tests --filter "FullyQualifiedName~MapFixtureTests"` — 1f79e62
+- [x] 1.3 The full API test suite passes where Docker is available: `dotnet test api.Tests` — 1f79e62
+- [x] 1.4 The API builds without new warnings: `dotnet build api` — 1f79e62
+- [x] 1.5 `SweepSeedCount` is the only seed bound changed in `MapGeneratorTests.cs` — 1f79e62
 
 #### Manual
 
-- [x] 1.6 The measured run time of `MapGeneratorTests` with 1000 seeds is recorded in the change's notes and accepted for CI — b9d98e1
-- [x] 1.7 The §6.1 cookbook entry reads correctly to someone who did not write the sweep — b9d98e1
-- [x] 1.8 The one-dimension arena gap is accepted, or a follow-up is opened for it — b9d98e1
+- [x] 1.6 The measured run time of `MapGeneratorTests` with 1000 seeds is recorded in the change's notes and accepted for CI — 1f79e62
+- [x] 1.7 The §6.1 cookbook entry reads correctly to someone who did not write the sweep — 1f79e62
+- [x] 1.8 The one-dimension arena gap is accepted, or a follow-up is opened for it — 1f79e62

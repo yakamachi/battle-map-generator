@@ -1,10 +1,10 @@
 ---
 change_id: client-error-reporting
 title: Report swallowed fetch errors in the client API wrapper
-status: impl_reviewed
+status: archived
 created: 2026-10-11
-updated: 2026-10-11
-archived_at: null
+updated: 2026-10-20
+archived_at: 2026-10-20T16:23:49Z
 ---
 
 ## Notes

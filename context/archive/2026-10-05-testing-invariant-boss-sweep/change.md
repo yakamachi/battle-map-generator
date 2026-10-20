@@ -1,10 +1,10 @@
 ---
 change_id: testing-invariant-boss-sweep
 title: Invariant and boss-arena sweep
-status: impl_reviewed
+status: archived
 created: 2026-10-05
-updated: 2026-10-05
-archived_at: null
+updated: 2026-10-20
+archived_at: 2026-10-20T16:23:49Z
 ---
 
 ## Notes

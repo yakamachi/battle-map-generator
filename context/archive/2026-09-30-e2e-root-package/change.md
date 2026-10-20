@@ -1,10 +1,10 @@
 ---
 change_id: e2e-root-package
 title: Move end-to-end tests to a root e2e package
-status: implemented
+status: archived
 created: 2026-09-30
-updated: 2026-09-30
-archived_at: null
+updated: 2026-10-20
+archived_at: 2026-10-20T16:23:49Z
 ---
 
 ## Notes
